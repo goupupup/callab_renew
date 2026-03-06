@@ -1,0 +1,51 @@
+import oracledb
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def list_tables():
+    user = os.getenv("ORACLE_USER")
+    password = os.getenv("ORACLE_PASS")
+    lib_dir = r"C:\instantclient_19_20"
+    
+    host = "172.20.25.2"
+    port = 1521
+    sid = "XE"
+    tns_dsn = f"""
+        (DESCRIPTION =
+            (ADDRESS = (PROTOCOL = TCP)(HOST = {host})(PORT = {port}))
+            (CONNECT_DATA =
+                (SID = {sid})
+            )
+        )
+    """
+
+    try:
+        oracledb.init_oracle_client(lib_dir=lib_dir)
+        connection = oracledb.connect(user=user, password=password, dsn=tns_dsn)
+        
+        with connection.cursor() as cursor:
+            # 주요 테이블 검색 (사용자 관리, 성적서, 장비 관련 키워드)
+            keywords = ['USR', 'USER', 'REPORT', 'EQUIP', 'CAL', 'FILE']
+            query = f"""
+                SELECT table_name 
+                FROM user_tables 
+                WHERE { ' OR '.join([f"table_name LIKE '%{kw}%'" for kw in keywords]) }
+                ORDER BY table_name
+            """
+            cursor.execute(query)
+            tables = cursor.fetchall()
+            
+            print("--- Relevant Tables Found ---")
+            for table in tables:
+                print(table[0])
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        if 'connection' in locals():
+            connection.close()
+
+if __name__ == "__main__":
+    list_tables()
