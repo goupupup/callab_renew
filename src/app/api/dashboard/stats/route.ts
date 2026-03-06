@@ -14,27 +14,49 @@ export async function GET() {
     const isMaster = session.user.role === "MASTER";
 
     try {
-        let equipmentSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN WHERE 1=1`;
-        let ongoingSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBCALMAN WHERE (STAT = '02' OR STAT = '11' OR STAT = '05' OR STAT = '07')`;
-        let expirationsSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN WHERE STAT = '10' AND TRIM(NEXT) <> '0' AND TO_DATE(NEXT, 'YYYYMMDD') < SYSDATE + 30`;
-
         const params: any = {};
+        let whereClause = " WHERE 1=1";
 
         if (!isMaster) {
-            equipmentSql += ` AND TRIM(CUST) = :corpId`;
-            ongoingSql += ` AND TRIM(CCOM) = :corpId`;
-            expirationsSql += ` AND TRIM(CUST) = :corpId`;
+            whereClause += ` AND TRIM(CUST) = :corpId`;
             params.corpId = corpId;
         }
 
-        // Stats: Total Equipment
-        const equipmentResult = await query<any>(equipmentSql, params);
+        // 1. Total Equipment
+        const equipmentSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN ${whereClause}`;
 
-        // Stats: On-Going
-        const ongoingResult = await query<any>(ongoingSql, params);
+        // 2. On-Going (Using TBCALMAN for process tracking)
+        const ongoingWhere = !isMaster ? ` WHERE TRIM(CCOM) = :corpId` : "";
+        const ongoingSql = `
+            SELECT COUNT(*) as TOTAL 
+            FROM EASYCAL.TBCALMAN 
+            ${ongoingWhere} 
+            ${ongoingWhere ? 'AND' : 'WHERE'} (STAT = '02' OR STAT = '11' OR STAT = '05' OR STAT = '07')
+        `;
 
-        // Stats: Upcoming Expirations
-        const expirationsResult = await query<any>(expirationsSql, params);
+        // 3. Upcoming Expirations (Optimized for Indexing)
+        // Calculating the threshold date in JS to avoid SYSDATE + 30 overhead in every row check if possible
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() + 30);
+        const thresholdStr = thresholdDate.toISOString().slice(0, 10).replace(/-/g, '');
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+        const expirationsSql = `
+            SELECT COUNT(*) as TOTAL 
+            FROM EASYCAL.TBMASMAN 
+            ${whereClause} 
+            AND STAT = '10' 
+            AND NEXT <> '0' 
+            AND NEXT BETWEEN :today AND :threshold
+        `;
+        const expirationParams = { ...params, today: todayStr, threshold: thresholdStr };
+
+        // Execute all three in PARALLEL
+        const [equipmentResult, ongoingResult, expirationsResult] = await Promise.all([
+            query<any>(equipmentSql, params),
+            query<any>(ongoingSql, !isMaster ? { corpId } : {}),
+            query<any>(expirationsSql, expirationParams)
+        ]);
 
         return NextResponse.json({
             totalEquipment: equipmentResult[0]?.TOTAL || 0,

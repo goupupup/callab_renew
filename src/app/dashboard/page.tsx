@@ -83,7 +83,15 @@ export default function DashboardPage() {
             {/* Metric Blocks */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {stats.map((stat) => (
-                    <Card key={stat.label} className="bg-white border-slate-100 hover:border-[#001489]/20 hover:shadow-xl hover:shadow-[#001489]/5 transition-all duration-300 rounded-[2rem] group relative overflow-hidden">
+                    <Card
+                        key={stat.label}
+                        className="bg-white border-slate-100 hover:border-[#001489]/20 hover:shadow-xl hover:shadow-[#001489]/5 transition-all duration-300 rounded-[2rem] group relative overflow-hidden cursor-pointer"
+                        onClick={() => {
+                            if (stat.label === "Total Equipment") router.push("/dashboard/equipment");
+                            if (stat.label === "On-Going") router.push("/dashboard/equipment?filter=onGoingOnly");
+                            if (stat.label === "Expirations") router.push("/dashboard/equipment?filter=expirationOnly");
+                        }}
+                    >
                         <CardContent className="p-6">
                             <div className="flex flex-col space-y-3">
                                 <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center border border-transparent group-hover:bg-white group-hover:border-slate-100 transition-all shadow-sm`}>

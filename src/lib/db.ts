@@ -7,9 +7,8 @@ const initOracle = () => {
     if (typeof window !== "undefined") return;
 
     try {
-        // 1. 이미 초기화되었는지 확인 (NJS-077 방지)
-        // 2. 경로 구분자를 정규화하여 전달
-        const libDir = "C:/instantclient_19_20";
+        // macOS 환경에 최적화된 Oracle Client 경로 설정
+        const libDir = "/opt/oracle/instantclient-basic-macos.arm64-23.3.0.23.09-2";
         console.log(`Checking Oracle Client at: ${libDir}`);
 
         oracledb.initOracleClient({ libDir });
@@ -19,9 +18,8 @@ const initOracle = () => {
             // 이미 초기화됨 - 무시
         } else if (err.message.includes("NJS-045")) {
             console.error("❌ NJS-045: Oracle Client 라이브러리를 찾거나 로드할 수 없습니다.");
-            console.error("   - 경로가 정확한지 확인: C:/instantclient_19_20");
-            console.error("   - Node.js(x64)와 Instant Client(x64) 아키텍처가 일치하는지 확인");
-            console.error("   - Visual Studio 2017 이상용 재배포 가능 패키지가 설치되어 있는지 확인");
+            console.error(`   - 경로가 정확한지 확인: /opt/oracle/instantclient-basic-macos.arm64-23.3.0.23.09-2`);
+            console.error("   - macOS(M1/M2/M3)용 Instant Client가 설치되어 있는지 확인");
             throw err;
         } else {
             console.error("Oracle Initialization Error:", err);

@@ -56,73 +56,92 @@ export async function GET(request: Request) {
         }
         if (!year) year = new Date().getFullYear().toString();
 
-        // 2. Determine FTP Path and Filename
-        let ftpPath = "";
-        let ftpFilename = "";
         let downloadFilename = "";
 
+        // 2. Determine potential FTP Paths
+        const potentialPaths: string[] = [];
         if (type === "data") {
-            const ftpClient = new FtpClient();
-            const extensions = ["xlsx", "zip", "txt"];
-            let found = false;
-            let extension = "";
+            const extensions = ["xlsx", "XLSX", "zip", "ZIP", "txt", "PDF", "pdf"];
 
+            // // 1. Raw Data Path (Year-based)
+            // if (calNo && year) {
+            //     for (const ext of extensions) {
+            //         potentialPaths.push(`/report/report_rawdata/${year}/${calNo}.${ext}`);
+            //     }
+            // }
+
+            // 2. Legacy Gear Path (ISID)
             for (const ext of extensions) {
-                const checkPath = `/HCT_CALLAB/gear/${id}.${ext}`;
-                if (await ftpClient.fileExists(checkPath)) {
-                    ftpPath = "/HCT_CALLAB/gear/";
-                    ftpFilename = `${id}.${ext}`;
-                    extension = ext;
-                    found = true;
-                    break;
+                potentialPaths.push(`/HCT_CALLAB/gear/${id}.${ext}`);
+            }
+
+            // 3. Legacy Gear Path (Asset No)
+            if (assetNo && assetNo !== id) {
+                for (const ext of extensions) {
+                    potentialPaths.push(`/HCT_CALLAB/gear/${assetNo}.${ext}`);
                 }
             }
 
-            if (!found) {
-                return NextResponse.json({ error: "업로드된 파일이 없습니다." }, { status: 404 });
-            }
+            // 4. Fallback search by ID directly in HCT_CALLAB
+            potentialPaths.push(`/HCT_CALLAB/${id}.xlsx`);
 
-            // Format: {Asset} - {year}_{Calno}_{HCTno}.{ext}
-            downloadFilename = `${assetNo} - ${year}_${calNo}_${id}.${extension}`;
-
-        } else if (type === "report") {
-            if (!calNo) {
-                return NextResponse.json({ error: "No calibration records found" }, { status: 404 });
-            }
-
-            ftpPath = `/report/report_cust_pdf/${year}/`;
-            ftpFilename = `${calNo}.pdf`;
-            downloadFilename = `${calNo}.pdf`;
+            downloadFilename = `${assetNo} - ${year}_${calNo}_${id}.xlsx`;
         } else {
-            return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+            if (!calNo) return NextResponse.json({ error: "No calibration records found" }, { status: 404 });
+
+            // 1. Primary Report Path
+            potentialPaths.push(`/report/report_cust_pdf/${year}/${calNo}.pdf`);
+            potentialPaths.push(`/report/report_cust_pdf/${year}/${calNo}.PDF`);
+
+            // 2. Fallback Report Path (No Year)
+            potentialPaths.push(`/report/report_cust_pdf/${calNo}.pdf`);
+
+            // 3. Fallback: HCT_CALLAB/report
+            potentialPaths.push(`/HCT_CALLAB/report/${calNo}.pdf`);
+            potentialPaths.push(`/HCT_CALLAB/report/${id}.pdf`);
+
+            // 4. Fallback: Raw Data or Gear
+            potentialPaths.push(`/report/report_rawdata/${year}/${calNo}.pdf`);
+            potentialPaths.push(`/HCT_CALLAB/gear/${id}.pdf`);
+            potentialPaths.push(`/HCT_CALLAB/gear/${calNo}.pdf`);
+
+            downloadFilename = `${calNo}.pdf`;
         }
 
-        const remotePath = `${ftpPath}${ftpFilename}`;
-        console.log(`🔍 [FTP ATTEMPT]: Type=${type}, ISID=${id}, Path=${remotePath}, DownloadAs=${downloadFilename}`);
-
-        // 3. FTP Download & Stream
+        // 3. FTP Download & Stream (Optimized: One connection for search + stream)
         const ftpClient = new FtpClient();
+        const result = await ftpClient.getStreamForFirstAvailable(potentialPaths);
 
-        const exists = await ftpClient.fileExists(remotePath);
-        if (!exists) {
-            console.error(`❌ [FTP NOT FOUND]: ${remotePath}`);
-            return NextResponse.json({ error: "File not found on server", debugPath: remotePath }, { status: 404 });
+        if (!result) {
+            console.error(`❌ [FTP NOT FOUND]: ${type} for ID=${id}, searched paths: ${potentialPaths.join(', ')}`);
+            return NextResponse.json({
+                error: type === "data" ? "업로드된 파일이 없습니다." : "성적서 파일이 없습니다.",
+                debugPaths: potentialPaths
+            }, { status: 404 });
         }
 
-        const { PassThrough } = await import("stream");
-        const proxyStream = new PassThrough();
+        const { stream: nodeStream, size: fileSize, remotePath } = result;
 
-        ftpClient.getFileStream(remotePath).then(ftpStream => {
-            ftpStream.pipe(proxyStream);
-        }).catch(err => {
-            console.error("FTP Stream Error:", err);
-            proxyStream.destroy(err);
-        });
+        // Refine download filename extension for data files if needed
+        if (type === "data") {
+            const actualExt = remotePath.split('.').pop();
+            downloadFilename = `${assetNo} - ${year}_${calNo}_${id}.${actualExt}`;
+        } else {
+            downloadFilename = remotePath.split('/').pop() || downloadFilename;
+        }
 
-        return new Response(proxyStream as any, {
+        console.log(`🚀 [FTP STREAM START]: Path=${remotePath}, Size=${fileSize}, DownloadAs=${downloadFilename}`);
+
+        const { Readable } = await import("stream");
+        const webStream = Readable.toWeb(nodeStream);
+        const safeDownloadFilename = downloadFilename.replace(/["\s]/g, '_');
+
+        return new Response(webStream as any, {
             headers: {
-                "Content-Type": "application/octet-stream",
-                "Content-Disposition": `attachment; filename="${downloadFilename}"`,
+                "Content-Type": type === "report" ? "application/pdf" : "application/octet-stream",
+                "Content-Disposition": `attachment; filename="${encodeURIComponent(safeDownloadFilename)}"; filename*=UTF-8''${encodeURIComponent(downloadFilename)}`,
+                "Content-Length": fileSize.toString(),
+                "Cache-Control": "no-store, no-cache, must-revalidate",
             },
         });
 

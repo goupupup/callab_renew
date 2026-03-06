@@ -35,114 +35,127 @@ export async function GET(request: Request) {
     const expirationOnly = searchParams.get("expirationOnly") === "true";
 
     try {
-        let sql = `
-            SELECT 
-                TRIM(ISID) as ISID, TRIM(ACCN) as ACCN, SERN, MODL, NAEM_SUP, TRIM(MNFC) as MNFC, REGD, LAST, NEXT, STAT,
-                (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = EASYCAL.TBMASMAN.MNFC) as MANUFACTURER_NAME
-            FROM EASYCAL.TBMASMAN 
-            WHERE 1=1
-        `;
-
+        let whereSql = ` WHERE 1=1`;
         const params: any = {};
 
         if (!isMaster) {
-            sql += ` AND TRIM(CUST) = :corpId`;
+            whereSql += ` AND TRIM(m.CUST) = :corpId`;
             params.corpId = corpId;
         } else if (company) {
-            // Master user can search by company/customer ID or partial ID
-            sql += ` AND CUST LIKE '%' || :company || '%'`;
+            whereSql += ` AND m.CUST LIKE '%' || :company || '%'`;
             params.company = company;
         }
 
         if (serialNumber) {
-            sql += ` AND SERN LIKE '%' || :sern || '%'`;
+            whereSql += ` AND m.SERN LIKE '%' || :sern || '%'`;
             params.sern = serialNumber;
         }
         if (assetNo) {
-            sql += ` AND ACCN LIKE '%' || :accn || '%'`;
+            whereSql += ` AND m.ACCN LIKE '%' || :accn || '%'`;
             params.accn = assetNo;
         }
         if (regNo) {
-            sql += ` AND ISID LIKE '%' || :isid || '%'`;
+            whereSql += ` AND m.ISID LIKE '%' || :isid || '%'`;
             params.isid = regNo;
         }
         if (modelName) {
-            sql += ` AND MODL LIKE '%' || :modelName || '%'`;
+            whereSql += ` AND m.MODL LIKE '%' || :modelName || '%'`;
             params.modelName = modelName;
         }
         if (equipmentName) {
-            sql += ` AND NAEM_SUP LIKE '%' || :equipmentName || '%'`;
+            whereSql += ` AND m.NAEM_SUP LIKE '%' || :equipmentName || '%'`;
             params.equipmentName = equipmentName;
         }
 
-        // Filtering Checkboxes
         if (onGoingOnly) {
-            sql += ` AND STAT IN ('02', '11', '05', '07')`;
+            whereSql += ` AND m.STAT IN ('02', '11', '05', '07')`;
         }
         if (expirationOnly) {
-            sql += ` AND NEXT < TO_CHAR(SYSDATE, 'YYYYMMDD') AND NEXT != '0'`;
+            whereSql += ` AND m.NEXT < TO_CHAR(SYSDATE, 'YYYYMMDD') AND m.NEXT != '0'`;
         }
 
         if (manufacturer) {
-            sql += ` AND MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
+            whereSql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
             params.mnfc = manufacturer;
         }
         if (lastCalStart && lastCalEnd) {
             const start = lastCalStart.replace(/-/g, '');
             const end = lastCalEnd.replace(/-/g, '');
-            sql += ` AND LAST BETWEEN :lastCalStart AND :lastCalEnd`;
+            whereSql += ` AND m.LAST BETWEEN :lastCalStart AND :lastCalEnd`;
             params.lastCalStart = start;
             params.lastCalEnd = end;
         }
         if (nextCalStart && nextCalEnd) {
             const start = nextCalStart.replace(/-/g, '');
             const end = nextCalEnd.replace(/-/g, '');
-            sql += ` AND NEXT BETWEEN :nextCalStart AND :nextCalEnd`;
+            whereSql += ` AND m.NEXT BETWEEN :nextCalStart AND :nextCalEnd`;
             params.nextCalStart = start;
             params.nextCalEnd = end;
         }
 
-        // Sorting params
         const sortBy = searchParams.get("sortBy") || "REGD";
         const order = searchParams.get("order")?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-        // Map frontend column names to backend SQL columns
         const sortMap: any = {
-            "assetNo": "TRIM(ACCN)",
-            "hctNo": "TO_NUMBER(REGEXP_REPLACE(TRIM(ISID), '[^0-9]', ''))",
-            "modelName": "MODL",
-            "equipmentName": "NAEM_SUP",
-            "serialNumber": "SERN",
-            "nextCal": "CASE WHEN NEXT = '0' OR NEXT IS NULL THEN '99991231' ELSE NEXT END",
-            "regDate": "REGD"
+            "assetNo": "TRIM(m.ACCN)",
+            "hctNo": "TO_NUMBER(REGEXP_REPLACE(TRIM(m.ISID), '[^0-9]', ''))",
+            "modelName": "m.MODL",
+            "equipmentName": "m.NAEM_SUP",
+            "serialNumber": "m.SERN",
+            "nextCal": "CASE WHEN m.NEXT = '0' OR m.NEXT IS NULL THEN '99991231' ELSE m.NEXT END",
+            "regDate": "m.REGD"
         };
-        const sortColumn = sortMap[sortBy] || "REGD";
+        const sortColumn = sortMap[sortBy] || "m.REGD";
 
-        // Count query for pagination totals
-        const countSql = `SELECT COUNT(*) as TOTAL FROM (${sql})`;
-        const countResult = await query<any>(countSql, params);
-        const totalItems = countResult[0]?.TOTAL || 0;
-
-        // Final SQL with pagination
-        // Using ROWNUM for backward compatibility with older Oracle versions
         const isAll = limit >= 9999;
 
-        let paginatedSql = "";
+        // 1. Precise Count Query (Simplified for speed)
+        const countSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN ${whereSql.replace(/m\./g, '')}`;
+
+        // 2. Paginated Data Query (Using JOIN instead of Subquery)
+        const dataSql = `
+            SELECT 
+                TRIM(m.ISID) as ISID, TRIM(m.ACCN) as ACCN, m.SERN as SERN, m.MODL as MODL, m.NAEM_SUP as NAEM_SUP, TRIM(m.MNFC) as MNFC, m.REGD as REGD, m.LAST as LAST, m.NEXT as NEXT, m.STAT as STAT,
+                TRIM(s.CONM) as MANUFACTURER_NAME
+            FROM EASYCAL.TBMASMAN m
+            LEFT JOIN EASYCAL.TBSUPMAN s ON m.MNFC = s.COID
+            ${whereSql}
+        `;
+
+        let finalDataSql = "";
+        const dataParams = { ...params };
+
         if (isAll) {
-            paginatedSql = `${sql} ORDER BY ${sortColumn} ${order}`;
+            finalDataSql = `${dataSql} ORDER BY ${sortColumn} ${order}`;
         } else {
-            paginatedSql = `
+            finalDataSql = `
                 SELECT * FROM (
                     SELECT a.*, ROWNUM rnum FROM (
-                        ${sql} ORDER BY ${sortColumn} ${order}
+                        ${dataSql} ORDER BY ${sortColumn} ${order}
                     ) a WHERE ROWNUM <= :upper_limit
                 ) WHERE rnum > :offset
             `;
-            params.offset = offset;
-            params.upper_limit = offset + limit;
+            dataParams.offset = offset;
+            dataParams.upper_limit = offset + limit;
         }
 
-        const equipment = await query<any>(paginatedSql, params);
+        // Execute both queries in PARALLEL to save time
+        const [countResult, equipment] = await Promise.all([
+            query<any>(countSql, params),
+            query<any>(finalDataSql, dataParams)
+        ]);
+
+        const totalItems = countResult[0]?.TOTAL || 0;
+
+        return NextResponse.json({
+            data: equipment,
+            pagination: {
+                total: totalItems,
+                page: isAll ? 1 : page,
+                limit,
+                totalPages: isAll ? 1 : Math.ceil(totalItems / limit)
+            }
+        });
 
         return NextResponse.json({
             data: equipment,

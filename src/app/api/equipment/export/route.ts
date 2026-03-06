@@ -46,58 +46,58 @@ export async function GET(request: Request) {
     try {
         let sql = `
             SELECT 
-                TRIM(ACCN) as ACCN, 
-                TRIM(ISID) as ISID, 
-                NAEM_SUP, 
-                MODL, 
-                SERN, 
-                NEXT
-            FROM EASYCAL.TBMASMAN 
+                TRIM(m.ACCN) as ACCN, 
+                TRIM(m.ISID) as ISID, 
+                m.NAEM_SUP, 
+                m.MODL, 
+                m.SERN, 
+                m.NEXT
+            FROM EASYCAL.TBMASMAN m
             WHERE 1=1
         `;
 
         const params: any = {};
 
         if (!isMaster) {
-            sql += ` AND TRIM(CUST) = :corpId`;
+            sql += ` AND TRIM(m.CUST) = :corpId`;
             params.corpId = corpId;
         } else if (company) {
-            sql += ` AND CUST LIKE '%' || :company || '%'`;
+            sql += ` AND m.CUST LIKE '%' || :company || '%'`;
             params.company = company;
         }
 
         if (serialNumber) {
-            sql += ` AND SERN LIKE '%' || :sern || '%'`;
+            sql += ` AND m.SERN LIKE '%' || :sern || '%'`;
             params.sern = serialNumber;
         }
         if (assetNo) {
-            sql += ` AND ACCN LIKE '%' || :accn || '%'`;
+            sql += ` AND m.ACCN LIKE '%' || :accn || '%'`;
             params.accn = assetNo;
         }
         if (regNo) {
-            sql += ` AND ISID LIKE '%' || :isid || '%'`;
+            sql += ` AND m.ISID LIKE '%' || :isid || '%'`;
             params.isid = regNo;
         }
         if (modelName) {
-            sql += ` AND MODL LIKE '%' || :modelName || '%'`;
+            sql += ` AND m.MODL LIKE '%' || :modelName || '%'`;
             params.modelName = modelName;
         }
         if (equipmentName) {
-            sql += ` AND NAEM_SUP LIKE '%' || :equipmentName || '%'`;
+            sql += ` AND m.NAEM_SUP LIKE '%' || :equipmentName || '%'`;
             params.equipmentName = equipmentName;
         }
         if (onGoingOnly) {
-            sql += ` AND STAT IN ('02', '11', '05', '07')`;
+            sql += ` AND m.STAT IN ('02', '11', '05', '07')`;
         }
         if (expirationOnly) {
-            sql += ` AND NEXT < TO_CHAR(SYSDATE, 'YYYYMMDD') AND NEXT != '0'`;
+            sql += ` AND m.NEXT < TO_CHAR(SYSDATE, 'YYYYMMDD') AND m.NEXT != '0'`;
         }
         if (manufacturer) {
-            sql += ` AND MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
+            sql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
             params.mnfc = manufacturer;
         }
         if (lastCalStart && lastCalEnd) {
-            sql += ` AND LAST BETWEEN :lastCalStart AND :lastCalEnd`;
+            sql += ` AND m.LAST BETWEEN :lastCalStart AND :lastCalEnd`;
             params.lastCalStart = lastCalStart.replace(/-/g, '');
             params.lastCalEnd = lastCalEnd.replace(/-/g, '');
         }
