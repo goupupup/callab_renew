@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     }
 
     const corpId = session.user.corpId;
-    const isMaster = session.user.role === "MASTER";
+    const role = session.user.role;
+    const isElevated = role === "MASTER" || role === "EMPLOYEE";
 
     // Filtering Params
     const serialNumber = searchParams.get("serialNumber");
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
                 m.NAEM_SUP, 
                 m.MODL, 
                 m.SERN, 
+                m.LAST,
                 m.NEXT
             FROM EASYCAL.TBMASMAN m
             WHERE 1=1
@@ -58,7 +60,7 @@ export async function GET(request: Request) {
 
         const params: any = {};
 
-        if (!isMaster) {
+        if (!isElevated) {
             sql += ` AND TRIM(m.CUST) = :corpId`;
             params.corpId = corpId;
         } else if (company) {
@@ -67,23 +69,23 @@ export async function GET(request: Request) {
         }
 
         if (serialNumber) {
-            sql += ` AND m.SERN LIKE '%' || :sern || '%'`;
+            sql += ` AND UPPER(TRIM(m.SERN)) LIKE '%' || UPPER(TRIM(:sern)) || '%'`;
             params.sern = serialNumber;
         }
         if (assetNo) {
-            sql += ` AND m.ACCN LIKE '%' || :accn || '%'`;
+            sql += ` AND UPPER(TRIM(m.ACCN)) LIKE '%' || UPPER(TRIM(:accn)) || '%'`;
             params.accn = assetNo;
         }
         if (regNo) {
-            sql += ` AND m.ISID LIKE '%' || :isid || '%'`;
+            sql += ` AND UPPER(TRIM(m.ISID)) = UPPER(TRIM(:isid))`;
             params.isid = regNo;
         }
         if (modelName) {
-            sql += ` AND m.MODL LIKE '%' || :modelName || '%'`;
+            sql += ` AND UPPER(TRIM(m.MODL)) LIKE '%' || UPPER(TRIM(:modelName)) || '%'`;
             params.modelName = modelName;
         }
         if (equipmentName) {
-            sql += ` AND m.NAEM_SUP LIKE '%' || :equipmentName || '%'`;
+            sql += ` AND UPPER(TRIM(m.NAEM_SUP)) LIKE '%' || UPPER(TRIM(:equipmentName)) || '%'`;
             params.equipmentName = equipmentName;
         }
         if (onGoingOnly) {
@@ -93,7 +95,7 @@ export async function GET(request: Request) {
             sql += ` AND m.NEXT < TO_CHAR(SYSDATE, 'YYYYMMDD') AND m.NEXT != '0'`;
         }
         if (manufacturer) {
-            sql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
+            sql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE UPPER(TRIM(CONM)) LIKE '%' || UPPER(TRIM(:mnfc)) || '%')`;
             params.mnfc = manufacturer;
         }
         if (lastCalStart && lastCalEnd) {
@@ -142,7 +144,7 @@ export async function GET(request: Request) {
         const worksheet = workbook.addWorksheet("Equipment List");
 
         // Set Headers with Style
-        const headers = ["No", "Asset No", "HCT No", "Equipment Name", "Model Name", "Serial Number", "Next Cal"];
+        const headers = ["No", "Asset No", "HCT No", "Equipment Name", "Model Name", "Serial Number", "Cal Date", "Next Cal"];
         worksheet.addRow(headers);
 
         // Style Headers
@@ -173,6 +175,7 @@ export async function GET(request: Request) {
                 item.NAEM_SUP || "---",
                 item.MODL || "---",
                 item.SERN || "---",
+                formatDate(item.LAST),
                 formatDate(item.NEXT)
             ];
             const row = worksheet.addRow(rowData);

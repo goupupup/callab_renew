@@ -7,19 +7,37 @@ const initOracle = () => {
     if (typeof window !== "undefined") return;
 
     try {
-        // macOS 환경에 최적화된 Oracle Client 경로 설정
-        const libDir = "/opt/oracle/instantclient-basic-macos.arm64-23.3.0.23.09-2";
-        console.log(`Checking Oracle Client at: ${libDir}`);
+        const isMac = process.platform === "darwin";
+        const isWin = process.platform === "win32";
 
-        oracledb.initOracleClient({ libDir });
-        console.log("✅ Oracle Thick mode successfully initialized.");
+        // 환경 변수에서 경로를 먼저 확인하고, 없으면 플랫폼별 기본값 사용
+        let libDir = process.env.ORACLE_LIB_DIR;
+
+        if (!libDir && isMac) {
+            // macOS (Apple Silicon) 기본 경로
+            libDir = "/opt/oracle/instantclient-basic-macos.arm64-23.3.0.23.09-2";
+        }
+
+        if (libDir) {
+            console.log(`🔍 [DB INIT]: Initializing Thick mode with libDir: ${libDir}`);
+            oracledb.initOracleClient({ libDir });
+        } else if (isWin) {
+            // Windows에서는 Instant Client가 시스템 PATH에 설정되어 있으면 인자 없이 호출 가능
+            console.log("🔍 [DB INIT]: Initializing Thick mode (Windows default - searching PATH)");
+            oracledb.initOracleClient();
+        } else {
+            console.log("🔍 [DB INIT]: Initializing Thin mode (No libDir provided for this platform)");
+        }
+
+        console.log("✅ Oracle DB mode successfully initialized.");
     } catch (err: any) {
         if (err.message.includes("NJS-077")) {
             // 이미 초기화됨 - 무시
         } else if (err.message.includes("NJS-045")) {
             console.error("❌ NJS-045: Oracle Client 라이브러리를 찾거나 로드할 수 없습니다.");
-            console.error(`   - 경로가 정확한지 확인: /opt/oracle/instantclient-basic-macos.arm64-23.3.0.23.09-2`);
-            console.error("   - macOS(M1/M2/M3)용 Instant Client가 설치되어 있는지 확인");
+            console.error(`   - 현재 플랫폼: ${process.platform}`);
+            console.error(`   - 시도된 경로: ${process.env.ORACLE_LIB_DIR || 'System PATH'}`);
+            console.error("   - .env 파일에 ORACLE_LIB_DIR 설정을 확인하거나 Instant Client 설치를 확인하세요.");
             throw err;
         } else {
             console.error("Oracle Initialization Error:", err);

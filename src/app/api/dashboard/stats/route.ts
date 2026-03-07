@@ -11,57 +11,67 @@ export async function GET() {
     }
 
     const corpId = session.user.corpId;
-    const isMaster = session.user.role === "MASTER";
+    const role = session.user.role;
+    const isMaster = role === "MASTER";
+    const isElevated = role === "MASTER" || role === "EMPLOYEE";
 
     try {
-        const params: any = {};
-        let whereClause = " WHERE 1=1";
-
-        if (!isMaster) {
-            whereClause += ` AND TRIM(CUST) = :corpId`;
-            params.corpId = corpId;
-        }
-
-        // 1. Total Equipment
-        const equipmentSql = `SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN ${whereClause}`;
-
-        // 2. On-Going (Using TBCALMAN for process tracking)
-        const ongoingWhere = !isMaster ? ` WHERE TRIM(CCOM) = :corpId` : "";
-        const ongoingSql = `
-            SELECT COUNT(*) as TOTAL 
-            FROM EASYCAL.TBCALMAN 
-            ${ongoingWhere} 
-            ${ongoingWhere ? 'AND' : 'WHERE'} (STAT = '02' OR STAT = '11' OR STAT = '05' OR STAT = '07')
-        `;
-
-        // 3. Upcoming Expirations (Optimized for Indexing)
-        // Calculating the threshold date in JS to avoid SYSDATE + 30 overhead in every row check if possible
-        const thresholdDate = new Date();
-        thresholdDate.setDate(thresholdDate.getDate() + 30);
-        const thresholdStr = thresholdDate.toISOString().slice(0, 10).replace(/-/g, '');
         const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
-        const expirationsSql = `
-            SELECT COUNT(*) as TOTAL 
+        // 1. Basic Stats for the current user's company
+        const basicStatsSql = `
+            SELECT 
+                COUNT(*) as TOTAL_EQUIPMENT,
+                SUM(CASE WHEN STAT IN ('02', '11', '05', '07') THEN 1 ELSE 0 END) as ONGOING_COUNT,
+                SUM(CASE WHEN STAT = '10' AND NEXT <> '0' AND NEXT < :today THEN 1 ELSE 0 END) as EXPIRED_COUNT
             FROM EASYCAL.TBMASMAN 
-            ${whereClause} 
-            AND STAT = '10' 
-            AND NEXT <> '0' 
-            AND NEXT BETWEEN :today AND :threshold
+            WHERE TRIM(CUST) = :corpId
         `;
-        const expirationParams = { ...params, today: todayStr, threshold: thresholdStr };
 
-        // Execute all three in PARALLEL
-        const [equipmentResult, ongoingResult, expirationsResult] = await Promise.all([
-            query<any>(equipmentSql, params),
-            query<any>(ongoingSql, !isMaster ? { corpId } : {}),
-            query<any>(expirationsSql, expirationParams)
+        // 2. Additional Company Blocks (Only for MASTER)
+        let companyStats: any[] = [];
+        if (isMaster) {
+            const companyStatsSql = `
+                SELECT 
+                    TRIM(m.CUST) as CORP_ID,
+                    ANY_VALUE(TRIM(c.CONM)) as CORP_NAME,
+                    COUNT(*) as TOTAL,
+                    SUM(CASE WHEN m.STAT IN ('02', '11', '05', '07') THEN 1 ELSE 0 END) as ONGOING,
+                    SUM(CASE WHEN m.NEXT < :today AND m.NEXT <> '0' THEN 1 ELSE 0 END) as EXPIRED
+                FROM EASYCAL.TBMASMAN m
+                LEFT JOIN EASYCAL.TBSUPMAN c ON TRIM(m.CUST) = TRIM(c.COID)
+                GROUP BY TRIM(m.CUST)
+                HAVING COUNT(*) > 0
+                ORDER BY ANY_VALUE(c.CONM) ASC
+            `;
+            // Note: If ANY_VALUE is not supported (older Oracle), use standard GROUP BY
+            // Using standard GROUP BY for better compatibility
+            const compatSql = `
+                SELECT 
+                    TRIM(m.CUST) as CORP_ID,
+                    MAX(TRIM(c.CONM)) as CORP_NAME,
+                    COUNT(*) as TOTAL,
+                    SUM(CASE WHEN m.STAT IN ('02', '11', '05', '07') THEN 1 ELSE 0 END) as ONGOING,
+                    SUM(CASE WHEN m.NEXT < :today AND m.NEXT <> '0' THEN 1 ELSE 0 END) as EXPIRED
+                FROM EASYCAL.TBMASMAN m
+                LEFT JOIN EASYCAL.TBSUPMAN c ON TRIM(m.CUST) = TRIM(c.COID)
+                GROUP BY TRIM(m.CUST)
+                ORDER BY MAX(c.CONM) ASC
+            `;
+            companyStats = await query<any>(compatSql, { today: todayStr });
+        }
+
+        const [basicResult] = await Promise.all([
+            query<any>(basicStatsSql, { corpId, today: todayStr })
         ]);
 
+        const stats = basicResult[0];
+
         return NextResponse.json({
-            totalEquipment: equipmentResult[0]?.TOTAL || 0,
-            ongoingCount: ongoingResult[0]?.TOTAL || 0,
-            upcomingExpirations: expirationsResult[0]?.TOTAL || 0,
+            totalEquipment: stats?.TOTAL_EQUIPMENT || 0,
+            ongoingCount: stats?.ONGOING_COUNT || 0,
+            upcomingExpirations: stats?.EXPIRED_COUNT || 0,
+            companyStats: isMaster ? companyStats : null
         });
     } catch (error: any) {
         console.error("Stats API Error:", error);

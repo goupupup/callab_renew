@@ -20,9 +20,9 @@ export const authOptions = {
                     const loginId = credentials.username.trim();
                     console.log(`[AUTH] Attempting ID: ${loginId}`);
 
-                    // Case-insensitive USERID check and log result count even if STATE mismatch
+                    // Case-insensitive USERID check with Auth fields
                     const users = await query<any>(
-                        `SELECT USERID, PASSWORD, USERNAME, CORPID, CORPNAME, STATE 
+                        `SELECT USERID, PASSWORD, USERNAME, CORPID, CORPNAME, STATE, AUTHORITY, CORPTYPE 
              FROM CUSTCAL.TWUSRMAN 
              WHERE UPPER(USERID) = UPPER(:id)`,
                         { id: loginId }
@@ -31,7 +31,7 @@ export const authOptions = {
                     console.log(`[AUTH] DB Result: ${users.length} users found for ID [${loginId}]`);
 
                     if (users.length > 0) {
-                        // Find active user first
+                        // Per User request: Only STATE == '1' accounts can login
                         const activeUser = users.find(u => u.STATE?.trim() === '1');
 
                         if (!activeUser) {
@@ -42,15 +42,25 @@ export const authOptions = {
                         const dbPassword = activeUser.PASSWORD ? activeUser.PASSWORD.trim() : "";
                         const inputPassword = credentials.password.trim();
 
-                        console.log(`[AUTH] Password Check - DB Len: ${dbPassword.length}, Input Len: ${inputPassword.length}`);
-
                         if (dbPassword === inputPassword) {
                             console.log("[AUTH] ✅ Success");
+
+                            // Role Determination Logic
+                            let role = "USER";
+                            const authority = (activeUser.AUTHORITY || "").trim().toUpperCase();
+                            const corpType = (activeUser.CORPTYPE || "").trim().toUpperCase();
+
+                            if (corpType === "H") {
+                                if (authority === "A") role = "MASTER";
+                                else if (authority === "U") role = "EMPLOYEE";
+                            }
+
                             return {
                                 id: activeUser.USERID.trim(),
                                 name: activeUser.USERNAME ? activeUser.USERNAME.trim() : "Member",
                                 corpId: activeUser.CORPID ? activeUser.CORPID.trim() : "NONE",
                                 corpName: activeUser.CORPNAME ? activeUser.CORPNAME.trim() : "HCT",
+                                role: role
                             };
                         } else {
                             console.warn("[AUTH] ❌ Password mismatch");
@@ -71,13 +81,15 @@ export const authOptions = {
             if (user) {
                 token.corpId = user.corpId;
                 token.corpName = user.corpName;
+                token.role = user.role;
             }
             return token;
         },
         async session({ session, token }: any) {
             if (session.user) {
-                session.user.corpId = token.corpId;
-                session.user.corpName = token.corpName;
+                (session.user as any).corpId = token.corpId;
+                (session.user as any).corpName = token.corpName;
+                (session.user as any).role = token.role;
             }
             return session;
         },

@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     }
 
     const corpId = session.user.corpId;
-    const isMaster = session.user.role === "MASTER";
+    const role = session.user.role;
+    const isElevated = role === "MASTER" || role === "EMPLOYEE";
 
     try {
         // 1. Verify access to this equipment and get basic info
@@ -30,11 +31,11 @@ export async function GET(request: Request) {
                 (SELECT TRIM(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = EASYCAL.TBMASMAN.ISID AND CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = EASYCAL.TBMASMAN.ISID)) as CIDU
             FROM EASYCAL.TBMASMAN 
             WHERE TRIM(ISID) = :id 
-            ${!isMaster ? 'AND TRIM(CUST) = :corpId' : ''}
+            ${!isElevated ? 'AND TRIM(CUST) = :corpId' : ''}
         `;
 
         const verifyParams: any = { id };
-        if (!isMaster) verifyParams.corpId = corpId;
+        if (!isElevated) verifyParams.corpId = corpId;
 
         const verifyResult = await query<any>(verifySql, verifyParams);
         if (verifyResult.length === 0) {

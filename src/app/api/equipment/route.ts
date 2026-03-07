@@ -12,7 +12,8 @@ export async function GET(request: Request) {
     }
 
     const corpId = session.user.corpId;
-    const isMaster = session.user.role === "MASTER";
+    const role = session.user.role;
+    const isElevated = role === "MASTER" || role === "EMPLOYEE";
 
     // Pagination params
     const page = parseInt(searchParams.get("page") || "1");
@@ -38,32 +39,32 @@ export async function GET(request: Request) {
         let whereSql = ` WHERE 1=1`;
         const params: any = {};
 
-        if (!isMaster) {
+        if (!isElevated) {
             whereSql += ` AND TRIM(m.CUST) = :corpId`;
             params.corpId = corpId;
         } else if (company) {
-            whereSql += ` AND m.CUST LIKE '%' || :company || '%'`;
+            whereSql += ` AND (TRIM(m.CUST) LIKE '%' || :company || '%' OR EXISTS (SELECT 1 FROM EASYCAL.TBSUPMAN s2 WHERE TRIM(s2.COID) = TRIM(m.CUST) AND UPPER(TRIM(s2.CONM)) LIKE '%' || UPPER(TRIM(:company)) || '%'))`;
             params.company = company;
         }
 
         if (serialNumber) {
-            whereSql += ` AND m.SERN LIKE '%' || :sern || '%'`;
+            whereSql += ` AND UPPER(TRIM(m.SERN)) LIKE '%' || UPPER(TRIM(:sern)) || '%'`;
             params.sern = serialNumber;
         }
         if (assetNo) {
-            whereSql += ` AND m.ACCN LIKE '%' || :accn || '%'`;
+            whereSql += ` AND UPPER(TRIM(m.ACCN)) LIKE '%' || UPPER(TRIM(:accn)) || '%'`;
             params.accn = assetNo;
         }
         if (regNo) {
-            whereSql += ` AND m.ISID LIKE '%' || :isid || '%'`;
+            whereSql += ` AND UPPER(TRIM(m.ISID)) = UPPER(TRIM(:isid))`;
             params.isid = regNo;
         }
         if (modelName) {
-            whereSql += ` AND m.MODL LIKE '%' || :modelName || '%'`;
+            whereSql += ` AND UPPER(TRIM(m.MODL)) LIKE '%' || UPPER(TRIM(:modelName)) || '%'`;
             params.modelName = modelName;
         }
         if (equipmentName) {
-            whereSql += ` AND m.NAEM_SUP LIKE '%' || :equipmentName || '%'`;
+            whereSql += ` AND UPPER(TRIM(m.NAEM_SUP)) LIKE '%' || UPPER(TRIM(:equipmentName)) || '%'`;
             params.equipmentName = equipmentName;
         }
 
@@ -75,7 +76,7 @@ export async function GET(request: Request) {
         }
 
         if (manufacturer) {
-            whereSql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE CONM LIKE '%' || :mnfc || '%')`;
+            whereSql += ` AND m.MNFC IN (SELECT COID FROM EASYCAL.TBSUPMAN WHERE UPPER(TRIM(CONM)) LIKE '%' || UPPER(TRIM(:mnfc)) || '%')`;
             params.mnfc = manufacturer;
         }
         if (lastCalStart && lastCalEnd) {
@@ -102,6 +103,7 @@ export async function GET(request: Request) {
             "modelName": "m.MODL",
             "equipmentName": "m.NAEM_SUP",
             "serialNumber": "m.SERN",
+            "lastCal": "CASE WHEN m.LAST = '0' OR m.LAST IS NULL THEN '00000000' ELSE m.LAST END",
             "nextCal": "CASE WHEN m.NEXT = '0' OR m.NEXT IS NULL THEN '99991231' ELSE m.NEXT END",
             "regDate": "m.REGD"
         };
@@ -116,9 +118,11 @@ export async function GET(request: Request) {
         const dataSql = `
             SELECT 
                 TRIM(m.ISID) as ISID, TRIM(m.ACCN) as ACCN, m.SERN as SERN, m.MODL as MODL, m.NAEM_SUP as NAEM_SUP, TRIM(m.MNFC) as MNFC, m.REGD as REGD, m.LAST as LAST, m.NEXT as NEXT, m.STAT as STAT,
-                TRIM(s.CONM) as MANUFACTURER_NAME
+                TRIM(s.CONM) as MANUFACTURER_NAME,
+                TRIM(cust.CONM) as CUSTOMER_NAME
             FROM EASYCAL.TBMASMAN m
-            LEFT JOIN EASYCAL.TBSUPMAN s ON m.MNFC = s.COID
+            LEFT JOIN EASYCAL.TBSUPMAN s ON TRIM(m.MNFC) = TRIM(s.COID)
+            LEFT JOIN EASYCAL.TBSUPMAN cust ON TRIM(m.CUST) = TRIM(cust.COID)
             ${whereSql}
         `;
 

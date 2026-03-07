@@ -33,24 +33,16 @@ export class FtpClient {
 
         await this.connect();
 
-        // Start the download process. The promise resolves when the transfer is complete.
+        // Start the download process. Close the client only after the transfer is fully complete or fails.
         this.client.downloadTo(proxyStream, remotePath)
+            .then(() => {
+                this.close();
+            })
             .catch((err) => {
                 console.error("❌ FTP Download Error:", err);
                 proxyStream.destroy(err);
-            });
-
-        let isClosed = false;
-        const cleanup = () => {
-            if (!isClosed) {
-                isClosed = true;
                 this.close();
-            }
-        };
-
-        proxyStream.on("finish", cleanup);
-        proxyStream.on("close", cleanup);
-        proxyStream.on("error", cleanup);
+            });
 
         return proxyStream;
     }
@@ -158,24 +150,16 @@ export class FtpClient {
             const { PassThrough } = await import("stream");
             const proxyStream = new PassThrough();
 
-            // Transfer ownership of connection to the stream
+            // Start the download process. Close the client only after the transfer is fully complete or fails.
             this.client.downloadTo(proxyStream, foundPath)
+                .then(() => {
+                    this.close();
+                })
                 .catch((err) => {
                     console.error("❌ FTP Download Error:", err);
                     proxyStream.destroy(err);
-                });
-
-            let isClosed = false;
-            const cleanup = () => {
-                if (!isClosed) {
-                    isClosed = true;
                     this.close();
-                }
-            };
-
-            proxyStream.on("finish", cleanup);
-            proxyStream.on("close", cleanup);
-            proxyStream.on("error", cleanup);
+                });
 
             return { stream: proxyStream, size: foundSize, remotePath: foundPath };
 
@@ -183,6 +167,23 @@ export class FtpClient {
             console.error("❌ FTP Search & Stream Error:", error);
             this.close();
             return undefined;
+        }
+    }
+
+    /**
+     * Upload a buffer to FTP
+     */
+    async uploadBuffer(buffer: Buffer, remotePath: string) {
+        await this.connect();
+        try {
+            const readable = new Readable();
+            readable._read = () => { };
+            readable.push(buffer);
+            readable.push(null);
+
+            await this.client.uploadFrom(readable, remotePath);
+        } finally {
+            this.close();
         }
     }
 }
