@@ -151,11 +151,9 @@ export default function SchedulePage() {
             <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>
                     <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-slate-900 leading-tight mb-2">
-                        Status <span className="text-[#001489]">Timeline Manager</span>
+                        <span className="text-[#001489]">Schedule Manager</span>
                     </h2>
-                    <p className="text-[10px] md:text-xs font-bold text-slate-400">
-                        Protocol: <span className="text-slate-900 uppercase font-black">EASYCAL.TBSCHMAN</span>
-                    </p>
+
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <Button
@@ -356,6 +354,12 @@ export default function SchedulePage() {
                                 const weekStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), (w * 7) - startsAt + 1);
                                 const weekEndDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), (w * 7) - startsAt + 7);
 
+                                const diffDays = (date: Date, start: Date) => {
+                                    const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                                    const d2 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                                    return Math.floor((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+                                };
+
                                 const weekSchedules = schedules.filter(s => {
                                     const sStart = new Date(s.STARTDATE);
                                     const sEnd = new Date(s.ENDDATE);
@@ -363,8 +367,8 @@ export default function SchedulePage() {
                                 }).map(s => {
                                     const sStart = new Date(s.STARTDATE);
                                     const sEnd = new Date(s.ENDDATE);
-                                    const displayStart = sStart < weekStartDate ? 0 : Math.max(0, (sStart.getDate() - (w * 7 - startsAt + 1)));
-                                    const displayEnd = sEnd > weekEndDate ? 6 : Math.min(6, (sEnd.getDate() - (w * 7 - startsAt + 1)));
+                                    const displayStart = sStart < weekStartDate ? 0 : Math.max(0, diffDays(sStart, weekStartDate));
+                                    const displayEnd = sEnd > weekEndDate ? 6 : Math.min(6, diffDays(sEnd, weekStartDate));
                                     return { ...s, colStart: displayStart, colSpan: displayEnd - displayStart + 1 };
                                 }).sort((a, b) => b.colSpan - a.colSpan);
 

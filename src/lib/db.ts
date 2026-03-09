@@ -58,7 +58,7 @@ const dbConfig = {
         : `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))(CONNECT_DATA=(SID=XE)))`,
 };
 
-export async function query<T>(sql: string, params: oracledb.BindParameters = []): Promise<T[]> {
+export async function query<T>(sql: string, params: any = []): Promise<T[]> {
     let connection;
 
     try {

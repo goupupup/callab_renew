@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         try {
             // Get next SCHID
             const idRes = await conn.execute(`SELECT MAX(TO_NUMBER(TRIM(SCHID))) as MAX_ID FROM EASYCAL.TBSCHMAN`);
-            const nextId = (idRes.rows[0] as any).MAX_ID ? (idRes.rows[0] as any).MAX_ID + 1 : 1;
+            const nextId = (idRes.rows?.[0] as any)?.MAX_ID ? (idRes.rows![0] as any).MAX_ID + 1 : 1;
 
             const sql = `
                 INSERT INTO EASYCAL.TBSCHMAN (

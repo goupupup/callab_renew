@@ -14,7 +14,8 @@ import {
     Menu,
     X,
     User,
-    ShieldCheck
+    ShieldCheck,
+    Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -59,40 +60,93 @@ export default function DashboardLayout({
         { icon: Settings, label: "Equipments", href: "/dashboard/equipment" },
     ];
 
-    const adminNavItems = [];
+    const adminNavItems: any[] = [];
     if (isElevated) {
+        adminNavItems.push({
+            icon: Search, label: "Search", href: "/dashboard/search",
+            subItems: [
+                { label: "REG NO", tab: "regNo" },
+                { label: "CAL NO", tab: "calNo" },
+                { label: "MODEL", tab: "model" },
+                { label: "ON-GOING", tab: "ongoing" },
+                { label: "EXPIRATIONS", tab: "expirations" },
+            ],
+        });
         adminNavItems.push({ icon: FileText, label: "Schedule", href: "/dashboard/schedule" });
     }
     if (isMaster) {
         adminNavItems.push({ icon: User, label: "Accounts", href: "/dashboard/accounts" });
     }
 
+
+    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+    const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
     const renderNavItems = (items: any[]) => (
         <nav className="space-y-1">
             {items.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + "?");
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+
                 return (
-                    <button
+                    <div
                         key={item.label}
-                        onClick={() => router.push(item.href)}
-                        className={`w-full flex items-center justify-between px-5 py-3.5 rounded-xl transition-all duration-200 group ${isActive
-                            ? "bg-[#001489] text-white shadow-lg shadow-[#001489]/10"
-                            : "text-slate-500 hover:text-[#001489] hover:bg-slate-50"
-                            }`}
+                        className="relative"
+                        onMouseEnter={(e) => {
+                            if (hasSubItems) {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setFlyoutPos({ top: rect.top, left: rect.right + 8 });
+                                setHoveredItem(item.label);
+                            }
+                        }}
+                        onMouseLeave={() => setHoveredItem(null)}
                     >
-                        <div className="flex items-center space-x-4">
-                            <item.icon className={`w-4 h-4 transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#001489]"}`} />
-                            <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
-                        </div>
-                        {isActive && <ChevronRight className="w-3 h-3 text-white/50" />}
-                    </button>
+                        <button
+                            onClick={() => router.push(item.href)}
+                            className={`w-full flex items-center justify-between px-5 py-3.5 rounded-xl transition-all duration-200 group ${isActive
+                                ? "bg-[#001489] text-white shadow-lg shadow-[#001489]/10"
+                                : "text-slate-500 hover:text-[#001489] hover:bg-slate-50"
+                                }`}
+                        >
+                            <div className="flex items-center space-x-4">
+                                <item.icon className={`w-4 h-4 transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#001489]"}`} />
+                                <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
+                            </div>
+                            {isActive && !hasSubItems && <ChevronRight className="w-3 h-3 text-white/50" />}
+                            {hasSubItems && <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${hoveredItem === item.label ? "translate-x-0.5" : ""} ${isActive ? "text-white/50" : "text-slate-300"}`} />}
+                        </button>
+
+                        {/* Flyout Submenu (fixed position to escape overflow) */}
+                        {hasSubItems && hoveredItem === item.label && (
+                            <div
+                                className="fixed z-[9999]"
+                                style={{ top: flyoutPos.top, left: flyoutPos.left }}
+                                onMouseEnter={() => setHoveredItem(item.label)}
+                                onMouseLeave={() => setHoveredItem(null)}
+                            >
+                                <div className="bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 min-w-[160px]">
+                                    <p className="px-4 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Search by</p>
+                                    {item.subItems.map((sub: any) => (
+                                        <button
+                                            key={sub.tab}
+                                            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/search?tab=${sub.tab}`); setHoveredItem(null); }}
+                                            className="w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:bg-[#001489]/5 hover:text-[#001489] transition-colors flex items-center gap-2.5"
+                                        >
+                                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                            {sub.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 );
             })}
         </nav>
     );
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] flex flex-col md:flex-row font-sans text-slate-900 overflow-hidden">
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col md:flex-row font-sans text-slate-900">
             {/* Mobile Overlay */}
             {isSidebarOpen && (
                 <div
@@ -107,7 +161,7 @@ export default function DashboardLayout({
                 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
             `}>
                 <div
-                    className="h-24 px-8 flex items-center justify-between border-b border-slate-100 cursor-pointer"
+                    className="h-24 px-8 flex items-center justify-center border-b border-slate-100 cursor-pointer"
                     onClick={() => router.push("/dashboard")}
                 >
                     <Image
