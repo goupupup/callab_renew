@@ -65,11 +65,11 @@ export default function DashboardLayout({
         adminNavItems.push({
             icon: Search, label: "Search", href: "/dashboard/search",
             subItems: [
-                { label: "REG NO", tab: "regNo" },
-                { label: "CAL NO", tab: "calNo" },
-                { label: "MODEL", tab: "model" },
-                { label: "ON-GOING", tab: "ongoing" },
-                { label: "EXPIRATIONS", tab: "expirations" },
+                { label: "REG NO", tab: "regNo", href: "/dashboard/search/reg-no" },
+                { label: "CAL NO", tab: "calNo", href: "/dashboard/search/cal-no" },
+                { label: "MODEL", tab: "model", href: "/dashboard/search/model" },
+                { label: "ON-GOING", tab: "ongoing", href: "/dashboard/search/ongoing" },
+                { label: "EXPIRATIONS", tab: "expirations", href: "/dashboard/search/expirations" },
             ],
         });
         adminNavItems.push({ icon: FileText, label: "Schedule", href: "/dashboard/schedule" });
@@ -79,30 +79,32 @@ export default function DashboardLayout({
     }
 
 
-    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+    const [expandedItem, setExpandedItem] = useState<string | null>(null);
     const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     const renderNavItems = (items: any[]) => (
         <nav className="space-y-1">
             {items.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + "?");
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
                 const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isExpanded = expandedItem === item.label;
 
                 return (
                     <div
                         key={item.label}
                         className="relative"
-                        onMouseEnter={(e) => {
-                            if (hasSubItems) {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setFlyoutPos({ top: rect.top, left: rect.right + 8 });
-                                setHoveredItem(item.label);
-                            }
-                        }}
-                        onMouseLeave={() => setHoveredItem(null)}
                     >
                         <button
-                            onClick={() => router.push(item.href)}
+                            onClick={(e) => {
+                                if (hasSubItems) {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setFlyoutPos({ top: rect.top, left: rect.right + 8 });
+                                    setExpandedItem(isExpanded ? null : item.label);
+                                } else {
+                                    router.push(item.href);
+                                    setExpandedItem(null);
+                                }
+                            }}
                             className={`w-full flex items-center justify-between px-5 py-3.5 rounded-xl transition-all duration-200 group ${isActive
                                 ? "bg-[#001489] text-white shadow-lg shadow-[#001489]/10"
                                 : "text-slate-500 hover:text-[#001489] hover:bg-slate-50"
@@ -113,31 +115,40 @@ export default function DashboardLayout({
                                 <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
                             </div>
                             {isActive && !hasSubItems && <ChevronRight className="w-3 h-3 text-white/50" />}
-                            {hasSubItems && <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${hoveredItem === item.label ? "translate-x-0.5" : ""} ${isActive ? "text-white/50" : "text-slate-300"}`} />}
+                            {hasSubItems && <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""} ${isActive ? "text-white/50" : "text-slate-300"}`} />}
                         </button>
 
-                        {/* Flyout Submenu (fixed position to escape overflow) */}
-                        {hasSubItems && hoveredItem === item.label && (
-                            <div
-                                className="fixed z-[9999]"
-                                style={{ top: flyoutPos.top, left: flyoutPos.left }}
-                                onMouseEnter={() => setHoveredItem(item.label)}
-                                onMouseLeave={() => setHoveredItem(null)}
-                            >
-                                <div className="bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 min-w-[160px]">
-                                    <p className="px-4 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Search by</p>
-                                    {item.subItems.map((sub: any) => (
-                                        <button
-                                            key={sub.tab}
-                                            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/search?tab=${sub.tab}`); setHoveredItem(null); }}
-                                            className="w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:bg-[#001489]/5 hover:text-[#001489] transition-colors flex items-center gap-2.5"
-                                        >
-                                            <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                            {sub.label}
-                                        </button>
-                                    ))}
+                        {/* Flyout Submenu (Triggered by CLICK) */}
+                        {hasSubItems && isExpanded && (
+                            <>
+                                {/* Backdrop to close on click outside */}
+                                <div className="fixed inset-0 z-[9998]" onClick={() => setExpandedItem(null)} />
+                                <div
+                                    className="fixed z-[9999] animate-in slide-in-from-left-2 fade-in duration-200"
+                                    style={{ top: flyoutPos.top, left: flyoutPos.left }}
+                                >
+                                    <div className="bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 min-w-[160px]">
+                                        <p className="px-4 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Search by</p>
+                                        {item.subItems.map((sub: any) => (
+                                            <button
+                                                key={sub.tab}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    router.push(sub.href);
+                                                    setExpandedItem(null);
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-2.5 ${pathname === sub.href
+                                                    ? "bg-[#001489]/5 text-[#001489]"
+                                                    : "text-slate-600 hover:bg-[#001489]/5 hover:text-[#001489]"
+                                                    }`}
+                                            >
+                                                <span className={`w-1 h-1 rounded-full ${pathname === sub.href ? "bg-[#001489]" : "bg-slate-300"}`} />
+                                                {sub.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </div>
                 );
@@ -263,7 +274,7 @@ export default function DashboardLayout({
                 </header>
 
                 {/* Dashboard Viewport */}
-                <div className="p-4 md:p-10 flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc]">
+                <div className="px-6 md:px-12 py-8 md:py-10 flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc]">
                     {children}
                 </div>
             </main>

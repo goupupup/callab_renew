@@ -28,14 +28,15 @@ export async function GET(request: Request) {
     try {
         // ── Lookups ──────────────────────────────────────────
         if (mode === "lookups") {
-            const [types, modes, statuses, suppliers, employees] = await Promise.all([
-                query<any>(`SELECT TRIM(TYID) as CODE, TRIM(TYNM) as NAME FROM EASYCAL.TBTYPMAN ORDER BY TYID`),
-                query<any>(`SELECT TRIM(MOID) as CODE, TRIM(MONM) as NAME FROM EASYCAL.TBMODMAN ORDER BY MOID`),
-                query<any>(`SELECT TRIM(STID) as CODE, TRIM(STNM) as NAME FROM EASYCAL.TBSTAMAN ORDER BY STID`),
-                query<any>(`SELECT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN ORDER BY CONM`),
-                query<any>(`SELECT TRIM(EMID) as CODE, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN ORDER BY EMNM`),
+            const [types, modes, statuses, suppliers, employees, subcontractors] = await Promise.all([
+                query<any>(`SELECT DISTINCT TRIM(TYID) as CODE, TRIM(TYNM) as NAME FROM EASYCAL.TBTYPMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(MOID) as CODE, TRIM(MONM) as NAME FROM EASYCAL.TBMODMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(STAT) as CODE, TRIM(DESN) as NAME FROM EASYCAL.TBSTAMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(EMID) as CODE, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN WHERE COT2 = '1' ORDER BY NAME`),
             ]);
-            return NextResponse.json({ types, modes, statuses, suppliers, employees });
+            return NextResponse.json({ types, modes, statuses, suppliers, employees, subcontractors });
         }
 
         // ── Calibration History ──────────────────────────────
@@ -141,7 +142,7 @@ export async function PUT(request: Request) {
 
     try {
         const body = await request.json();
-        const { isid, naemSup, accn, sern, memo, acc1, tyep, modeCode, term, cust, last, next } = body;
+        const { isid, naemSup, accn, sern, memo, acc1, tyep, modeCode, term, cust, stat, last, next } = body;
 
         if (!isid) return NextResponse.json({ error: "Missing ISID" }, { status: 400 });
 
@@ -157,7 +158,9 @@ export async function PUT(request: Request) {
                     TYEP = :tyep,
                     MODE_CODE = :modeCode,
                     TERM = :term,
-                    CUST = :cust
+                    CUST = :cust,
+                    STAT = :stat,
+                    MODE_CODE = :modeCode
             `;
 
             const bindParams: any = {
@@ -167,9 +170,10 @@ export async function PUT(request: Request) {
                 memo: memo || null,
                 acc1: acc1 || null,
                 tyep: tyep || null,
-                modeCode: modeCode || null,
                 term: term || null,
                 cust: cust || null,
+                stat: stat || null,
+                modeCode: modeCode || null,
                 isid,
             };
 
