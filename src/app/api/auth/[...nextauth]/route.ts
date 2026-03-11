@@ -98,6 +98,9 @@ export const authOptions = {
         signIn: "/auth/login",
     },
     secret: process.env.NEXTAUTH_SECRET,
+    session: {
+        strategy: "jwt",
+    },
 };
 
 const handler = NextAuth(authOptions);

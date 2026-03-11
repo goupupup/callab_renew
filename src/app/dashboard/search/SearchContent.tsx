@@ -13,16 +13,53 @@ import { Input } from "@/components/ui/input";
 
 // ── Types ────────────────────────────────────────────────────
 interface Equipment {
-    ISID: string; ACCN: string; SERN: string; MODL: string;
-    NAEM_SUP: string; NAEM: string; MNFC: string; CUST: string;
-    MEMO: string; ACC1: string; TYEP: string; MODE_CODE: string;
-    TERM: string; LAST: string; NEXT: string; STAT: string; EMID: string;
-    MANUFACTURER_NAME: string; CUSTOMER_NAME: string; ENGINEER_NAME: string;
-    STATUS_NAME: string; LATEST_CALNO: string;
+    ISID: string;
+    ACCN: string;
+    SERN: string;
+    MODL: string;
+    NAEM_SUP: string; // Equipment Display Name
+    NAEM: string;     // Master Name
+    MNFC: string;
+    CUST: string;
+    MEMO: string;
+    ACC1: string;
+    TYEP: string;
+    MODE_CODE: string;
+    SELF: string;
+    EXTN: string;
+    TERM: string;
+    LAST: string;
+    NEXT: string;
+    STAT: string;
+    DPCD: string;
+    OWNM: string;
+    MANUFACTURE: string;
+    APPLICANT: string;
+    DIVN: string;
+    DEPART: string;
+    REG_ENGINEER: string;
+    LATEST_ENGINEER_NAME: string;
+    ASSISTANCE: string;
+    STATUS_NAME: string;
+    MODE_NAME: string;
+    COST_EXE: string;
+    COST_CAL: string;
+    CALN: string;
+    EXER: string;
+    SPC1: string;
+    LATEST_CALNO: string;
 }
 
-interface LookupItem { CODE: string; NAME: string; }
-interface CalHistory { CIDU: string; CARD: string; LOCT: string; KOLAS_NO: string; CALNO_EXT: string; EMID: string; }
+interface LookupItem { CODE: string; NAME: string; DESCRIPTION?: string; }
+interface CalHistory { 
+    CIDU: string; 
+    KOLAS_NO: string; 
+    CARD: string; 
+    CASD: string; 
+    ENGINEER: string; 
+    SALE_COMPANY: string; 
+    SUBCON: string; 
+}
 
 export type SearchMode = "regNo" | "asset" | "sn" | "calNo" | "model" | "ongoing" | "expirations";
 type SearchType = "regNo" | "asset" | "sn";
@@ -172,30 +209,34 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         if (!selectedEquipment) return;
         setIsSaving(true);
         try {
+            const body = {
+                ISID: selectedEquipment.ISID,
+                NAEM_SUP: editData.NAEM_SUP,
+                ACCN: editData.ACCN,
+                SERN: editData.SERN,
+                MEMO: editData.MEMO,
+                ACC1: editData.ACC1,
+                TYEP: editData.TYEP,
+                MODE_CODE: editData.MODE_CODE,
+                TERM: editData.TERM,
+                CUST: editData.CUST,
+                STAT: editData.STAT,
+                SELF: editData.SELF,
+                EXTN: editData.EXTN,
+                LAST: isMaster ? editData.LAST : undefined,
+                NEXT: isMaster ? editData.NEXT : undefined,
+            };
+
             const res = await fetch("/api/search", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    isid: selectedEquipment.ISID,
-                    naemSup: editData.NAEM_SUP,
-                    accn: editData.ACCN,
-                    sern: editData.SERN,
-                    memo: editData.MEMO,
-                    acc1: editData.ACC1,
-                    tyep: editData.TYEP,
-                    modeCode: editData.MODE_CODE,
-                    term: editData.TERM,
-                    cust: editData.CUST,
-                    stat: editData.STAT,
-                    modeCode: editData.MODE_CODE,
-                    last: isMaster ? editData.LAST : undefined,
-                    next: isMaster ? editData.NEXT : undefined,
-                }),
+                body: JSON.stringify(body),
             });
+
             if (!res.ok) throw new Error();
             toast.success("저장 완료");
             await handleSearch("regNo", selectedEquipment.ISID);
-        } catch {
+        } catch (err) {
             toast.error("저장 중 오류가 발생했습니다");
         } finally {
             setIsSaving(false);
@@ -238,12 +279,12 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         }
     };
 
-    const updateField = (key: string, value: string) => {
+    const updateField = (key: keyof Equipment, value: string) => {
         let finalValue = value;
         if (key === "LAST" || key === "NEXT") {
             finalValue = parseDate(value);
         }
-        setEditData(prev => ({ ...prev, [key]: finalValue }));
+        setEditData((prev: Partial<Equipment>) => ({ ...prev, [key]: finalValue }));
     };
 
     const searchTypeLabels: Record<SearchType, string> = {
@@ -453,12 +494,30 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         <div className="h-px bg-slate-100 flex-1" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <FieldCombo
+                                            label="Ownership / Customer"
+                                            value={editData.CUST || ""}
+                                            displayValue={lookups?.suppliers?.find(s => s.CODE === editData.CUST)?.NAME || editData.APPLICANT || ""}
+                                            options={lookups?.suppliers || []}
+                                            onChange={(v) => updateField("CUST", v)}
+                                        />
+                                        <div /> 
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldEditable label="Equipment Display Name" value={editData.NAEM_SUP || ""} onChange={(v) => updateField("NAEM_SUP", v)} primary />
                                         <FieldReadOnly label="Master Database Name" value={selectedEquipment.NAEM} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldReadOnly label="Model Specification" value={selectedEquipment.MODL} />
-                                        <FieldReadOnly label="Manufacturer Identity" value={`${selectedEquipment.MNFC || ""} ${selectedEquipment.MANUFACTURER_NAME ? `(${selectedEquipment.MANUFACTURER_NAME})` : ""}`} />
+                                        <FieldReadOnly label="Manufacturer Identity" value={selectedEquipment.MANUFACTURE || selectedEquipment.MNFC || ""} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <FieldReadOnly label="Division" value={selectedEquipment.DIVN || "—"} />
+                                        <FieldReadOnly label="Department" value={selectedEquipment.DEPART || "—"} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <FieldReadOnly label="Owner Name" value={selectedEquipment.OWNM || "—"} />
+                                        <FieldReadOnly label="DPCD" value={selectedEquipment.DPCD || "—"} />
                                     </div>
                                 </div>
 
@@ -486,39 +545,37 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 <div className="space-y-6">
                                     <FieldCombo
                                         label="Management category"
-                                        value={editData.STAT || ""}
-                                        displayValue={lookups?.statuses?.find(s => s.CODE === editData.STAT)?.NAME || ""}
-                                        options={lookups?.statuses || []}
-                                        onChange={(v) => updateField("STAT", v)}
-                                    />
-                                    <FieldCombo
-                                        label="Current operational Status"
                                         value={editData.TYEP || ""}
                                         displayValue={lookups?.types?.find(t => t.CODE === editData.TYEP)?.NAME || ""}
                                         options={lookups?.types || []}
                                         onChange={(v) => updateField("TYEP", v)}
                                     />
                                     <FieldCombo
-                                        label="Ownership / Customer"
-                                        value={editData.CUST || ""}
-                                        displayValue={lookups?.suppliers?.find(s => s.CODE === editData.CUST)?.NAME || editData.CUSTOMER_NAME || ""}
-                                        options={lookups?.suppliers || []}
-                                        onChange={(v) => updateField("CUST", v)}
+                                        label="Current operational Status"
+                                        value={editData.MODE_CODE || ""}
+                                        displayValue={lookups?.modes?.find(m => m.CODE === editData.MODE_CODE)?.NAME || ""}
+                                        options={lookups?.modes || []}
+                                        onChange={(v) => updateField("MODE_CODE", v)}
                                     />
                                     <FieldCombo
                                         label="SELF/EXT"
-                                        value={editData.MODE_CODE || ""}
-                                        displayValue={editData.MODE_CODE === "SELF" ? "SELF" : (editData.MODE_CODE ? "EXT" : "")}
-                                        options={[{ CODE: "SELF", NAME: "SELF" }, { CODE: "EXT", NAME: "EXT" }]}
-                                        onChange={(v) => updateField("MODE_CODE", v === "EXT" ? "" : v)}
+                                        value={editData.SELF || ""}
+                                        displayValue={editData.SELF === '1' ? 'SELF' : 'EXT'}
+                                        options={[{ CODE: '1', NAME: 'SELF' }, { CODE: '0', NAME: 'EXT' }]}
+                                        onChange={(v) => {
+                                            updateField("SELF", v);
+                                            if (v === '1') updateField("EXTN", "");
+                                        }}
                                     />
-                                    <FieldCombo
-                                        label="SUBCONTRACTOR"
-                                        value={editData.MODE_CODE || ""}
-                                        displayValue={lookups?.subcontractors?.find(s => s.CODE === editData.MODE_CODE)?.NAME || ""}
-                                        options={lookups?.subcontractors || []}
-                                        onChange={(v) => updateField("MODE_CODE", v)}
-                                    />
+                                    <div className={`transition-all duration-300 ${editData.SELF === '0' ? "opacity-100" : "opacity-40 pointer-events-none grayscale"}`}>
+                                        <FieldCombo
+                                            label="SUBCONTRACTOR"
+                                            value={editData.EXTN || ""}
+                                            displayValue={editData.EXTN || ""}
+                                            options={lookups?.subcontractors || []}
+                                            onChange={(v) => updateField("EXTN", v)}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="pt-6 border-t border-slate-200">
@@ -533,16 +590,18 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         <div className="grid grid-cols-2 gap-4">
                                             {isMaster ? (
                                                 <>
-                                                    <FieldEditable label="Last Cal" value={editData.LAST || ""} onChange={(v) => updateField("LAST", v)} isDate masterOnly />
-                                                    <FieldEditable label="Next Cal" value={editData.NEXT || ""} onChange={(v) => updateField("NEXT", v)} isDate masterOnly />
+                                                    <FieldEditable label="Last Date" value={editData.LAST || ""} onChange={(v) => updateField("LAST", v)} isDate masterOnly />
+                                                    <FieldEditable label="Next Date" value={editData.NEXT || ""} onChange={(v) => updateField("NEXT", v)} isDate masterOnly />
                                                 </>
                                             ) : (
                                                 <>
-                                                    <FieldReadOnly label="Last Cal" value={formatDate(selectedEquipment.LAST)} />
-                                                    <FieldReadOnly label="Next Cal" value={formatDate(selectedEquipment.NEXT)} />
+                                                    <FieldReadOnly label="Last Date" value={formatDate(selectedEquipment.LAST)} />
+                                                    <FieldReadOnly label="Next Date" value={formatDate(selectedEquipment.NEXT)} />
                                                 </>
                                             )}
                                         </div>
+                                        <FieldReadOnly label="Latest Engineer" value={selectedEquipment.LATEST_ENGINEER_NAME || "—"} />
+                                        <FieldReadOnly label="Status" value={selectedEquipment.STATUS_NAME || "—"} highlight />
                                     </div>
                                 </div>
                             </div>
@@ -623,34 +682,44 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 </div>
                             ) : (
                                 <div className="p-2">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
+                                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                                        <thead className="bg-[#001489]/5 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Cert No</th>
-                                                <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Date</th>
-                                                <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status / Report</th>
-                                                <th className="px-10 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CAL NO</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CERTI NO</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">REC DATE</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CAL DATE</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">ENGINEER</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">BILL COMPANY</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">SUBCON</th>
+                                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {calHistory.map((h, i) => (
-                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-10 py-6 font-black text-[#001489] text-base">{h.CIDU}</td>
-                                                    <td className="px-10 py-6 font-bold text-slate-900 text-sm whitespace-nowrap">{formatDate(h.CARD)}</td>
-                                                    <td className="px-10 py-6">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-black text-slate-700">{h.LOCT || "Laboratory"}</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{h.KOLAS_NO || "Standard Report"}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-10 py-6 text-right">
-                                                        <Button
+                                                <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
+                                                    <td className="px-8 py-6">
+                                                        <button 
                                                             onClick={() => downloadReport(h.CIDU)}
-                                                            className="h-11 px-6 bg-slate-950 hover:bg-[#001489] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-black/5"
+                                                            className="text-sm font-black text-[#001489] hover:underline transition-all underline-offset-4"
                                                         >
-                                                            <Download className="w-4 h-4 mr-2" />
-                                                            Download PDF
-                                                        </Button>
+                                                            {h.CIDU}
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.KOLAS_NO || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap">{formatDate(h.CARD)}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap">{formatDate(h.CASD)}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.ENGINEER || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.SALE_COMPANY || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 font-medium italic">{h.SUBCON || "—"}</td>
+                                                    <td className="px-8 py-6 text-right">
+                                                        <button
+                                                            onClick={() => downloadReport(h.CIDU)}
+                                                            className="p-3 bg-slate-950 hover:bg-[#001489] text-white rounded-xl transition-all shadow-lg opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                            title="Download PDF"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}

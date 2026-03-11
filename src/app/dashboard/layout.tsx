@@ -29,7 +29,11 @@ export default function DashboardLayout({
     const { data: session, status } = useSession();
     const router = useRouter();
     const pathname = usePathname();
+    
+    // Hooks MUST be at the top level
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [expandedItem, setExpandedItem] = useState<string | null>(null);
+    const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -77,10 +81,6 @@ export default function DashboardLayout({
     if (isMaster) {
         adminNavItems.push({ icon: User, label: "Accounts", href: "/dashboard/accounts" });
     }
-
-
-    const [expandedItem, setExpandedItem] = useState<string | null>(null);
-    const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     const renderNavItems = (items: any[]) => (
         <nav className="space-y-1">
