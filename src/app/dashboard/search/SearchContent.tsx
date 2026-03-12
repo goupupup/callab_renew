@@ -64,14 +64,14 @@ interface MasterRecord {
 }
 
 interface LookupItem { CODE: string; NAME: string; DESCRIPTION?: string; }
-interface CalHistory { 
-    CIDU: string; 
-    KOLAS_NO: string; 
-    CARD: string; 
-    CASD: string; 
-    ENGINEER: string; 
-    SALE_COMPANY: string; 
-    SUBCON: string; 
+interface CalHistory {
+    CIDU: string;
+    KOLAS_NO: string;
+    CARD: string;
+    CASD: string;
+    ENGINEER: string;
+    SALE_COMPANY: string;
+    SUBCON: string;
 }
 
 export type SearchMode = "regNo" | "asset" | "sn" | "calNo" | "model" | "ongoing" | "expirations";
@@ -198,7 +198,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
             const data: Equipment[] = await res.json();
 
             if (data.length === 0) {
-                toast.info("검색 결과가 없습니다");
+                toast.info("No Data");
             } else if (data.length === 1) {
                 selectEquipment(data[0]);
                 setResults(data);
@@ -502,9 +502,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             </div>
                         </div>
 
-                        <div className="p-8 md:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+                        <div className="p-3 md:p-8 xl:p-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 xl:gap-12">
                             {/* Primary Info (LHS) */}
-                            <div className="lg:col-span-8 space-y-12">
+                            <div className="lg:col-span-6 xl:col-span-8 space-y-8 md:space-y-12">
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-4">
                                         <div className="h-px bg-slate-100 flex-1" />
@@ -519,14 +519,14 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             options={lookups?.suppliers || []}
                                             onChange={(v) => updateField("CUST", v)}
                                         />
-                                        <div /> 
+                                        <div />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldEditable label="Equipment Display Name" value={editData.NAEM_SUP || ""} onChange={(v) => updateField("NAEM_SUP", v)} primary />
                                         <div className="relative group">
                                             <FieldReadOnly label="Master Database Name" value={selectedEquipment.NAEM} />
                                             {isMaster && (
-                                                <button 
+                                                <button
                                                     onClick={() => setShowMasterModal(true)}
                                                     className="absolute right-2 top-8 p-3 rounded-xl bg-white border border-slate-200 text-[#001489] hover:bg-[#001489] hover:text-white shadow-sm transition-all z-10"
                                                     title="Manage Master Database"
@@ -568,7 +568,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             </div>
 
                             {/* Secondary Info (RHS - Side Panel Style) */}
-                            <div className="lg:col-span-4 space-y-8 bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100">
+                            <div className="lg:col-span-6 xl:col-span-4 space-y-8 bg-slate-50/50 p-6 md:p-10 rounded-[2rem] border border-slate-100">
                                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-4">Management Status</span>
 
                                 <div className="space-y-6">
@@ -616,7 +616,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             onChange={(v) => { if (/^\d*$/.test(v)) updateField("TERM", v); }}
                                             textAlign="center"
                                         />
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {isMaster ? (
                                                 <>
                                                     <FieldEditable label="Last Date" value={editData.LAST || ""} onChange={(v) => updateField("LAST", v)} isDate masterOnly />
@@ -641,17 +641,17 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
             {/* Master Search & Edit Modal */}
             {showMasterModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setShowMasterModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                <div className="fixed inset-y-0 right-0 left-0 md:left-72 bg-black/60 z-[200] flex items-center justify-center p-2 md:p-8 backdrop-blur-sm transition-all" onClick={() => setShowMasterModal(false)}>
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-7xl max-h-[98vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2">Master Management</p>
                                 <h3 className="text-2xl font-black text-slate-950">Master Database Search & Editor</h3>
                             </div>
                             <button onClick={() => setShowMasterModal(false)} className="p-3 hover:bg-rose-50 hover:text-rose-500 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-5 h-5" /></button>
                         </div>
-                        
-                        <div className="overflow-y-auto max-h-[calc(90vh-100px)] custom-scrollbar p-10 space-y-10">
+
+                        <div className="overflow-y-auto max-h-[calc(95vh-100px)] custom-scrollbar p-6 md:p-10 space-y-10">
                             {/* Master Search Section */}
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4">
@@ -661,8 +661,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Equipment Name</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={masterSearch.name}
                                             onChange={e => setMasterSearch({ ...masterSearch, name: e.target.value })}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
@@ -670,8 +670,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={masterSearch.model}
                                             onChange={e => setMasterSearch({ ...masterSearch, model: e.target.value })}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
@@ -679,8 +679,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={masterSearch.manufacturer}
                                             onChange={e => setMasterSearch({ ...masterSearch, manufacturer: e.target.value })}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
@@ -693,8 +693,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             </div>
 
                             {/* Search Results Table */}
-                            <div className="rounded-3xl border border-slate-100 overflow-hidden bg-slate-50/50">
-                                <table className="w-full text-left border-collapse">
+                            <div className="rounded-3xl border border-slate-100 overflow-x-auto bg-slate-50/50 custom-scrollbar">
+                                <table className="w-full text-left border-collapse min-w-[800px]">
                                     <thead className="bg-[#001489]/5">
                                         <tr>
                                             {['Master Name', 'Model', 'Manu', 'Interval', 'Mode', 'Self', 'Category', 'Code'].map(h => (
@@ -731,37 +731,37 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489]">Master Detail</span>
                                     <div className="h-px bg-[#001489]/10 flex-1" />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Name</label>
-                                        <input type="text" value={selectedMaster.EQPNAM || ""} onChange={e => setSelectedMaster({...selectedMaster, EQPNAM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.EQPNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, EQPNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
-                                        <input type="text" value={selectedMaster.MDLNAM || ""} onChange={e => setSelectedMaster({...selectedMaster, MDLNAM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.MDLNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MDLNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
-                                        <input type="text" value={selectedMaster.MNFCTR || ""} onChange={e => setSelectedMaster({...selectedMaster, MNFCTR: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.MNFCTR || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MNFCTR: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Interval</label>
-                                        <input type="text" value={selectedMaster.CALTRM || ""} onChange={e => setSelectedMaster({...selectedMaster, CALTRM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.CALTRM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CALTRM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cal Mode</label>
-                                        <input type="text" value={selectedMaster.MODE_CODE || ""} onChange={e => setSelectedMaster({...selectedMaster, MODE_CODE: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.MODE_CODE || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MODE_CODE: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Self/Ext</label>
-                                        <select value={selectedMaster.SELF || "1"} onChange={e => setSelectedMaster({...selectedMaster, SELF: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white">
+                                        <select value={selectedMaster.SELF || "1"} onChange={e => setSelectedMaster({ ...selectedMaster, SELF: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white">
                                             <option value="1">SELF</option>
                                             <option value="0">EXT</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
-                                        <input type="text" value={selectedMaster.CLSMAN_EXT || ""} onChange={e => setSelectedMaster({...selectedMaster, CLSMAN_EXT: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <input type="text" value={selectedMaster.CLSMAN_EXT || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CLSMAN_EXT: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Code</label>
@@ -780,9 +780,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
             {/* Selection Modal */}
             {showSelectModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setShowSelectModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                <div className="fixed inset-y-0 right-0 left-0 md:left-72 bg-black/60 z-[200] flex items-center justify-center p-2 md:p-8 backdrop-blur-sm transition-all" onClick={() => setShowSelectModal(false)}>
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-5xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 md:p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2">Refine Selection</p>
                                 <h3 className="text-2xl font-black text-slate-950">Found {results.length} Matching Records</h3>
@@ -828,9 +828,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
             {/* History Modal */}
             {showHistoryModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setShowHistoryModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-[#001489]/5 to-white">
+                <div className="fixed inset-y-0 right-0 left-0 md:left-72 bg-black/60 z-[200] flex items-center justify-center p-2 md:p-8 backdrop-blur-sm transition-all" onClick={() => setShowHistoryModal(false)}>
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-7xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 md:p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-[#001489]/5 to-white">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489] mb-2 uppercase">Calibration Lifecycle</p>
                                 <h3 className="text-2xl font-black text-slate-950">History for ID: {selectedEquipment?.ISID}</h3>
@@ -876,7 +876,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                         </button>
                                                     </td>
                                                     <td className="px-8 py-6 text-left">
-                                                        <button 
+                                                        <button
                                                             onClick={() => downloadReport(h.CIDU)}
                                                             className="text-sm font-black text-[#001489] hover:underline transition-all underline-offset-4"
                                                         >
@@ -957,7 +957,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                             if (picker.showPicker) picker.showPicker();
                             else picker.focus();
                         }}
-                        className={`w-full px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
+                        className={`w-full px-4 md:px-6 py-4 md:py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
                     />
                     <input
                         type="date"
@@ -975,7 +975,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                     type="text"
                     value={displayValue || ""}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`w-full px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
+                    className={`w-full px-4 md:px-6 py-4 md:py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
                 />
             )}
         </div>
