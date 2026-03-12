@@ -50,6 +50,19 @@ interface Equipment {
     LATEST_CALNO: string;
 }
 
+interface MasterRecord {
+    MDLNO: string;
+    EQPNAM: string;
+    MDLNAM: string;
+    MNFCTR: string;
+    CALTRM: string;
+    MODE_CODE: string;
+    SELF: string;
+    CLSMAN_EXT: string;
+    CLSMAN: string;
+    CALCLS: string;
+}
+
 interface LookupItem { CODE: string; NAME: string; DESCRIPTION?: string; }
 interface CalHistory { 
     CIDU: string; 
@@ -137,8 +150,13 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     // Modals
     const [showSelectModal, setShowSelectModal] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [showMasterModal, setShowMasterModal] = useState(false);
     const [calHistory, setCalHistory] = useState<CalHistory[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+    const [masterSearch, setMasterSearch] = useState({ name: "", model: "", manufacturer: "" });
+    const [masterResults, setMasterResults] = useState<MasterRecord[]>([]);
+    const [selectedMaster, setSelectedMaster] = useState<Partial<MasterRecord>>({});
 
     // Load Lookups
     useEffect(() => {
@@ -505,7 +523,18 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldEditable label="Equipment Display Name" value={editData.NAEM_SUP || ""} onChange={(v) => updateField("NAEM_SUP", v)} primary />
-                                        <FieldReadOnly label="Master Database Name" value={selectedEquipment.NAEM} />
+                                        <div className="relative group">
+                                            <FieldReadOnly label="Master Database Name" value={selectedEquipment.NAEM} />
+                                            {isMaster && (
+                                                <button 
+                                                    onClick={() => setShowMasterModal(true)}
+                                                    className="absolute right-2 top-8 p-3 rounded-xl bg-white border border-slate-200 text-[#001489] hover:bg-[#001489] hover:text-white shadow-sm transition-all z-10"
+                                                    title="Manage Master Database"
+                                                >
+                                                    <Database className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldReadOnly label="Model Specification" value={selectedEquipment.MODL} />
@@ -610,6 +639,145 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 </div>
             )}
 
+            {/* Master Search & Edit Modal */}
+            {showMasterModal && (
+                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setShowMasterModal(false)}>
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2">Master Management</p>
+                                <h3 className="text-2xl font-black text-slate-950">Master Database Search & Editor</h3>
+                            </div>
+                            <button onClick={() => setShowMasterModal(false)} className="p-3 hover:bg-rose-50 hover:text-rose-500 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-5 h-5" /></button>
+                        </div>
+                        
+                        <div className="overflow-y-auto max-h-[calc(90vh-100px)] custom-scrollbar p-10 space-y-10">
+                            {/* Master Search Section */}
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-4">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489]">Master Search</span>
+                                    <div className="h-px bg-[#001489]/10 flex-1" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Equipment Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={masterSearch.name}
+                                            onChange={e => setMasterSearch({ ...masterSearch, name: e.target.value })}
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
+                                        <input 
+                                            type="text" 
+                                            value={masterSearch.model}
+                                            onChange={e => setMasterSearch({ ...masterSearch, model: e.target.value })}
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
+                                        <input 
+                                            type="text" 
+                                            value={masterSearch.manufacturer}
+                                            onChange={e => setMasterSearch({ ...masterSearch, manufacturer: e.target.value })}
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                        />
+                                    </div>
+                                    <Button className="h-12 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-xl shadow-lg">
+                                        <Search className="w-4 h-4 mr-2" /> Search Master
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Search Results Table */}
+                            <div className="rounded-3xl border border-slate-100 overflow-hidden bg-slate-50/50">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-[#001489]/5">
+                                        <tr>
+                                            {['Master Name', 'Model', 'Manu', 'Interval', 'Mode', 'Self', 'Category', 'Code'].map(h => (
+                                                <th key={h} className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {masterResults.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={8} className="px-6 py-12 text-center text-xs font-bold text-slate-300 italic">No search results</td>
+                                            </tr>
+                                        ) : (
+                                            masterResults.map((m, idx) => (
+                                                <tr key={idx} className="hover:bg-white cursor-pointer transition-colors" onClick={() => setSelectedMaster(m)}>
+                                                    <td className="px-6 py-4 text-[11px] font-black text-slate-900">{m.EQPNAM}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MDLNAM}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MNFCTR}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.CALTRM}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MODE_CODE}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.SELF === '1' ? 'SELF' : 'EXT'}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.CLSMAN_EXT}</td>
+                                                    <td className="px-6 py-4 text-[11px] font-black text-[#001489]">{m.MDLNO}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Master Detail Editor */}
+                            <div className="space-y-8 bg-slate-50 p-8 rounded-[2rem] border border-slate-100 shadow-inner">
+                                <div className="flex items-center gap-4">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489]">Master Detail</span>
+                                    <div className="h-px bg-[#001489]/10 flex-1" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Name</label>
+                                        <input type="text" value={selectedMaster.EQPNAM || ""} onChange={e => setSelectedMaster({...selectedMaster, EQPNAM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
+                                        <input type="text" value={selectedMaster.MDLNAM || ""} onChange={e => setSelectedMaster({...selectedMaster, MDLNAM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
+                                        <input type="text" value={selectedMaster.MNFCTR || ""} onChange={e => setSelectedMaster({...selectedMaster, MNFCTR: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Interval</label>
+                                        <input type="text" value={selectedMaster.CALTRM || ""} onChange={e => setSelectedMaster({...selectedMaster, CALTRM: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cal Mode</label>
+                                        <input type="text" value={selectedMaster.MODE_CODE || ""} onChange={e => setSelectedMaster({...selectedMaster, MODE_CODE: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Self/Ext</label>
+                                        <select value={selectedMaster.SELF || "1"} onChange={e => setSelectedMaster({...selectedMaster, SELF: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white">
+                                            <option value="1">SELF</option>
+                                            <option value="0">EXT</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
+                                        <input type="text" value={selectedMaster.CLSMAN_EXT || ""} onChange={e => setSelectedMaster({...selectedMaster, CLSMAN_EXT: e.target.value})} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Code</label>
+                                        <input type="text" readOnly value={selectedMaster.MDLNO || ""} className="w-full px-5 py-3 rounded-xl border border-slate-100 text-sm font-black text-[#001489] bg-slate-100/50" />
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <Button className="flex-1 h-14 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all"><Save className="w-4 h-4 mr-2" /> Update Master</Button>
+                                    <Button className="flex-1 h-14 bg-slate-900 border border-slate-800 font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all"><Search className="w-4 h-4 mr-2" /> Add New Master</Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Selection Modal */}
             {showSelectModal && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setShowSelectModal(false)}>
@@ -685,6 +853,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <table className="w-full text-left border-collapse min-w-[1000px]">
                                         <thead className="bg-[#001489]/5 sticky top-0 z-10">
                                             <tr>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Actions</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CAL NO</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CERTI NO</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">REC DATE</th>
@@ -692,13 +861,21 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">ENGINEER</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">BILL COMPANY</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">SUBCON</th>
-                                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {calHistory.map((h, i) => (
-                                                <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
+                                                <tr key={i} className="hover:bg-slate-50/80 transition-colors group text-center">
                                                     <td className="px-8 py-6">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); downloadReport(h.CIDU); }}
+                                                            className="p-3 bg-slate-950 hover:bg-[#001489] text-white rounded-xl transition-all shadow-lg transform scale-90 group-hover:scale-100"
+                                                            title="Download PDF"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-left">
                                                         <button 
                                                             onClick={() => downloadReport(h.CIDU)}
                                                             className="text-sm font-black text-[#001489] hover:underline transition-all underline-offset-4"
@@ -706,21 +883,12 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                             {h.CIDU}
                                                         </button>
                                                     </td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.KOLAS_NO || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap">{formatDate(h.CARD)}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap">{formatDate(h.CASD)}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.ENGINEER || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600">{h.SALE_COMPANY || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 font-medium italic">{h.SUBCON || "—"}</td>
-                                                    <td className="px-8 py-6 text-right">
-                                                        <button
-                                                            onClick={() => downloadReport(h.CIDU)}
-                                                            className="p-3 bg-slate-950 hover:bg-[#001489] text-white rounded-xl transition-all shadow-lg opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
-                                                            title="Download PDF"
-                                                        >
-                                                            <Download className="w-4 h-4" />
-                                                        </button>
-                                                    </td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.KOLAS_NO || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap text-left">{formatDate(h.CARD)}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap text-left">{formatDate(h.CASD)}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.ENGINEER || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.SALE_COMPANY || "—"}</td>
+                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 font-medium italic text-left">{h.SUBCON || "—"}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -778,6 +946,30 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                     rows={4}
                     className="w-full px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all resize-none placeholder:text-slate-200"
                 />
+            ) : isDate ? (
+                <div className="relative">
+                    <input
+                        type="text"
+                        readOnly
+                        value={displayValue || ""}
+                        onClick={(e) => {
+                            const picker = e.currentTarget.nextElementSibling as HTMLInputElement;
+                            if (picker.showPicker) picker.showPicker();
+                            else picker.focus();
+                        }}
+                        className={`w-full px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
+                    />
+                    <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 pointer-events-none"
+                        onChange={(e) => {
+                            if (!e.target.value) return;
+                            const ymd = e.target.value.replace(/-/g, ""); // YYYY-MM-DD -> YYYYMMDD
+                            onChange(ymd);
+                        }}
+                    />
+                    <Clock className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
+                </div>
             ) : (
                 <input
                     type="text"

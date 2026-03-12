@@ -50,7 +50,7 @@ export async function GET(request: Request) {
                     A.KOLAS_NO,
                     A.CASD,
                     A.CARD,
-                    '[' || TRIM(B.EMID) || '] ' || B.EMNM AS ENGINEER,
+                    B.EMNM AS ENGINEER,
                     C.CONM AS SALE_COMPANY, 
                     D.CONM AS SUBCON, 
                     A.CALNO_EXT,
