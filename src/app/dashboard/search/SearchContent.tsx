@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { toast } from "sonner";
 import {
     Search, ChevronDown, Save, History, Download, X, Loader2,
-    FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database
+    FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,7 @@ interface MasterRecord {
     EQPNAM: string;
     MDLNAM: string;
     MNFCTR: string;
+    MNFC: string;
     CALTRM: string;
     MODE_CODE: string;
     SELF: string;
@@ -157,6 +158,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const [masterSearch, setMasterSearch] = useState({ name: "", model: "", manufacturer: "" });
     const [masterResults, setMasterResults] = useState<MasterRecord[]>([]);
     const [selectedMaster, setSelectedMaster] = useState<Partial<MasterRecord>>({});
+    const [isLoadingMasterResults, setIsLoadingMasterResults] = useState(false);
 
     // Load Lookups
     useEffect(() => {
@@ -225,6 +227,11 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
     const handleSave = async () => {
         if (!selectedEquipment) return;
+        
+        if (!window.confirm("Do you really want to change this information?")) {
+            return;
+        }
+
         setIsSaving(true);
         try {
             const body = {
@@ -241,6 +248,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 STAT: editData.STAT,
                 SELF: editData.SELF,
                 EXTN: editData.EXTN,
+                NAEM: editData.NAEM,
+                MODL: editData.MODL,
+                MNFC: editData.MNFC,
                 LAST: isMaster ? editData.LAST : undefined,
                 NEXT: isMaster ? editData.NEXT : undefined,
             };
@@ -259,6 +269,48 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleMasterSearch = async () => {
+        setIsLoadingMasterResults(true);
+        try {
+            const params = new URLSearchParams({
+                mode: "masterSearch",
+                name: masterSearch.name,
+                model: masterSearch.model,
+                manufacturer: masterSearch.manufacturer
+            });
+            const res = await fetch(`/api/search?${params.toString()}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setMasterResults(data);
+            if (data.length === 0) toast.info("No master records found");
+        } catch {
+            toast.error("Failed to search master database");
+        } finally {
+            setIsLoadingMasterResults(false);
+        }
+    };
+
+    const applyMasterSelection = () => {
+        if (!selectedMaster.MDLNO) {
+            toast.error("Please select a master record first");
+            return;
+        }
+
+        setEditData(prev => ({
+            ...prev,
+            NAEM: selectedMaster.EQPNAM || prev.NAEM,
+            MODL: selectedMaster.MDLNAM || prev.MODL,
+            MNFC: selectedMaster.MNFC || prev.MNFC,
+            MANUFACTURE: selectedMaster.MNFCTR || prev.MANUFACTURE, // For display
+            TERM: selectedMaster.CALTRM || prev.TERM,
+            SELF: selectedMaster.SELF || prev.SELF,
+            MODE_CODE: selectedMaster.MODE_CODE || prev.MODE_CODE // Applied Here
+        }));
+
+        setShowMasterModal(false);
+        toast.success("Master information applied. Click 'Save Changes' to persist.");
     };
 
     const openCalHistory = async () => {
@@ -524,10 +576,15 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldEditable label="Equipment Display Name" value={editData.NAEM_SUP || ""} onChange={(v) => updateField("NAEM_SUP", v)} primary />
                                         <div className="relative group">
-                                            <FieldReadOnly label="Master Database Name" value={selectedEquipment.NAEM} />
+                                            <FieldReadOnly label="Master Database Name" value={editData.NAEM || selectedEquipment.NAEM} />
                                             {isMaster && (
                                                 <button
-                                                    onClick={() => setShowMasterModal(true)}
+                                                    onClick={() => {
+                                                        setMasterSearch({ name: "", model: "", manufacturer: "" });
+                                                        setMasterResults([]);
+                                                        setSelectedMaster({});
+                                                        setShowMasterModal(true);
+                                                    }}
                                                     className="absolute right-2 top-8 p-3 rounded-xl bg-white border border-slate-200 text-[#001489] hover:bg-[#001489] hover:text-white shadow-sm transition-all z-10"
                                                     title="Manage Master Database"
                                                 >
@@ -537,8 +594,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <FieldReadOnly label="Model Specification" value={selectedEquipment.MODL} />
-                                        <FieldReadOnly label="Manufacturer Identity" value={selectedEquipment.MANUFACTURE || selectedEquipment.MNFC || ""} />
+                                        <FieldReadOnly label="Model Specification" value={editData.MODL || selectedEquipment.MODL} />
+                                        <FieldReadOnly label="Manufacturer Identity" value={editData.MANUFACTURE || selectedEquipment.MANUFACTURE || selectedEquipment.MNFC || ""} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <FieldReadOnly label="Division" value={selectedEquipment.DIVN || "—"} />
@@ -665,6 +722,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             type="text"
                                             value={masterSearch.name}
                                             onChange={e => setMasterSearch({ ...masterSearch, name: e.target.value })}
+                                            onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
@@ -674,6 +732,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             type="text"
                                             value={masterSearch.model}
                                             onChange={e => setMasterSearch({ ...masterSearch, model: e.target.value })}
+                                            onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
@@ -683,11 +742,17 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             type="text"
                                             value={masterSearch.manufacturer}
                                             onChange={e => setMasterSearch({ ...masterSearch, manufacturer: e.target.value })}
+                                            onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
                                             className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
-                                    <Button className="h-12 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-xl shadow-lg">
-                                        <Search className="w-4 h-4 mr-2" /> Search Master
+                                    <Button
+                                        onClick={handleMasterSearch}
+                                        disabled={isLoadingMasterResults}
+                                        className="h-12 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-xl shadow-lg"
+                                    >
+                                        {isLoadingMasterResults ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
+                                        Search Master
                                     </Button>
                                 </div>
                             </div>
@@ -769,8 +834,14 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
-                                    <Button className="flex-1 h-14 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all"><Save className="w-4 h-4 mr-2" /> Update Master</Button>
-                                    <Button className="flex-1 h-14 bg-slate-900 border border-slate-800 font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all"><Search className="w-4 h-4 mr-2" /> Add New Master</Button>
+                                    <Button
+                                        onClick={applyMasterSelection}
+                                        className="flex-1 h-14 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all ring-4 ring-[#001489]/10"
+                                    >
+                                        <Check className="w-4 h-4 mr-2" /> Apply to Equipment
+                                    </Button>
+                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 font-bold uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-50 transition-all">Update Master</Button>
+                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 font-bold uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-50 transition-all">Add New Master</Button>
                                 </div>
                             </div>
                         </div>

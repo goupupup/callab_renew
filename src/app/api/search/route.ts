@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         if (mode === "calHistory") {
             const id = (searchParams.get("isid") || searchParams.get("id"))?.trim();
             if (!id) return NextResponse.json({ error: "ISID required" }, { status: 400 });
-            
+
             const history = await query<any>(`
                 SELECT 
                     A.CIDU,
@@ -69,44 +69,84 @@ export async function GET(request: Request) {
             return NextResponse.json(history);
         }
 
-        // ── Main Search ──────────────────────────────────────
+        if (mode === "masterSearch") {
+            const name = searchParams.get("name")?.trim() || "";
+            const model = searchParams.get("model")?.trim() || "";
+            const manufacturer = searchParams.get("manufacturer")?.trim() || "";
+
+            let masterSql = `
+                SELECT 
+                    TRIM(A.EQPNAM) as EQPNAM,
+                    TRIM(A.MDLNAM) as MDLNAM,
+                    TRIM(B.CONM) as MNFCTR,
+                    TRIM(A.MNFCTR) as MNFC,
+                    TRIM(A.CALTRM) as CALTRM,
+                    TRIM(A.SELF) as SELF,
+                    TRIM(A.MODE_CODE) as MODE_CODE,
+                    TRIM(A.CLSMAN_EXT) as CLSMAN_EXT,
+                    TRIM(A.MDLNO) as MDLNO
+                FROM EASYCAL.TBMDLMAN A
+                LEFT JOIN EASYCAL.TBSUPMAN B ON A.MNFCTR = B.COID
+                WHERE 1=1
+            `;
+            const masterParams: any = {};
+
+            if (name) {
+                masterSql += ` AND UPPER(A.EQPNAM) LIKE :name`;
+                masterParams.name = `%${name.toUpperCase()}%`;
+            }
+            if (model) {
+                masterSql += ` AND UPPER(A.MDLNAM) LIKE :model`;
+                masterParams.model = `%${model.toUpperCase()}%`;
+            }
+            if (manufacturer) {
+                masterSql += ` AND (A.MNFCTR = :manu OR UPPER(B.CONM) LIKE :manuName)`;
+                masterParams.manu = manufacturer;
+                masterParams.manuName = `%${manufacturer.toUpperCase()}%`;
+            }
+
+            masterSql += ` ORDER BY A.EQPNAM ASC`;
+            const masterRows = await query<any>(masterSql, masterParams);
+            return NextResponse.json(masterRows);
+        }
         let sql = `
             SELECT 
-                a.ISID,
-                a.NAEM_SUP,
-                a.NAEM,
-                a.MODL,
-                a.SERN,
-                a.ACCN,
-                a.STAT as STAT,
-                a.TYEP as TYEP,
-                a.MODE_CODE as MODE_CODE,
-                a.TERM,
-                a.LAST,
-                a.NEXT,
-                a.CUST,
-                a.MEMO,
-                a.ACC1,
-                a.SELF,
-                a.EXTN,
-                a.DPCD,
-                a.OWNM,
+                TRIM(a.ISID) as ISID,
+                TRIM(a.NAEM_SUP) as NAEM_SUP,
+                TRIM(a.NAEM) as NAEM,
+                TRIM(a.MODL) as MODL,
+                TRIM(a.SERN) as SERN,
+                TRIM(a.ACCN) as ACCN,
+                TRIM(a.STAT) as STAT,
+                TRIM(a.TYEP) as TYEP,
+                TRIM(a.MODE_CODE) as MODE_CODE,
+                TRIM(a.TERM) as TERM,
+                TRIM(a.LAST) as LAST,
+                TRIM(a.NEXT) as NEXT,
+                TRIM(a.CUST) as CUST,
+                TRIM(a.MEMO) as MEMO,
+                TRIM(a.ACC1) as ACC1,
+                TRIM(a.SELF) as SELF,
+                TRIM(a.EXTN) as EXTN,
+                TRIM(a.DPCD) as DPCD,
+                TRIM(a.OWNM) as OWNM,
                 a.COST_EXE,
                 a.COST_CAL,
                 a.CALN,
                 a.EXER,
                 a.SPC1,
-                b.CONM as MANUFACTURE,
-                c.CONM as APPLICANT,
-                d.DESN as DIVN,
-                e.DESN as DEPART,
-                '[' || f.MODE_CODE || '] ' || f.MODE_DESC as MODE_NAME_SNIPPET,
-                '[' || g.TYEP || '] ' || g.DESN as TYPE_NAME_SNIPPET,
-                h.CONM as SUBCONTRACTOR_NAME,
-                '[' || TRIM(j.EMID) || '] ' || j.EMNM as LATEST_ENGINEER_NAME,
-                '[' || TRIM(k.EMID) || '] ' || k.EMNM as ASSISTANCE,
-                l.DESN as STATUS_NAME,
-                '[' || TRIM(f.MODE_CODE) || '] ' || f.MODE_DESC as MODE_NAME, 
+                TRIM(a.MNFC) as MNFC,
+                TRIM(b.CONM) as MANUFACTURE,
+                TRIM(c.CONM) as APPLICANT,
+                TRIM(d.DESN) as DIVN,
+                TRIM(e.DESN) as DEPART,
+                '[' || TRIM(f.MODE_CODE) || '] ' || TRIM(f.MODE_DESC) as MODE_NAME_SNIPPET,
+                '[' || TRIM(g.TYEP) || '] ' || TRIM(g.DESN) as TYPE_NAME_SNIPPET,
+                TRIM(h.CONM) as SUBCONTRACTOR_NAME,
+                '[' || TRIM(j.EMID) || '] ' || TRIM(j.EMNM) as LATEST_ENGINEER_NAME,
+                '[' || TRIM(k.EMID) || '] ' || TRIM(k.EMNM) as ASSISTANCE,
+                TRIM(l.DESN) as STATUS_NAME,
+                '[' || TRIM(f.MODE_CODE) || '] ' || TRIM(f.MODE_DESC) as MODE_NAME, 
                 (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = a.ISID) as LATEST_CALNO
             FROM EASYCAL.TBMASMAN a
             LEFT JOIN EASYCAL.TBSUPMAN b ON a.MNFC = b.COID
@@ -170,53 +210,149 @@ export async function PUT(request: Request) {
 
     try {
         const body = await request.json();
-        const { ISID, STAT, TYEP, MODE_CODE, TERM, LAST, NEXT, CUST, MEMO, ACC1, SELF, EXTN, NAEM_SUP, ACCN, SERN } = body;
+        const {
+            ISID, STAT, TYEP, MODE_CODE, TERM, LAST, NEXT, CUST, MEMO, ACC1, SELF, EXTN,
+            NAEM_SUP, ACCN, SERN, NAEM, MODL, MNFC
+        } = body;
 
         if (!ISID) return NextResponse.json({ error: "ISID is required" }, { status: 400 });
 
-        const sql = `
-            UPDATE EASYCAL.TBMASMAN 
-            SET 
-                STAT = :stat,
-                TYEP = :tyep,
-                MODE_CODE = :modeCode,
-                TERM = :term,
-                LAST = :last,
-                NEXT = :next,
-                CUST = :cust,
-                MEMO = :memo,
-                ACC1 = :acc1,
-                SELF = :self,
-                EXTN = :extn,
-                NAEM_SUP = :naemSup,
-                ACCN = :accn,
-                SERN = :sern
-            WHERE ISID = :isid
-        `;
-
         const connection = await oracledb.getConnection(dbConfig);
-        await connection.execute(sql, {
-            stat: STAT,
-            tyep: TYEP,
-            modeCode: MODE_CODE,
-            term: TERM,
-            last: LAST,
-            next: NEXT,
-            cust: CUST,
-            memo: MEMO,
-            acc1: ACC1,
-            self: SELF,
-            extn: EXTN,
-            naemSup: NAEM_SUP,
-            accn: ACCN,
-            sern: SERN,
-            isid: ISID
-        }, { autoCommit: true });
-        await connection.close();
 
-        return NextResponse.json({ success: true });
+        try {
+            // 1. Get current (Before) state for logging
+            const selectBeforeSql = `SELECT * FROM EASYCAL.TBMASMAN WHERE ISID = :isid`;
+            console.log("🔍 [PUT STEP 1]: Checking current state...", selectBeforeSql);
+            const beforeResult = await connection.execute(
+                selectBeforeSql,
+                { isid: ISID },
+                { outFormat: oracledb.OUT_FORMAT_OBJECT }
+            );
+            const before: any = beforeResult.rows?.[0];
+
+            if (!before) throw new Error("Equipment not found");
+
+            // 2. Update TBMASMAN (Using provided defaults for missing FE fields)
+            const updateMasSql = `
+                UPDATE EASYCAL.TBMASMAN 
+                SET 
+                    STAT = :stat,
+                    TYEP = :tyep,
+                    MODE_CODE = :modeCode,
+                    TERM = :term,
+                    LAST = :last,
+                    NEXT = :next,
+                    CUST = :cust,
+                    MEMO = :memo,
+                    ACC1 = :acc1,
+                    SELF = :self,
+                    EXTN = :extn,
+                    NAEM_SUP = :naemSup,
+                    ACCN = :accn,
+                    SERN = :sern,
+                    NAEM = :naem,
+                    MODL = :modl,
+                    MNFC = :mnfc,
+                    COST_EXE = 0,
+                    COST = 0,
+                    EQIP = null,
+                    CAL_NEXT = null
+                WHERE ISID = :isid
+            `;
+            console.log("🔍 [PUT STEP 2]: Updating TBMASMAN...", updateMasSql);
+            await connection.execute(updateMasSql, {
+                stat: STAT,
+                tyep: TYEP,
+                modeCode: MODE_CODE,
+                term: TERM,
+                last: LAST,
+                next: NEXT,
+                cust: CUST,
+                memo: MEMO,
+                acc1: ACC1,
+                self: SELF,
+                extn: EXTN,
+                naemSup: NAEM_SUP,
+                accn: ACCN,
+                sern: SERN,
+                naem: NAEM,
+                modl: MODL,
+                mnfc: MNFC,
+                isid: ISID
+            });
+
+            // 3. Conditional TBCALMAN Update (Status Check)
+            const selectCalSql = `SELECT CIDU, STAT FROM EASYCAL.TBCALMAN 
+                 WHERE CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = :isid)`;
+            console.log("🔍 [PUT STEP 3]: Checking last cal info...", selectCalSql);
+            const calResult = await connection.execute(
+                selectCalSql,
+                { isid: ISID },
+                { outFormat: oracledb.OUT_FORMAT_OBJECT }
+            );
+            const latestCal: any = calResult.rows?.[0];
+
+            if (latestCal && ['02', '11', '17'].includes(latestCal.STAT?.trim())) {
+                const updateCalSql = `UPDATE EASYCAL.TBCALMAN SET CCOM = :cust WHERE CIDU = :cidu`;
+                console.log("🔍 [PUT STEP 4]: Syncing TBCALMAN...", updateCalSql);
+                await connection.execute(
+                    updateCalSql,
+                    { cust: CUST, cidu: latestCal.CIDU }
+                );
+            }
+
+            // 4. Generate & Insert Log
+            const changed: string[] = ["<UPDATE>"];
+            const check = (label: string, oldVal: any, newVal: any) => {
+                const o = String(oldVal || "").trim();
+                const n = String(newVal || "").trim();
+                if (o !== n) changed.push(`※${label}: ${o} -> ${n}`);
+            };
+
+            check("RegNo", before.ISID, ISID);
+            check("SN", before.SERN, SERN);
+            check("EQPT", before.NAEM_SUP, NAEM_SUP);
+            check("MASTER", before.NAEM, NAEM);
+            check("MODEL", before.MODL, MODL);
+            check("ASSET", before.ACCN, ACCN);
+            check("CUST", before.CUST, CUST);
+            check("MEMO", before.MEMO, MEMO);
+            check("ACC", before.ACC1, ACC1);
+            check("TYPE", before.TYEP, TYEP);
+            check("MODE", before.MODE_CODE, MODE_CODE);
+            check("SELF", before.SELF, SELF);
+            check("EXTN", before.EXTN, EXTN);
+            check("TERM", before.TERM, TERM);
+            check("DUE", before.NEXT, NEXT);
+
+            if (changed.length > 1) {
+                const logStr = changed.join(",");
+                const emid = session.user.id?.slice(0, 6) || "SYSTEM";
+                const insertLogSql = `INSERT INTO AUTOCAL_LOG.TBMASMAN_LOG (ISID, SDAT, MOID, RSDT) 
+                     VALUES (:isid, SYSDATE, :moid, :rsdt)`;
+                console.log("🔍 [PUT STEP 5]: Inserting log into TBMSAMAN_LOG...", insertLogSql);
+                await connection.execute(
+                    insertLogSql,
+                    {
+                        isid: ISID,
+                        moid: emid.padEnd(10, ' '), // MOID is CHAR(10)
+                        rsdt: logStr.slice(0, 3200)  // RSDT is VARCHAR2(3200)
+                    }
+                );
+            }
+
+            await connection.commit();
+            return NextResponse.json({ success: true });
+
+        } catch (err: any) {
+            await connection.rollback();
+            throw err;
+        } finally {
+            await connection.close();
+        }
+
     } catch (err: any) {
-        console.error("❌ [PUT ERROR]:", err.message);
+        console.error("❌ [API PUT ERROR]:", err.message);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

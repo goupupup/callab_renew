@@ -26,12 +26,24 @@ async function main() {
         `, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
         console.log("Sample Data:", JSON.stringify(dataRes.rows[0], null, 2));
 
-        // 3. Status/Type lookups content
-        const typesRes = await conn.execute(`SELECT * FROM EASYCAL.TBTYPMAN`);
-        console.log("TBTYPMAN:", JSON.stringify(typesRes.rows, null, 2));
+        // 3. Check Log Table
+        console.log("Checking log table candidates...");
+        const logTabs = await conn.execute(`
+            SELECT table_name FROM all_tables 
+            WHERE owner = 'EASYCAL' AND table_name LIKE '%MAN_LOG'
+        `);
+        console.log("Log Tables found:", logTabs.rows);
 
-        const statusRes = await conn.execute(`SELECT * FROM EASYCAL.TBSTAMAN`);
-        console.log("TBSTAMAN:", JSON.stringify(statusRes.rows, null, 2));
+        for (const tab of logTabs.rows) {
+            const table_name = tab[0];
+            const cols = await conn.execute(`
+                SELECT column_name, data_type, data_length 
+                FROM all_tab_columns 
+                WHERE table_name = :tab AND owner = 'EASYCAL'
+                ORDER BY column_id
+            `, { tab: table_name });
+            console.log(`Columns for ${table_name}:`, cols.rows);
+        }
 
     } catch (err) {
         console.error(err);
