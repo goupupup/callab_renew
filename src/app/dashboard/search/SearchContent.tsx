@@ -11,6 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import AdvancedOngoingSearch from "./components/AdvancedOngoingSearch";
+import AdvancedCalNoSearch from "./components/AdvancedCalNoSearch";
+import AdvancedModelSearch from "./components/AdvancedModelSearch";
+import AdvancedExpirationSearch from "./components/AdvancedExpirationSearch";
+
 // ── Types ────────────────────────────────────────────────────
 interface Equipment {
     ISID: string;
@@ -394,8 +399,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                         </div>
                     </div>
 
-                    {/* ── Integrated Search Bar ────────────────── */}
-                    {["regNo", "calNo", "model"].includes(activeTab) && (
+                    {/* ── Integrated Search Bar (Registry/Asset/SN) ──────── */}
+                    {(activeTab === "regNo" || activeTab === "asset" || activeTab === "sn") && (
                         <div className="flex items-center gap-3 w-full md:max-w-xl bg-slate-50 p-2 rounded-2xl border border-slate-100 shadow-inner">
                             {activeTab === "regNo" && (
                                 <div className="relative">
@@ -433,13 +438,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             handleSearch(mode as SearchMode);
                                         }
                                     }}
-                                    placeholder={
-                                        activeTab === "regNo"
-                                            ? `ENTER ${searchTypeLabels[searchType]}...`
-                                            : activeTab === "calNo"
-                                                ? "ENTER CAL NO..."
-                                                : "ENTER MODEL NAME..."
-                                    }
+                                    placeholder={`ENTER ${searchTypeLabels[searchType]}...`}
                                     className="h-12 border-none bg-transparent shadow-none text-sm font-black uppercase placeholder:text-slate-300 focus-visible:ring-0"
                                 />
                             </div>
@@ -467,8 +466,14 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 </div>
             )}
 
-            {/* Results List */}
-            {results.length > 1 && !showSelectModal && selectedEquipment && (
+            {/* Advanced Search Components */}
+            {activeTab === "ongoing" && <AdvancedOngoingSearch lookups={lookups} />}
+            {activeTab === "calNo" && <AdvancedCalNoSearch lookups={lookups} />}
+            {activeTab === "model" && <AdvancedModelSearch lookups={lookups} />}
+            {activeTab === "expirations" && <AdvancedExpirationSearch lookups={lookups} />}
+
+            {/* Results List for regNo/asset/sn */}
+            {["regNo", "asset", "sn"].includes(activeTab) && results.length > 1 && !showSelectModal && selectedEquipment && (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-top-4 duration-500">
                     <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-3">

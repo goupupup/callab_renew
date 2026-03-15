@@ -33,7 +33,7 @@ export async function GET(request: Request) {
                 query<any>(`SELECT DISTINCT TRIM(MODE_CODE) as CODE, '[' || TRIM(MODE_CODE) || '] ' || TRIM(MODE_DESC) as NAME FROM EASYCAL.TBMODMAN WHERE MODE_CODE IS NOT NULL ORDER BY CODE`),
                 query<any>(`SELECT DISTINCT TRIM(STAT) as CODE, '[' || TRIM(STAT) || '] ' || TRIM(DESN) as NAME FROM EASYCAL.TBSTAMAN WHERE STAT IS NOT NULL ORDER BY CODE`),
                 query<any>(`SELECT DISTINCT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN ORDER BY NAME`),
-                query<any>(`SELECT DISTINCT TRIM(EMID) as CODE, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(EMID) as CODE, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN WHERE DIVISION LIKE '%#CAL%' AND TRIM(STAT) <> 'Retiree' ORDER BY NAME`),
                 query<any>(`SELECT DISTINCT TRIM(CONM) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN WHERE TRIM(COT2) = '1' AND CONM IS NOT NULL ORDER BY NAME`),
             ]);
             return NextResponse.json({ types, modes, statuses, suppliers, employees, subcontractors });
@@ -108,6 +108,212 @@ export async function GET(request: Request) {
             masterSql += ` ORDER BY A.EQPNAM ASC`;
             const masterRows = await query<any>(masterSql, masterParams);
             return NextResponse.json(masterRows);
+        }
+
+        if (mode === "advancedHistory") {
+            const isid = searchParams.get("isid")?.trim() || "";
+            const calNo = searchParams.get("calNo")?.trim() || "";
+            const asset = searchParams.get("asset")?.trim() || "";
+            const ccom = searchParams.get("ccom")?.trim() || "";
+            const emid = searchParams.get("emid")?.trim() || "";
+            const mnfc = searchParams.get("mnfc")?.trim() || "";
+            const certNo = searchParams.get("certNo")?.trim() || "";
+            const loctPre = searchParams.get("loctPre")?.trim() || "";
+            const calCls = searchParams.get("calCls")?.trim() || "";
+            const onsite = searchParams.get("onsite")?.trim() || "";
+            
+            // Rec Dates (MMDDYYYY expected by translated Python logic)
+            const recStart = searchParams.get("recStart")?.trim() || ""; // MMDDYYYY
+            const recEnd = searchParams.get("recEnd")?.trim() || "";     // MMDDYYYY
+            
+            // Cal Dates
+            const calStart = searchParams.get("calStart")?.trim() || ""; // MMDDYYYY
+            const calEnd = searchParams.get("calEnd")?.trim() || "";     // MMDDYYYY
+            
+            // Ret Dates
+            const retStart = searchParams.get("retStart")?.trim() || ""; // MMDDYYYY
+            const retEnd = searchParams.get("retEnd")?.trim() || "";     // MMDDYYYY
+
+            let historySql = `
+                SELECT
+                    TRIM(A.ISID) as ISID,
+                    TRIM(B.CIDU) as CIDU,
+                    TRIM(B.KOLAS_NO) as KOLAS_NO,
+                    (SELECT TRIM(DESN) FROM EASYCAL.TBSTAMAN WHERE STAT = B.STAT) as STATUS_NAME,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.CUST) as CUSTOMER_NAME,
+                    TRIM(A.NAEM_SUP) as NAEM_SUP,
+                    TRIM(A.MODL) as MODL,
+                    TRIM(A.SERN) as SERN,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.MNFC) as MNFC_NAME,
+                    TRIM(A.ACCN) as ACCN,
+                    TRIM(B.CASD) as CASD,
+                    TRIM(B.CARD) as CARD,
+                    TRIM(B.SIDT) as SIDT,
+                    TRIM(A.NEXT) as NEXT,
+                    TRIM(A.TERM) as TERM,
+                    TRIM(B.ROTD) as ROTD,
+                    CASE
+                        WHEN B.LOCT = '0' THEN 'Visit'
+                        ELSE 'On Site'
+                    END as LOCATION_TYPE,
+                    (SELECT '['||TRIM(MODE_CODE)||']'||TRIM(MODE_DESC) FROM EASYCAL.TBMODMAN WHERE MODE_CODE = A.MODE_CODE) as MODE_NAME,
+                    TRIM(B.CNAM) as CNAM,
+                    TRIM(B.CANCEL_RSN) as CANCEL_RSN
+                FROM EASYCAL.TBMASMAN A
+                LEFT JOIN EASYCAL.TBCALMAN B ON A.ISID = B.ISID
+                WHERE 1=1
+            `;
+            const historyParams: any = {};
+
+            if (!isMaster) {
+                historySql += ` AND A.CUST = :corpId`;
+                historyParams.corpId = session.user.corpId;
+            }
+
+            if (isid) {
+                historySql += ` AND TRIM(A.ISID) = :isid`;
+                historyParams.isid = isid;
+            }
+            if (calNo) {
+                historySql += ` AND TRIM(B.CIDU) = :calNo`;
+                historyParams.calNo = calNo;
+            }
+            if (asset) {
+                historySql += ` AND TRIM(A.ACCN) = :asset`;
+                historyParams.asset = asset;
+            }
+            if (ccom) {
+                historySql += ` AND TRIM(B.CCOM) = :ccom`;
+                historyParams.ccom = ccom;
+            }
+            if (emid) {
+                historySql += ` AND TRIM(B.EMID) = :emid`;
+                historyParams.emid = emid;
+            }
+            if (mnfc) {
+                historySql += ` AND TRIM(A.MNFC) = :mnfc`;
+                historyParams.mnfc = mnfc;
+            }
+            if (certNo) {
+                historySql += ` AND TRIM(B.KOLAS_NO) = :certNo`;
+                historyParams.certNo = certNo;
+            }
+            if (loctPre) {
+                historySql += ` AND TRIM(B.LOCT_PRE) = :loctPre`;
+                historyParams.loctPre = loctPre;
+            }
+            if (calCls) {
+                historySql += ` AND TRIM(A.CALCLS) = :calCls`;
+                historyParams.calCls = calCls;
+            }
+            if (onsite) {
+                historySql += ` AND TRIM(B.LOCT_PRE) = :onsite`;
+                historyParams.onsite = onsite;
+            }
+
+            // Rec Dates
+            if (recStart) {
+                historySql += ` AND TRIM(B.CASD) <> '0' AND TO_DATE(B.CASD,'YYYYMMDD') >= TO_DATE(:recStart,'MMDDYYYY')`;
+                historyParams.recStart = recStart;
+            }
+            if (recEnd) {
+                historySql += ` AND TO_DATE(B.CASD,'YYYYMMDD') <= TO_DATE(:recEnd,'MMDDYYYY')`;
+                historyParams.recEnd = recEnd;
+            }
+
+            // Cal Dates
+            if (calStart) {
+                historySql += ` AND TRIM(B.CARD) <> '0' AND TO_DATE(B.CARD,'YYYYMMDD') >= TO_DATE(:calStart,'MMDDYYYY')`;
+                historyParams.calStart = calStart;
+            }
+            if (calEnd) {
+                historySql += ` AND TO_DATE(B.CARD,'YYYYMMDD') <= TO_DATE(:calEnd,'MMDDYYYY')`;
+                historyParams.calEnd = calEnd;
+            }
+
+            // Ret Dates
+            if (retStart) {
+                historySql += ` AND TRIM(B.ROTD) <> '0' AND TO_DATE(B.ROTD,'YYYYMMDD') >= TO_DATE(:retStart,'MMDDYYYY')`;
+                historyParams.retStart = retStart;
+            }
+            if (retEnd) {
+                historySql += ` AND TO_DATE(B.ROTD,'YYYYMMDD') <= TO_DATE(:retEnd,'MMDDYYYY')`;
+                historyParams.retEnd = retEnd;
+            }
+
+            historySql += ` ORDER BY B.STAT`;
+            const historyRows = await query<any>(historySql, historyParams);
+            return NextResponse.json(historyRows);
+        }
+
+        if (mode === "advancedModel") {
+            const isExact = searchParams.get("isExact") === "true";
+            const model = searchParams.get("model")?.trim() || "";
+            const eqptName = searchParams.get("eqptName")?.trim() || "";
+            const cust = searchParams.get("cust")?.trim() || "";
+            const mnfc = searchParams.get("mnfc")?.trim() || "";
+            const memo = searchParams.get("memo")?.trim() || "";
+
+            let conditions = [];
+            const params: any = {};
+
+            if (!isMaster) {
+                conditions.push(`A.CUST = :corpId`);
+                params.corpId = session.user.corpId;
+            } else if (cust) {
+                conditions.push(`A.CUST = :cust`);
+                params.cust = cust;
+            }
+
+            if (model) {
+                if (isExact) {
+                    conditions.push(`UPPER(TRIM(A.MODL)) = :model`);
+                    params.model = model.toUpperCase();
+                } else {
+                    conditions.push(`UPPER(A.MODL) LIKE :model`);
+                    params.model = `%${model.toUpperCase()}%`;
+                }
+            }
+            if (eqptName) {
+                conditions.push(`UPPER(A.NAEM_SUP) LIKE :eqptName`);
+                params.eqptName = `%${eqptName.toUpperCase()}%`;
+            }
+            if (mnfc) {
+                conditions.push(`A.MNFC = :mnfc`);
+                params.mnfc = mnfc;
+            }
+            if (memo) {
+                conditions.push(`UPPER(A.MEMO) LIKE :memo`);
+                params.memo = `%${memo.toUpperCase()}%`;
+            }
+
+            const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+            const sql = `
+                SELECT
+                    TRIM(A.ISID) as ISID,
+                    TRIM(A.NAEM_SUP) as NAEM_SUP,
+                    TRIM(A.MODL) as MODL,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.MNFC) as MNFC_NAME,
+                    TRIM(A.SERN) as SERN,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.CUST) as CUST_NAME,
+                    TRIM(A.LAST) as LAST,
+                    TRIM(A.TERM) as TERM,
+                    A.COST_EXE,
+                    TRIM(A.SELF) as SELF,
+                    (SELECT TRIM(MODE_DESC) FROM EASYCAL.TBMODMAN WHERE MODE_CODE = A.MODE_CODE) as MODE_DESC,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.EXTN) as EXTN_NAME,
+                    TRIM(A.MEMO) as MEMO
+                FROM EASYCAL.TBMASMAN A
+                ${whereClause}
+                ORDER BY 
+                    CASE
+                        WHEN A.LAST <> '0' AND A.LAST IS NOT NULL THEN TO_DATE(A.LAST,'YYYYMMDD')
+                    END DESC NULLS LAST
+            `;
+
+            const rows = await query<any>(sql, params);
+            return NextResponse.json(rows);
         }
         let sql = `
             SELECT 

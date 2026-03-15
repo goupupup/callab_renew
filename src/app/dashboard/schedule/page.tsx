@@ -140,6 +140,12 @@ export default function SchedulePage() {
         }
     };
 
+    const parseLocalDate = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        const [y, m, d] = dateStr.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    };
+
     const getEmployeeNames = (item: any) => {
         const ids = [item.EMID1, item.EMID2, item.EMID3, item.EMID4, item.EMID5].filter(Boolean);
         return ids.map(id => employees.find(e => e.ID === id.trim())?.NAME || id).join(", ");
@@ -357,16 +363,16 @@ export default function SchedulePage() {
                                 const diffDays = (date: Date, start: Date) => {
                                     const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                                     const d2 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                                    return Math.floor((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+                                    return Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
                                 };
 
                                 const weekSchedules = schedules.filter(s => {
-                                    const sStart = new Date(s.STARTDATE);
-                                    const sEnd = new Date(s.ENDDATE);
+                                    const sStart = parseLocalDate(s.STARTDATE);
+                                    const sEnd = parseLocalDate(s.ENDDATE);
                                     return (sStart <= weekEndDate && sEnd >= weekStartDate);
                                 }).map(s => {
-                                    const sStart = new Date(s.STARTDATE);
-                                    const sEnd = new Date(s.ENDDATE);
+                                    const sStart = parseLocalDate(s.STARTDATE);
+                                    const sEnd = parseLocalDate(s.ENDDATE);
                                     const displayStart = sStart < weekStartDate ? 0 : Math.max(0, diffDays(sStart, weekStartDate));
                                     const displayEnd = sEnd > weekEndDate ? 6 : Math.min(6, diffDays(sEnd, weekStartDate));
                                     return { ...s, colStart: displayStart, colSpan: displayEnd - displayStart + 1 };
@@ -394,7 +400,11 @@ export default function SchedulePage() {
                                             {weekDays.map((day, dIdx) => {
                                                 if (!day) return <div key={dIdx} />;
                                                 const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                                                const isToday = new Date().toISOString().split('T')[0] === dateObj.toISOString().split('T')[0];
+                                                const today = new Date();
+                                                const isToday = 
+                                                    today.getFullYear() === dateObj.getFullYear() &&
+                                                    today.getMonth() === dateObj.getMonth() &&
+                                                    today.getDate() === dateObj.getDate();
                                                 return (
                                                     <div key={dIdx} className="flex justify-start">
                                                         <span className={`text-[9px] md:text-[11px] font-black ${isToday ? "bg-[#001489] text-white w-5 h-5 md:w-7 md:h-7 rounded-sm md:rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20" : dIdx === 0 ? "text-rose-400" : dIdx === 6 ? "text-blue-300" : "text-slate-300"}`}>
@@ -412,8 +422,8 @@ export default function SchedulePage() {
                                                         <div
                                                             key={s.SCHID}
                                                             className={`absolute h-full ${getScheduleColor(s.SCH_TYPE)} text-white px-1.5 md:px-3 flex items-center text-[7px] md:text-[9px] font-black uppercase tracking-tight shadow-sm cursor-pointer hover:brightness-110 transition-all z-20 
-                                                                ${s.colStart === 0 && new Date(s.STARTDATE) < weekStartDate ? "rounded-l-none" : "rounded-sm md:rounded-l-lg"}
-                                                                ${s.colStart + s.colSpan === 7 && new Date(s.ENDDATE) > weekEndDate ? "rounded-r-none" : "rounded-sm md:rounded-r-lg"}
+                                                                ${s.colStart === 0 && parseLocalDate(s.STARTDATE) < weekStartDate ? "rounded-l-none" : "rounded-sm md:rounded-l-lg"}
+                                                                ${s.colStart + s.colSpan === 7 && parseLocalDate(s.ENDDATE) > weekEndDate ? "rounded-r-none" : "rounded-sm md:rounded-r-lg"}
                                                             `}
                                                             style={{
                                                                 left: `${(s.colStart / 7) * 100}%`,
@@ -422,8 +432,8 @@ export default function SchedulePage() {
                                                             onClick={() => {
                                                                 setEditingId(s.SCHID);
                                                                 setFormData({
-                                                                    startDate: new Date(s.STARTDATE).toISOString().split('T')[0],
-                                                                    endDate: new Date(s.ENDDATE).toISOString().split('T')[0],
+                                                                    startDate: s.STARTDATE,
+                                                                    endDate: s.ENDDATE,
                                                                     schType: s.SCH_TYPE,
                                                                     division: s.DIVISION,
                                                                     memo: s.MEMO || "",
