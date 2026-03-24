@@ -48,6 +48,14 @@ interface Equipment {
     EXER: string;
     SPC1: string;
     LATEST_CALNO: string;
+    // Ongoing fields
+    DELAY_RSN?: string;
+    CASD?: string;
+    SCHE?: string;
+    MEMO_CAL?: string;
+    ACC2?: string;
+    CTEL?: string;
+    RECEPTIONIST?: string;
 }
 
 interface MasterRecord {
@@ -160,6 +168,14 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const [selectedMaster, setSelectedMaster] = useState<Partial<MasterRecord>>({});
     const [isLoadingMasterResults, setIsLoadingMasterResults] = useState(false);
 
+    // Ongoing Specific State
+    const [ongoingFilter, setOngoingFilter] = useState({
+        regno: "", calno: "", applicant: "", contact: "", engineer: "",
+        startDate: "", endDate: "", selfExt: "1", onoffSite: "B"
+    });
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [batchUpdate, setBatchUpdate] = useState({ engineer: "", date: "", reason: "" });
+
     // Load Lookups
     useEffect(() => {
         fetch("/api/search?mode=lookups")
@@ -182,6 +198,10 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const handleSearch = useCallback(async (mode?: SearchMode, query?: string) => {
         const m = mode || activeTab;
         const q = query !== undefined ? query : searchQuery;
+
+        if (m === "ongoing") {
+            return handleOngoingSearch();
+        }
 
         if (["regNo", "asset", "sn", "calNo", "model"].includes(m) && !q.trim()) {
             toast.error("검색어를 입력하세요");
@@ -206,7 +226,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 setResults(data);
             } else {
                 setResults(data);
-                if (["asset", "sn", "model", "ongoing", "expirations"].includes(m)) {
+                if (["asset", "sn", "model", "expirations"].includes(m)) {
                     setShowSelectModal(true);
                 } else {
                     selectEquipment(data[0]);
@@ -217,7 +237,27 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         } finally {
             setIsSearching(false);
         }
-    }, [activeTab, searchQuery]);
+    }, [activeTab, searchQuery, ongoingFilter]);
+
+    const handleOngoingSearch = async () => {
+        setIsSearching(true);
+        setSelectedEquipment(null);
+        setResults([]);
+        setSelectedRows([]);
+
+        try {
+            const params = new URLSearchParams({ mode: "ongoing", ...ongoingFilter });
+            const res = await fetch(`/api/search?${params.toString()}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setResults(data);
+            if (data.length === 0) toast.info("No ongoing results found");
+        } catch {
+            toast.error("진행 내역 검색 중 오류가 발생했습니다");
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     const selectEquipment = (eq: Equipment) => {
         setSelectedEquipment(eq);
@@ -395,7 +435,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                     </div>
 
                     {/* ── Integrated Search Bar ────────────────── */}
-                    {["regNo", "calNo", "model"].includes(activeTab) && (
+                    {["regNo", "asset", "sn", "calNo", "model"].includes(activeTab) && (
                         <div className="flex items-center gap-3 w-full md:max-w-xl bg-slate-50 p-2 rounded-2xl border border-slate-100 shadow-inner">
                             {activeTab === "regNo" && (
                                 <div className="relative">
@@ -459,16 +499,222 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 </div>
             </div>
 
-            {/* Loading for auto-search tabs */}
-            {isSearching && (activeTab === "ongoing" || activeTab === "expirations") && (
-                <div className="flex flex-col items-center justify-center p-24 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all">
-                    <div className="w-16 h-16 border-4 border-[#001489]/10 border-t-[#001489] rounded-full animate-spin mb-6" />
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Fetching Real-time Data...</p>
+            {/* Ongoing View */}
+            {activeTab === "ongoing" && !selectedEquipment && (
+                <div className="space-y-6 lg:space-y-10 animate-in fade-in duration-500">
+                    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+                        <div className="px-10 py-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                            <div className="w-2 h-6 bg-[#001489] rounded-full" />
+                            <h3 className="text-xs font-black text-slate-900 tracking-[0.2em] uppercase">Search Condition</h3>
+                        </div>
+                        <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">REGNO</label>
+                                <Input value={ongoingFilter.regno} onChange={e => setOngoingFilter({...ongoingFilter, regno: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100 placeholder:text-slate-300" placeholder="ISID..." />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CALNO</label>
+                                <Input value={ongoingFilter.calno} onChange={e => setOngoingFilter({...ongoingFilter, calno: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100 placeholder:text-slate-300" placeholder="HA..." />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">APPLICANT</label>
+                                <Input value={ongoingFilter.applicant} onChange={e => setOngoingFilter({...ongoingFilter, applicant: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100 placeholder:text-slate-300" placeholder="CUSTOMER..." />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CONTACT PERSON</label>
+                                <Input value={ongoingFilter.contact} onChange={e => setOngoingFilter({...ongoingFilter, contact: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100 placeholder:text-slate-300" placeholder="NAME..." />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">RESERVED ENGINEER</label>
+                                <select
+                                    value={ongoingFilter.engineer}
+                                    onChange={e => setOngoingFilter({...ongoingFilter, engineer: e.target.value})}
+                                    className="w-full h-11 px-4 lg:px-6 rounded-xl bg-slate-50 border border-slate-100 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#001489]/20 transition-all appearance-none"
+                                >
+                                    <option value="">ALL ENGINEERS</option>
+                                    {lookups?.employees.map(e => <option key={e.CODE} value={e.CODE}>{e.NAME}</option>)}
+                                </select>
+                            </div>
+                            <div className="lg:col-span-2 space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">REC DATE RANGE</label>
+                                <div className="flex items-center gap-3">
+                                    <Input type="date" value={ongoingFilter.startDate} onChange={e => setOngoingFilter({...ongoingFilter, startDate: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100" />
+                                    <span className="text-slate-300 font-bold">~</span>
+                                    <Input type="date" value={ongoingFilter.endDate} onChange={e => setOngoingFilter({...ongoingFilter, endDate: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-slate-100" />
+                                </div>
+                            </div>
+                            <div className="flex items-end pb-1">
+                                <Button onClick={() => handleSearch()} disabled={isSearching} className="w-full h-11 bg-[#001489] hover:bg-blue-900 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-blue-900/10 transition-all">
+                                    {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "SEARCH"}
+                                </Button>
+                            </div>
+                            {/* Checkbox filters */}
+                            <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50 mt-2">
+                                <div className="flex items-center gap-6">
+                                    <label className="text-[10px] font-black text-[#001489] uppercase tracking-widest">Self/Ext:</label>
+                                    <div className="flex items-center gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="checkbox" className="w-4 h-4 rounded border-slate-200 text-[#001489] focus:ring-[#001489]" checked={ongoingFilter.selfExt === '1'} onChange={e => setOngoingFilter({...ongoingFilter, selfExt: e.target.checked ? '1' : ''})} />
+                                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#001489] transition-colors">SELF</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="checkbox" className="w-4 h-4 rounded border-slate-200 text-[#001489] focus:ring-[#001489]" checked={ongoingFilter.selfExt === '0'} onChange={e => setOngoingFilter({...ongoingFilter, selfExt: e.target.checked ? '0' : ''})} />
+                                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#001489] transition-colors">EXTN</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <label className="text-[10px] font-black text-[#001489] uppercase tracking-widest">In House/On Site:</label>
+                                    <div className="flex items-center gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="checkbox" className="w-4 h-4 rounded border-slate-200 text-[#001489] focus:ring-[#001489]" checked={ongoingFilter.onoffSite === 'B'} onChange={e => setOngoingFilter({...ongoingFilter, onoffSite: e.target.checked ? 'B' : ''})} />
+                                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#001489] transition-colors">IN HOUSE</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="checkbox" className="w-4 h-4 rounded border-slate-200 text-[#001489] focus:ring-[#001489]" checked={ongoingFilter.onoffSite === 'A'} onChange={e => setOngoingFilter({...ongoingFilter, onoffSite: e.target.checked ? 'A' : ''})} />
+                                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#001489] transition-colors">ON SITE</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden min-h-[500px] flex flex-col">
+                        <div className="px-10 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-6 bg-[#001489] rounded-full" />
+                                <h3 className="text-xs font-black text-slate-900 tracking-[0.2em] uppercase">Ongoing List</h3>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{results.length} Items Found</p>
+                        </div>
+                        <div className="flex-1 overflow-auto custom-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[3000px]">
+                                <thead className="bg-[#001489]/5 sticky top-0 z-20">
+                                    <tr className="divide-x divide-slate-200">
+                                        <th className="px-4 py-4 w-12 text-center">
+                                            <input type="checkbox" onChange={(e) => {
+                                                if (e.target.checked) setSelectedRows(results.map(r => r.ISID));
+                                                else setSelectedRows([]);
+                                            }} checked={selectedRows.length === results.length && results.length > 0} className="rounded" />
+                                        </th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-40">CHK</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-40">REGNO</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">RESERVED</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">SCHEDULED DATE</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-64">REASON OF DELAY</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-72">EQPT</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-60">MODEL</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-60">SN</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-72">APPLICANT NAME</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">CALNO</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">STATE(CAL)</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-40">REC DATE</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-40">TARGET DATE</th>
+                                        <th className="px-6 py-4 text-[10px) font-black uppercase text-slate-500 tracking-[0.2em] w-48">MAKER</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">ACC</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-80">REQUIRE(CAL)</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-80">EXTERIOR MEMO</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-80">MEMO(REG)</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">DIVISION</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">DEPART</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">CONTACT PERSON</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">TEL</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">CAL_TYPE</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">RECEPTIONIST</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] w-48">SUBCONTRACTOR</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {results.map((eq, idx) => {
+                                        const isDelayed = eq.SCHE && eq.SCHE.trim() !== "" && eq.SCHE < new Date().toISOString().slice(0, 10).replace(/-/g, "");
+                                        return (
+                                            <tr 
+                                                key={eq.ISID + idx} 
+                                                className={`divide-x divide-slate-50 hover:bg-slate-50/80 transition-color group ${isDelayed ? "bg-rose-50/30" : ""}`}
+                                            >
+                                                <td className="px-4 py-4 text-center">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedRows.includes(eq.ISID)} 
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedRows([...selectedRows, eq.ISID]);
+                                                            else setSelectedRows(selectedRows.filter(id => id !== eq.ISID));
+                                                        }}
+                                                        className="rounded text-[#001489] focus:ring-[#001489]" 
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 text-xs font-black text-[#001489]">{eq.ISID}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.REG_ENGINEER || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{formatDate(eq.NEXT || "")}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-rose-600 italic">{eq.DELAY_RSN || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-900">{eq.NAEM_SUP || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.MODL || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.SERN || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-900">{eq.APPLICANT || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-950">{eq.CALN || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-emerald-600 uppercase tracking-tighter">{eq.STATUS_NAME || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-400">{formatDate(eq.CASD || "")}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-400">{formatDate(eq.SCHE || "")}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.MANUFACTURE || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.ACC1 || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-medium text-slate-500 italic truncate max-w-xs">{eq.MEMO_CAL || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-medium text-slate-500 italic truncate max-w-xs">{eq.ACC2 || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-medium text-slate-500 italic truncate max-w-xs">{eq.MEMO || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.DIVN || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.DEPART || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-900">{eq.OWNM || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.CTEL || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.MODE_NAME || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600">{eq.RECEPTIONIST || "—"}</td>
+                                                <td className="px-6 py-4 text-xs font-bold text-slate-600italic">{eq.EXTN || "—"}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Sticky Bottom Set Bar */}
+                        <div className="p-8 border-t border-slate-100 bg-slate-50/80 backdrop-blur-md flex flex-wrap items-center gap-8">
+                            <div className="flex items-center gap-4">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#001489]">Reserved Person:</label>
+                                <select 
+                                    className="h-11 px-6 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#001489]/20"
+                                    value={batchUpdate.engineer}
+                                    onChange={e => setBatchUpdate({...batchUpdate, engineer: e.target.value})}
+                                >
+                                    <option value="">SELECT...</option>
+                                    {lookups?.employees.map(e => <option key={e.CODE} value={e.CODE}>{e.NAME}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#001489]">Scheduled Date:</label>
+                                <Input type="date" className="h-11 w-48 rounded-xl bg-white border-slate-200" value={batchUpdate.date} onChange={e => setBatchUpdate({...batchUpdate, date: e.target.value})} />
+                            </div>
+                            <div className="flex items-center gap-4 flex-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#001489]">Reason of Delay:</label>
+                                <Input className="h-11 flex-1 rounded-xl bg-white border-slate-200" value={batchUpdate.reason} onChange={e => setBatchUpdate({...batchUpdate, reason: e.target.value})} />
+                            </div>
+                            <Button 
+                                className="h-11 px-10 bg-[#001489] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 active:scale-95 transition-all"
+                                onClick={() => {
+                                    if (selectedRows.length === 0) {
+                                        toast.error("변경할 장비를 선택해주세요");
+                                        return;
+                                    }
+                                    toast.info(`${selectedRows.length}개 장비 일괄 업데이트 기능 준비 중...`);
+                                }}
+                            >
+                                SET
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            {/* Results List */}
-            {results.length > 1 && !showSelectModal && selectedEquipment && (
+            {/* Results List (Equipment Picker for standard search) */}
+            {activeTab !== "ongoing" && results.length > 1 && !showSelectModal && selectedEquipment && (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-top-4 duration-500">
                     <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -511,8 +757,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 </div>
             )}
 
-            {/* Equipment Detail Card */}
-            {selectedEquipment && editData && (
+            {/* Equipment Detail Card (Only for non-ongoing or specific selection) */}
+            {activeTab !== "ongoing" && selectedEquipment && editData && (
                 <div className="grid grid-cols-1 gap-8 animate-in slide-in-from-bottom-6 duration-700">
                     <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                         <div className="p-8 md:p-12 border-b border-slate-100 bg-gradient-to-br from-white via-slate-50/30 to-[#001489]/5">

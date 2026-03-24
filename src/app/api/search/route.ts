@@ -109,6 +109,79 @@ export async function GET(request: Request) {
             const masterRows = await query<any>(masterSql, masterParams);
             return NextResponse.json(masterRows);
         }
+
+        if (mode === "ongoing") {
+            const regno = searchParams.get("regno") || "";
+            const calno = searchParams.get("calno") || "";
+            const applicant = searchParams.get("applicant") || "";
+            const contactPerson = searchParams.get("contact_person") || "";
+            const engineer = searchParams.get("engineer") || "";
+            const startDate = searchParams.get("startDate") || "";
+            const endDate = searchParams.get("endDate") || "";
+            const selfExt = searchParams.get("selfExt") || ""; // '1'=Self, '0'=Extn, '2'=None, ''=Both
+            const onoffSite = searchParams.get("onoffSite") || ""; // 'A'=OnSite, 'B'=InHouse, 'Z'=None, ''=Both
+
+            let ongoingSql = `
+                SELECT 
+                    TRIM(A.ISID) as ISID,                -- 등록번호
+                    TRIM(B.EMNM) as REG_ENGINEER,        -- 완료예정자
+                    TRIM(A.EXP_DATE) as NEXT,           -- 완료예정일 (SCHEDULED DATE)
+                    TRIM(A.DELAY_RSN) as DELAY_RSN,     -- 지연사유
+                    TRIM(E.NAEM_SUP) as NAEM_SUP,       -- 장비이름
+                    TRIM(E.MODL) as MODL,               -- 모델명
+                    TRIM(E.SERN) as SERN,               -- 시리얼번호
+                    TRIM(D.CONM) as APPLICANT,          -- 고객사 이름
+                    TRIM(A.CIDU) as CALN,               -- 접수번호
+                    TRIM(C.DESN) as STATUS_NAME,        -- 접수번호 상태
+                    TRIM(A.CASD) as CASD,               -- 접수일자
+                    TRIM(A.SCHE) as SCHE,               -- 예정일자
+                    TRIM(F.CONM) as MANUFACTURE,        -- 제조사
+                    TRIM(A.ACC1) as ACC1,               -- 악세사리
+                    TRIM(A.MEMO_CAL) as MEMO_CAL,       -- 교정접수 요구사항
+                    TRIM(A.ACC2) as ACC2,               -- 외관메모
+                    TRIM(E.MEMO) as MEMO,               -- 등록번호 메모
+                    CASE 
+                        WHEN G.DIVN = '99' THEN '99' 
+                        ELSE TRIM(G.DESN) 
+                    END as DIVN,                        -- 부서
+                    CASE 
+                        WHEN H.PART = '9999' THEN '9999' 
+                        ELSE TRIM(H.DESN) 
+                    END as DEPART,                      -- 파트
+                    TRIM(A.CNAM) as OWNM,               -- 담당자 이름
+                    TRIM(A.CTEL) as CTEL,               -- 담당자 연락처
+                    '[' || TRIM(I.MODE_CODE) || '] ' || TRIM(I.MODE_DESC) as MODE_NAME, -- 교정모드
+                    TRIM(J.EMNM) as RECEPTIONIST,       -- 접수자
+                    TRIM(K.CONM) as EXTN                -- 외부반출기관
+                FROM EASYCAL.TBCALMAN A
+                LEFT JOIN EASYCAL.TBEMPMAN B ON A.EXP_RESP = B.EMID
+                LEFT JOIN EASYCAL.TBSTAMAN C ON A.STAT = C.STAT
+                LEFT JOIN EASYCAL.TBSUPMAN D ON A.CCOM = D.COID
+                LEFT JOIN EASYCAL.TBMASMAN E ON A.ISID = E.ISID
+                LEFT JOIN EASYCAL.TBSUPMAN F ON F.COID = E.MNFC
+                LEFT JOIN EASYCAL.TBOWNDIV G ON (A.CCOM = G.CUST AND A.DIVN = G.DIVN)
+                LEFT JOIN EASYCAL.TBOWNPAT H ON (A.CCOM = H.CUST AND A.PART = H.PART)
+                LEFT JOIN EASYCAL.TBMODMAN I ON I.MODE_CODE = E.MODE_CODE
+                LEFT JOIN EASYCAL.TBEMPMAN J ON J.EMID = A.AEID
+                LEFT JOIN EASYCAL.TBSUPMAN K ON K.COID = A.EXTN
+                WHERE (A.STAT = '02' OR A.STAT = '11' OR A.STAT = '05' OR A.STAT = '07')
+            `;
+
+            const params: any = {};
+            if (regno) { ongoingSql += ` AND A.ISID = :regno`; params.regno = regno; }
+            if (calno) { ongoingSql += ` AND A.CIDU = :calno`; params.calno = calno; }
+            if (applicant) { ongoingSql += ` AND D.CONM LIKE :applicant`; params.applicant = `%${applicant}%`; }
+            if (contactPerson) { ongoingSql += ` AND A.CNAM LIKE :cp`; params.cp = `%${contactPerson}%`; }
+            if (engineer) { ongoingSql += ` AND B.EMID = :eng`; params.eng = engineer; }
+            if (selfExt) { ongoingSql += ` AND E.SELF = :selfExt`; params.selfExt = selfExt; }
+            if (onoffSite) { ongoingSql += ` AND A.LOCT_PRE = :onoffSite`; params.onoffSite = onoffSite; }
+            if (startDate) { ongoingSql += ` AND TO_DATE(A.CASD,'YYYYMMDD') >= TO_DATE(:startDate,'YYYYMMDD')`; params.startDate = startDate; }
+            if (endDate) { ongoingSql += ` AND TO_DATE(A.CASD,'YYYYMMDD') <= TO_DATE(:endDate,'YYYYMMDD')`; params.endDate = endDate; }
+
+            ongoingSql += ` ORDER BY A.CASD DESC, A.CIDU DESC`;
+            const rows = await query<any>(ongoingSql, params);
+            return NextResponse.json(rows);
+        }
         let sql = `
             SELECT 
                 TRIM(a.ISID) as ISID,
@@ -184,8 +257,6 @@ export async function GET(request: Request) {
         } else if (mode === "model") {
             sql += ` AND (UPPER(a.MODL) LIKE UPPER(:q) OR UPPER(a.NAEM_SUP) LIKE UPPER(:q) OR UPPER(a.NAEM) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
-        } else if (mode === "ongoing") {
-            sql += ` AND a.ISID IN (SELECT ISID FROM EASYCAL.TBCALMAN WHERE PROS = '0')`;
         } else if (mode === "expirations") {
             sql += ` AND a.NEXT <= TO_CHAR(SYSDATE + 30, 'YYYYMMDD') AND a.NEXT >= TO_CHAR(SYSDATE - 365, 'YYYYMMDD')`;
         }
