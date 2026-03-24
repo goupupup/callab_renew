@@ -473,13 +473,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             handleSearch(mode as SearchMode);
                                         }
                                     }}
-                                    placeholder={
-                                        activeTab === "regNo"
-                                            ? `ENTER ${searchTypeLabels[searchType]}...`
-                                            : activeTab === "calNo"
-                                                ? "ENTER CAL NO..."
-                                                : "ENTER MODEL NAME..."
-                                    }
+                                    placeholder={`ENTER ${searchTypeLabels[searchType]}...`}
                                     className="h-12 border-none bg-transparent shadow-none text-sm font-black uppercase placeholder:text-slate-300 focus-visible:ring-0"
                                 />
                             </div>

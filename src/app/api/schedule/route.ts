@@ -33,7 +33,9 @@ export async function GET(request: Request) {
         // Default: Fetch Schedules (Last 6 months to upcoming)
         const schedules = await query<any>(
             `SELECT 
-                STARTDATE, ENDDATE, SCH_TYPE, DIVISION, MEMO, 
+                TO_CHAR(STARTDATE, 'YYYY-MM-DD') as STARTDATE, 
+                TO_CHAR(ENDDATE, 'YYYY-MM-DD') as ENDDATE, 
+                SCH_TYPE, DIVISION, MEMO, 
                 TRIM(EMID1) as EMID1, TRIM(EMID2) as EMID2, TRIM(EMID3) as EMID3, 
                 TRIM(EMID4) as EMID4, TRIM(EMID5) as EMID5, TRIM(SCHID) as SCHID 
              FROM EASYCAL.TBSCHMAN 

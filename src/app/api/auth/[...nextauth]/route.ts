@@ -1,11 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { query } from "@/lib/db";
 
 // Authentication Migration (Phase 1) 지침에 따른 NextAuth 설정
 // CUSTCAL.TWUSRMAN 테이블을 사용한 레거시 인증 방식 연동
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Calibration Service",
