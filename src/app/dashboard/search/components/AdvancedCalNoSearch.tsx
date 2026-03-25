@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, ChevronDown, Download, History, Loader2, AlertTriangle, X } from 'lucide-react';
+import { Search, Calendar, ChevronDown, Download, History, Loader2, AlertTriangle, X, ArrowUpDown, ChevronUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -22,6 +22,7 @@ interface AdvancedCalNoSearchProps {
 export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProps) {
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
 
     // Filter States
     const [filters, setFilters] = useState({
@@ -50,7 +51,7 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
     const handleSearch = async () => {
         setIsSearching(true);
         try {
-            const params = new URLSearchParams({ mode: "advancedHistory" });
+            const params = new URLSearchParams({ mode: "advancedCalHistory" });
             if (filters.isid) params.append("isid", filters.isid.trim());
             if (filters.calNo) params.append("calNo", filters.calNo.trim());
             if (filters.asset) params.append("asset", filters.asset.trim());
@@ -60,28 +61,15 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
             if (filters.emid) params.append("emid", filters.emid);
             if (filters.calCls) params.append("calCls", filters.calCls);
 
-            // Date formatting
-            const formatDateForBackend = (dateStr: string) => {
-                if (!dateStr) return "";
-                const [y, m, d] = dateStr.split("-");
-                return `${m}${d}${y}`;
-            };
+            if (filters.recStart) params.append("recStart", filters.recStart);
+            if (filters.recEnd) params.append("recEnd", filters.recEnd);
+            if (filters.calStart) params.append("calStart", filters.calStart);
+            if (filters.calEnd) params.append("calEnd", filters.calEnd);
+            if (filters.retStart) params.append("retStart", filters.retStart);
+            if (filters.retEnd) params.append("retEnd", filters.retEnd);
 
-            if (filters.recStart) params.append("recStart", formatDateForBackend(filters.recStart));
-            if (filters.recEnd) params.append("recEnd", formatDateForBackend(filters.recEnd));
-            if (filters.calStart) params.append("calStart", formatDateForBackend(filters.calStart));
-            if (filters.calEnd) params.append("calEnd", formatDateForBackend(filters.calEnd));
-            if (filters.retStart) params.append("retStart", formatDateForBackend(filters.retStart));
-            if (filters.retEnd) params.append("retEnd", formatDateForBackend(filters.retEnd));
-
-            // Logic: Site Type
-            let onsite = "";
-            if (filters.inHouse && filters.onSite) {
-                onsite = "";
-            } else {
-                onsite = filters.onSite ? "A" : "B";
-            }
-            if (onsite) params.append("onsite", onsite);
+            params.append("inHouse", filters.inHouse.toString());
+            params.append("onSite", filters.onSite.toString());
 
             const res = await fetch(`/api/search?${params.toString()}`);
             if (!res.ok) throw new Error("Search failed");
@@ -100,6 +88,34 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
         return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
     };
 
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedResults = React.useMemo(() => {
+        if (!sortConfig.key || !sortConfig.direction) return results;
+
+        return [...results].sort((a, b) => {
+            const aVal = a[sortConfig.key] || '';
+            const bVal = b[sortConfig.key] || '';
+
+            if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [results, sortConfig]);
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (sortConfig.key !== columnKey) return <ArrowUpDown className="w-3 h-3 ml-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp className="w-3 h-3 ml-1 text-indigo-500" /> 
+            : <ChevronDown className="w-3 h-3 ml-1 text-indigo-500" />;
+    };
+
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500">
             {/* Search Condition Panel */}
@@ -112,198 +128,183 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
                     <p className="text-[10px] font-bold text-slate-400 leading-tight">Calibration History Search Engine</p>
                 </div>
 
-                <div className="p-4 md:p-5 xl:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-x-4 md:gap-y-4 flex-1">
-                    {/* Basic Fields */}
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">REG NO</label>
+                <div className="p-4 grid grid-cols-[auto_1fr_auto_1.5fr_auto_1.5fr_auto] gap-x-3 gap-y-2 items-center flex-1 overflow-visible">
+                    {/* Row 0 */}
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">REGNO :</label>
+                    <Input 
+                        value={filters.isid}
+                        onChange={(e) => updateFilter("isid", e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="h-8 text-[11px] bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md" 
+                    />
+                    
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">REC DATE :</label>
+                    <div className="flex items-center gap-1">
                         <Input 
-                            value={filters.isid}
-                            onChange={(e) => updateFilter("isid", e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300" 
-                            placeholder="e.g. 1234" 
+                            type="date" 
+                            value={filters.recStart}
+                            onChange={(e) => updateFilter("recStart", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
                         />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CAL NO</label>
+                        <span className="text-slate-300">~</span>
                         <Input 
-                            value={filters.calNo}
-                            onChange={(e) => updateFilter("calNo", e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300" 
-                            placeholder="e.g. 240401-01" 
+                            type="date" 
+                            value={filters.recEnd}
+                            onChange={(e) => updateFilter("recEnd", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
                         />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">ASSET</label>
-                        <Input 
-                            value={filters.asset}
-                            onChange={(e) => updateFilter("asset", e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300" 
-                            placeholder="Asset No." 
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CERT NO</label>
-                        <Input 
-                            value={filters.certNo}
-                            onChange={(e) => updateFilter("certNo", e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300" 
-                            placeholder="Cert No." 
-                        />
-                    </div>
-
-                    {/* Searchable Comboboxes */}
-                    <div className="space-y-1.5 xl:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">APPLICANT</label>
-                        <SearchableDropdown 
-                            options={lookups?.suppliers || []}
-                            value={filters.ccom}
-                            onChange={(v) => updateFilter("ccom", v)}
-                            placeholder="Type to search company..."
-                        />
-                    </div>
-
-                    <div className="space-y-1.5 lg:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">MANUFACTURER</label>
-                        <SearchableDropdown 
-                            options={lookups?.suppliers || []}
-                            value={filters.mnfc}
-                            onChange={(v) => updateFilter("mnfc", v)}
-                            placeholder="Type to search maker..."
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">ENGINEER</label>
-                        <SearchableDropdown 
-                            options={lookups?.employees || []}
-                            value={filters.emid}
-                            onChange={(v) => updateFilter("emid", v)}
-                            placeholder="Any Engineer"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CATEGORY</label>
-                        <div className="relative">
-                            <select 
-                                value={filters.calCls}
-                                onChange={(e) => updateFilter("calCls", e.target.value)}
-                                className="w-full h-9 bg-slate-50 border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500/50 rounded-lg px-3 text-xs font-medium text-slate-700 appearance-none"
-                            >
-                                <option value="">Any</option>
-                                {lookups?.types.map(t => (
-                                    <option key={t.CODE} value={t.CODE}>{t.NAME}</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                        </div>
-                    </div>
-
-
-                    {/* Date Ranges */}
-                    <div className="space-y-1.5 xl:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">REC DATE</label>
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                type="date" 
-                                value={filters.recStart}
-                                onChange={(e) => updateFilter("recStart", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                            <span className="text-slate-300 font-bold">~</span>
-                            <Input 
-                                type="date" 
-                                value={filters.recEnd}
-                                onChange={(e) => updateFilter("recEnd", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-1.5 xl:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CAL DATE</label>
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                type="date" 
-                                value={filters.calStart}
-                                onChange={(e) => updateFilter("calStart", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                            <span className="text-slate-300 font-bold">~</span>
-                            <Input 
-                                type="date" 
-                                value={filters.calEnd}
-                                onChange={(e) => updateFilter("calEnd", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-1.5 xl:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">RET DATE</label>
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                type="date" 
-                                value={filters.retStart}
-                                onChange={(e) => updateFilter("retStart", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                            <span className="text-slate-300 font-bold">~</span>
-                            <Input 
-                                type="date" 
-                                value={filters.retEnd}
-                                onChange={(e) => updateFilter("retEnd", e.target.value)}
-                                className="h-9 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg text-[11px] px-2" 
-                            />
-                        </div>
-                    </div>
-
-                    {/* Bottom Actions */}
-                    <div className="xl:col-span-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-3 border-t border-slate-100 mt-1">
-                        <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Site Type:</span>
-                            <label className="flex items-center gap-1.5 cursor-pointer group">
-                                <input 
-                                    type="checkbox" 
-                                    checked={filters.inHouse}
-                                    onChange={(e) => updateFilter("inHouse", e.target.checked)}
-                                    className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-600/20" 
-                                />
-                                <span className="text-[10px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">IN HOUSE</span>
-                            </label>
-                            <label className="flex items-center gap-1.5 cursor-pointer group">
-                                <input 
-                                    type="checkbox" 
-                                    checked={filters.onSite}
-                                    onChange={(e) => updateFilter("onSite", e.target.checked)}
-                                    className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-600/20" 
-                                />
-                                <span className="text-[10px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">ON SITE</span>
-                            </label>
-                        </div>
-
-                        <Button
-                            onClick={handleSearch}
-                            disabled={isSearching}
-                            className="h-10 px-8 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20 transition-all active:scale-95 w-full md:w-auto"
-                        >
-                            {isSearching ? <span className="animate-pulse flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Searching...</span> : "Search History"}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 shrink-0">
+                            <Calendar className="w-4 h-4" />
                         </Button>
                     </div>
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">APPLICANT :</label>
+                    <SearchableDropdown 
+                        options={lookups?.suppliers || []}
+                        value={filters.ccom}
+                        onChange={(v) => updateFilter("ccom", v)}
+                        placeholder=""
+                    />
+                    <div />
+
+                    {/* Row 1 */}
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">CALNO :</label>
+                    <Input 
+                        value={filters.calNo}
+                        onChange={(e) => updateFilter("calNo", e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="h-8 text-[11px] bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md" 
+                    />
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">CAL DATE :</label>
+                    <div className="flex items-center gap-1">
+                        <Input 
+                            type="date" 
+                            value={filters.calStart}
+                            onChange={(e) => updateFilter("calStart", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
+                        />
+                        <span className="text-slate-300">~</span>
+                        <Input 
+                            type="date" 
+                            value={filters.calEnd}
+                            onChange={(e) => updateFilter("calEnd", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 shrink-0">
+                            <Calendar className="w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">ENGINEER :</label>
+                    <SearchableDropdown 
+                        options={lookups?.employees || []}
+                        value={filters.emid}
+                        onChange={(v) => updateFilter("emid", v)}
+                        placeholder=""
+                    />
+                    <div />
+
+                    {/* Row 2 */}
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">ASSET :</label>
+                    <Input 
+                        value={filters.asset}
+                        onChange={(e) => updateFilter("asset", e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="h-8 text-[11px] bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md" 
+                    />
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">RET DATE :</label>
+                    <div className="flex items-center gap-1">
+                        <Input 
+                            type="date" 
+                            value={filters.retStart}
+                            onChange={(e) => updateFilter("retStart", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
+                        />
+                        <span className="text-slate-300">~</span>
+                        <Input 
+                            type="date" 
+                            value={filters.retEnd}
+                            onChange={(e) => updateFilter("retEnd", e.target.value)}
+                            className="h-8 flex-1 bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md text-[11px] px-1" 
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 shrink-0">
+                            <Calendar className="w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">MANUFACTURER :</label>
+                    <SearchableDropdown 
+                        options={lookups?.suppliers || []}
+                        value={filters.mnfc}
+                        onChange={(v) => updateFilter("mnfc", v)}
+                        placeholder=""
+                    />
+                    <div />
+
+                    {/* Row 3 */}
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">CERT NO :</label>
+                    <Input 
+                        value={filters.certNo}
+                        onChange={(e) => updateFilter("certNo", e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="h-8 text-[11px] bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-md" 
+                    />
+
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">CATEGORY :</label>
+                    <div className="relative">
+                        <select 
+                            value={filters.calCls}
+                            onChange={(e) => updateFilter("calCls", e.target.value)}
+                            className="w-full h-8 bg-slate-50 border border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500/50 rounded-md px-2 text-[11px] font-medium text-slate-700 appearance-none"
+                        >
+                            <option value=""></option>
+                            {lookups?.types.map(t => (
+                                <option key={t.CODE} value={t.CODE}>{t.NAME}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
+                    </div>
+
+                    <div className="col-span-2 flex items-center gap-4 bg-slate-100/50 px-3 py-1 rounded-md border border-slate-100 h-8 self-center">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">IN HOUSE/ON SITE :</span>
+                        <label className="flex items-center gap-1.5 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={filters.inHouse}
+                                onChange={(e) => updateFilter("inHouse", e.target.checked)}
+                                className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-600/20" 
+                            />
+                            <span className="text-[9px] font-bold text-slate-600 group-hover:text-indigo-600 transition-colors uppercase">IN HOUSE</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={filters.onSite}
+                                onChange={(e) => updateFilter("onSite", e.target.checked)}
+                                className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-600/20" 
+                            />
+                            <span className="text-[9px] font-bold text-slate-600 group-hover:text-indigo-600 transition-colors uppercase">ON SITE</span>
+                        </label>
+                    </div>
+
+                    <Button
+                        onClick={handleSearch}
+                        disabled={isSearching}
+                        className="h-8 px-6 bg-indigo-600 hover:bg-indigo-700 rounded-md text-[10px] font-black uppercase tracking-[0.2em] shadow-md shadow-indigo-600/10 transition-all active:scale-95 whitespace-nowrap"
+                    >
+                        {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "SEARCH"}
+                    </Button>
                 </div>
             </div>
 
-            {/* Results Grid */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
-                            CAL / REP History
-                            <span className="bg-indigo-600/10 text-indigo-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
-                        </h3>
-                    </div>
+                <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                        CAL/REP HISTORY
+                        <span className="bg-indigo-600/10 text-indigo-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
+                    </h3>
                     <Button variant="outline" size="sm" className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200">
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
@@ -315,39 +316,70 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead className="bg-slate-50/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-indigo-600">REG NO</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">CAL NO</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">CERT NO</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">STATE</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-[#001489]">EQPT NAME</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">MODEL</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">APPLICANT</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-emerald-600 text-center">CAL DATE</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-rose-600 text-center">DUE DATE</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">REC DATE</th>
-                                    <th className="px-4 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">RET DATE</th>
+                                    {[
+                                        { key: 'ISID', label: 'REGNO', color: 'text-indigo-600' },
+                                        { key: 'CIDU', label: 'CALNO', color: 'text-slate-400' },
+                                        { key: 'CERTNO', label: 'CERT NO', color: 'text-slate-400' },
+                                        { key: 'STATUS_NAME', label: 'STATE(CAL)', color: 'text-slate-400', align: 'center' },
+                                        { key: 'APPLICANT', label: 'APPLICANT', color: 'text-slate-400' },
+                                        { key: 'EQIP_NAME', label: 'EQIP NAME', color: 'text-[#001489]' },
+                                        { key: 'MODEL', label: 'MODEL', color: 'text-slate-400' },
+                                        { key: 'SN', label: 'SN', color: 'text-slate-400' },
+                                        { key: 'MNFC_NAME', label: 'MANUFACTURER', color: 'text-slate-400' },
+                                        { key: 'ASSET', label: 'ASSET', color: 'text-slate-400' },
+                                        { key: 'REC_DATE', label: 'REC DATE', color: 'text-slate-400' },
+                                        { key: 'CAL_DATE', label: 'CAL DATE', color: 'text-emerald-600' },
+                                        { key: 'APPV_DATE', label: 'APPV DATE', color: 'text-slate-400' },
+                                        { key: 'DUE_DATE', label: 'DUE DATE', color: 'text-rose-600' },
+                                        { key: 'TERM', label: 'TERM', color: 'text-slate-400' },
+                                        { key: 'RET_DATE', label: 'RET DATE', color: 'text-slate-400' },
+                                        { key: 'REC_TYPE', label: 'REC TYPE', color: 'text-slate-400' },
+                                        { key: 'CAL_TYPE', label: 'CAL TYPE', color: 'text-slate-400' },
+                                        { key: 'CONTACT', label: 'CONTACT', color: 'text-slate-400' },
+                                        { key: 'CANCEL_RSN', label: 'CANCEL REASON', color: 'text-slate-400' }
+                                    ].map(col => (
+                                        <th 
+                                            key={col.key}
+                                            onClick={() => requestSort(col.key)}
+                                            className={`px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors ${col.align === 'center' ? 'text-center' : ''}`}
+                                        >
+                                            <div className={`flex items-center ${col.align === 'center' ? 'justify-center' : ''}`}>
+                                                {col.label}
+                                                <SortIcon columnKey={col.key} />
+                                            </div>
+                                        </th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-medium">
-                                {results.map((row, idx) => (
+                                {sortedResults.map((row, idx) => (
                                     <tr key={idx} className="hover:bg-indigo-600/5 transition-colors cursor-pointer group">
-                                        <td className="px-4 py-2 text-[11px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{row.ISID}</td>
-                                        <td className="px-4 py-2 text-[11px] font-bold text-slate-600 uppercase">{row.CIDU}</td>
-                                        <td className="px-4 py-2 text-[11px] font-bold text-slate-400">{row.KOLAS_NO || "—"}</td>
-                                        <td className="px-4 py-2 text-center">
+                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{row.ISID}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600 uppercase">{row.CIDU}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-400">{row.CERTNO || "—"}</td>
+                                        <td className="px-3 py-2 text-center">
                                             <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${
-                                                row.STATUS_NAME === 'CANCEL' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                                row.STATUS_NAME === 'Cancelled' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                                             }`}>
                                                 {row.STATUS_NAME || "OK"}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-2 text-[11px] font-bold text-[#001489] bg-slate-50/50">{row.NAEM_SUP}</td>
-                                        <td className="px-4 py-2 text-[11px] text-slate-500">{row.MODL}</td>
-                                        <td className="px-4 py-2 text-[11px] text-slate-600 text-center truncate max-w-[120px]" title={row.CUSTOMER_NAME}>{row.CUSTOMER_NAME || "—"}</td>
-                                        <td className="px-4 py-2 text-[11px] font-black text-emerald-600 bg-emerald-50/50 text-center">{formatDate(row.CARD)}</td>
-                                        <td className="px-4 py-2 text-[11px] font-black text-rose-600 bg-rose-50/50 text-center">{formatDate(row.NEXT)}</td>
-                                        <td className="px-4 py-2 text-[11px] text-slate-400 text-center">{formatDate(row.CASD)}</td>
-                                        <td className="px-4 py-2 text-[11px] text-slate-400 text-center">{formatDate(row.ROTD)}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-600 truncate max-w-[120px]" title={row.APPLICANT}>{row.APPLICANT || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-[#001489] bg-slate-50/50">{row.EQIP_NAME}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.MODEL}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.SN || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.MNFC_NAME || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.ASSET || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-400">{formatDate(row.REC_DATE)}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-emerald-600 bg-emerald-50/50">{formatDate(row.CAL_DATE)}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-400">{formatDate(row.APPV_DATE)}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-rose-600 bg-rose-50/50">{formatDate(row.DUE_DATE)}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.TERM ? `${row.TERM}m` : "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-400">{formatDate(row.RET_DATE)}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.REC_TYPE || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.CAL_TYPE || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-500">{row.CONTACT || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] text-slate-400 italic truncate max-w-[150px]" title={row.CANCEL_RSN}>{row.CANCEL_RSN || "—"}</td>
                                     </tr>
                                 ))}
                             </tbody>

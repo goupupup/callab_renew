@@ -12,6 +12,13 @@ const dbConfig = {
         : `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))(CONNECT_DATA=(SID=XE)))`,
 };
 
+// Helper to extract code from [CODE] Description format
+const extractCode = (str: string) => {
+    if (!str) return str;
+    const match = str.match(/\[(.*?)\]/);
+    return match ? match[1].trim() : str.trim();
+};
+
 // GET: Fetch schedules and employees
 export async function GET(request: Request) {
     const session = await getServerSession(authOptions) as any;
@@ -25,7 +32,7 @@ export async function GET(request: Request) {
     try {
         if (mode === "employees") {
             const employees = await query<any>(
-                `SELECT TRIM(EMID) as ID, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN ORDER BY NAME ASC`
+                `SELECT TRIM(EMID) as ID, '[' || TRIM(EMID) || '] ' || TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN ORDER BY NAME ASC`
             );
             return NextResponse.json(employees);
         }
@@ -57,7 +64,16 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { startDate, endDate, schType, division, memo, emid1, emid2, emid3, emid4, emid5 } = body;
+        const startDate = body.startDate;
+        const endDate = body.endDate;
+        const schType = body.schType;
+        const division = body.division;
+        const memo = body.memo;
+        const emid1 = extractCode(body.emid1);
+        const emid2 = extractCode(body.emid2);
+        const emid3 = extractCode(body.emid3);
+        const emid4 = extractCode(body.emid4);
+        const emid5 = extractCode(body.emid5);
 
         const conn = await oracledb.getConnection(dbConfig);
         try {
@@ -99,7 +115,17 @@ export async function PUT(request: Request) {
 
     try {
         const body = await request.json();
-        const { startDate, endDate, schType, division, memo, emid1, emid2, emid3, emid4, emid5, schId } = body;
+        const startDate = body.startDate;
+        const endDate = body.endDate;
+        const schType = body.schType;
+        const division = body.division;
+        const memo = body.memo;
+        const emid1 = extractCode(body.emid1);
+        const emid2 = extractCode(body.emid2);
+        const emid3 = extractCode(body.emid3);
+        const emid4 = extractCode(body.emid4);
+        const emid5 = extractCode(body.emid5);
+        const schId = extractCode(body.schId);
 
         const conn = await oracledb.getConnection(dbConfig);
         try {

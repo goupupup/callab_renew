@@ -12,6 +12,13 @@ const dbConfig = {
         : `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))(CONNECT_DATA=(SID=XE)))`,
 };
 
+// Helper to extract code from [CODE] Description format
+const extractCode = (str: string) => {
+    if (!str) return str;
+    const match = str.match(/\[(.*?)\]/);
+    return match ? match[1].trim() : str.trim();
+};
+
 // GET: Search equipment or fetch lookups
 export async function GET(request: Request) {
     const session = await getServerSession(authOptions) as any;
@@ -21,7 +28,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get("mode");
-    const q = searchParams.get("q")?.trim() || "";
+    const q = extractCode(searchParams.get("q") || "");
     const role = session.user.role;
     const isMaster = role === "MASTER";
 
@@ -29,34 +36,34 @@ export async function GET(request: Request) {
         // ── Lookups ──────────────────────────────────────────
         if (mode === "lookups") {
             const [types, modes, statuses, suppliers, employees, subcontractors] = await Promise.all([
-                query<any>(`SELECT DISTINCT TRIM(TYEP) as CODE, '[' || TRIM(TYEP) || '] ' || TRIM(DESN) as NAME FROM EASYCAL.TBTYPMAN WHERE TYEP IS NOT NULL ORDER BY CODE`),
-                query<any>(`SELECT DISTINCT TRIM(MODE_CODE) as CODE, '[' || TRIM(MODE_CODE) || '] ' || TRIM(MODE_DESC) as NAME FROM EASYCAL.TBMODMAN WHERE MODE_CODE IS NOT NULL ORDER BY CODE`),
-                query<any>(`SELECT DISTINCT TRIM(STAT) as CODE, '[' || TRIM(STAT) || '] ' || TRIM(DESN) as NAME FROM EASYCAL.TBSTAMAN WHERE STAT IS NOT NULL ORDER BY CODE`),
+                query<any>(`SELECT DISTINCT TRIM(TYEP) as CODE, '[' || TRIM(TYEP) || '] ' || TRIM(DESN) as NAME FROM EASYCAL.TBTYPMAN WHERE TYEP IS NOT NULL ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(MODE_CODE) as CODE, '[' || TRIM(MODE_CODE) || '] ' || TRIM(MODE_DESC) as NAME FROM EASYCAL.TBMODMAN WHERE MODE_CODE IS NOT NULL ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(STAT) as CODE, '[' || TRIM(STAT) || '] ' || TRIM(DESN) as NAME FROM EASYCAL.TBSTAMAN WHERE STAT IS NOT NULL ORDER BY NAME`),
                 query<any>(`SELECT DISTINCT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN ORDER BY NAME`),
-                query<any>(`SELECT DISTINCT TRIM(EMID) as CODE, TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN WHERE DIVISION LIKE '%#CAL%' AND TRIM(STAT) <> 'Retiree' ORDER BY NAME`),
-                query<any>(`SELECT DISTINCT TRIM(CONM) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN WHERE TRIM(COT2) = '1' AND CONM IS NOT NULL ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(EMID) as CODE, '[' || TRIM(EMID) || '] ' || TRIM(EMNM) as NAME FROM EASYCAL.TBEMPMAN WHERE (DIVISION LIKE '%#CAL%' OR DIVISION LIKE '%#TECH%') AND TRIM(STAT) <> 'Retiree' ORDER BY NAME`),
+                query<any>(`SELECT DISTINCT TRIM(COID) as CODE, TRIM(CONM) as NAME FROM EASYCAL.TBSUPMAN WHERE TRIM(COT2) = '1' AND CONM IS NOT NULL ORDER BY NAME`),
             ]);
             return NextResponse.json({ types, modes, statuses, suppliers, employees, subcontractors });
         }
 
         // ── Calibration History (Specific for REG NO detail) ──
         if (mode === "calHistory") {
-            const id = (searchParams.get("isid") || searchParams.get("id"))?.trim();
+            const id = extractCode(searchParams.get("isid") || searchParams.get("id") || "");
             if (!id) return NextResponse.json({ error: "ISID required" }, { status: 400 });
 
             const history = await query<any>(`
                 SELECT 
-                    A.CIDU,
-                    A.KOLAS_NO,
-                    A.CASD,
-                    A.CARD,
-                    B.EMNM AS ENGINEER,
-                    C.CONM AS SALE_COMPANY, 
-                    D.CONM AS SUBCON, 
-                    A.CALNO_EXT,
-                    A.CANCEL_RSN,
+                    TRIM(A.CIDU) as CIDU,
+                    TRIM(A.KOLAS_NO) as KOLAS_NO,
+                    TRIM(A.CASD) as CASD,
+                    TRIM(A.CARD) as CARD,
+                    '[' || TRIM(B.EMID) || '] ' || TRIM(B.EMNM) AS ENGINEER,
+                    TRIM(C.CONM) AS SALE_COMPANY, 
+                    TRIM(D.CONM) AS SUBCON, 
+                    TRIM(A.CALNO_EXT) as CALNO_EXT,
+                    TRIM(A.CANCEL_RSN) as CANCEL_RSN,
                     CASE
-                        WHEN E.EMID IS NOT NULL THEN '[' || TRIM(E.EMID) || '] ' || E.EMNM
+                        WHEN E.EMID IS NOT NULL THEN '[' || TRIM(E.EMID) || '] ' || TRIM(E.EMNM)
                     END AS CANCEL_PERSON
                 FROM EASYCAL.TBCALMAN A
                 LEFT JOIN EASYCAL.TBEMPMAN B ON A.EMID = B.EMID
@@ -70,9 +77,9 @@ export async function GET(request: Request) {
         }
 
         if (mode === "masterSearch") {
-            const name = searchParams.get("name")?.trim() || "";
-            const model = searchParams.get("model")?.trim() || "";
-            const manufacturer = searchParams.get("manufacturer")?.trim() || "";
+            const name = extractCode(searchParams.get("name") || "");
+            const model = extractCode(searchParams.get("model") || "");
+            const manufacturer = extractCode(searchParams.get("manufacturer") || "");
 
             let masterSql = `
                 SELECT 
@@ -82,25 +89,26 @@ export async function GET(request: Request) {
                     TRIM(A.MNFCTR) as MNFC,
                     TRIM(A.CALTRM) as CALTRM,
                     TRIM(A.SELF) as SELF,
-                    TRIM(A.MODE_CODE) as MODE_CODE,
+                    '[' || TRIM(A.MODE_CODE) || '] ' || TRIM(C.MODE_DESC) as MODE_NAME,
                     TRIM(A.CLSMAN_EXT) as CLSMAN_EXT,
                     TRIM(A.MDLNO) as MDLNO
                 FROM EASYCAL.TBMDLMAN A
                 LEFT JOIN EASYCAL.TBSUPMAN B ON A.MNFCTR = B.COID
+                LEFT JOIN EASYCAL.TBMODMAN C ON A.MODE_CODE = C.MODE_CODE
                 WHERE 1=1
             `;
             const masterParams: any = {};
 
             if (name) {
-                masterSql += ` AND UPPER(A.EQPNAM) LIKE :name`;
+                masterSql += ` AND TRIM(UPPER(A.EQPNAM)) LIKE :name`;
                 masterParams.name = `%${name.toUpperCase()}%`;
             }
             if (model) {
-                masterSql += ` AND UPPER(A.MDLNAM) LIKE :model`;
+                masterSql += ` AND TRIM(UPPER(A.MDLNAM)) LIKE :model`;
                 masterParams.model = `%${model.toUpperCase()}%`;
             }
             if (manufacturer) {
-                masterSql += ` AND (A.MNFCTR = :manu OR UPPER(B.CONM) LIKE :manuName)`;
+                masterSql += ` AND (TRIM(A.MNFCTR) = :manu OR TRIM(UPPER(B.CONM)) LIKE :manuName)`;
                 masterParams.manu = manufacturer;
                 masterParams.manuName = `%${manufacturer.toUpperCase()}%`;
             }
@@ -110,12 +118,97 @@ export async function GET(request: Request) {
             return NextResponse.json(masterRows);
         }
 
+        if (mode === "advancedCalHistory") {
+            const isid = extractCode(searchParams.get("isid") || "");
+            const calNo = extractCode(searchParams.get("calNo") || "");
+            const asset = extractCode(searchParams.get("asset") || "");
+            const certNo = extractCode(searchParams.get("certNo") || "");
+            const ccom = extractCode(searchParams.get("ccom") || "");
+            const mnfc = extractCode(searchParams.get("mnfc") || "");
+            const emid = extractCode(searchParams.get("emid") || "");
+            const calCls = extractCode(searchParams.get("calCls") || "");
+            const recStart = searchParams.get("recStart") || ""; // expects YYYY-MM-DD from FE
+            const recEnd = searchParams.get("recEnd") || "";
+            const calStart = searchParams.get("calStart") || "";
+            const calEnd = searchParams.get("calEnd") || "";
+            const retStart = searchParams.get("retStart") || "";
+            const retEnd = searchParams.get("retEnd") || "";
+            const inHouse = searchParams.get("inHouse") === "true";
+            const onSite = searchParams.get("onSite") === "true";
+
+            let historySql = `
+                SELECT
+                    TRIM(A.ISID) as ISID,
+                    TRIM(B.CIDU) as CIDU,
+                    TRIM(B.KOLAS_NO) as CERTNO,
+                    (SELECT TRIM(DESN) FROM EASYCAL.TBSTAMAN WHERE STAT = B.STAT) as STATUS_NAME,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.CUST) as APPLICANT,
+                    TRIM(A.NAEM_SUP) as EQIP_NAME,
+                    TRIM(A.MODL) as MODEL,
+                    TRIM(A.SERN) as SN,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.MNFC) as MNFC_NAME,
+                    TRIM(A.ACCN) as ASSET,
+                    TRIM(B.CASD) as REC_DATE,
+                    TRIM(B.CARD) as CAL_DATE,
+                    TRIM(B.SIDT) as APPV_DATE,
+                    TRIM(A.NEXT) as DUE_DATE,
+                    TRIM(A.TERM) as TERM,
+                    TRIM(B.ROTD) as RET_DATE,
+                    CASE
+                        WHEN B.LOCT = '0' THEN 'Visit'
+                        ELSE 'On Site'
+                    END as REC_TYPE,
+                    (SELECT '['||TRIM(MODE_CODE)||']'||TRIM(MODE_DESC) FROM EASYCAL.TBMODMAN WHERE MODE_CODE = A.MODE_CODE) as CAL_TYPE,
+                    TRIM(B.CNAM) as CONTACT,
+                    TRIM(B.CANCEL_RSN) as CANCEL_RSN
+                FROM EASYCAL.TBMASMAN A
+                LEFT JOIN EASYCAL.TBCALMAN B ON A.ISID = B.ISID
+                WHERE 1=1
+            `;
+
+            const historyParams: any = {};
+
+            // Filters based on README rules
+            if (isid) { historySql += ` AND TRIM(A.ISID) = :isid`; historyParams.isid = isid; }
+            if (calNo) { historySql += ` AND TRIM(B.CIDU) = :calNo`; historyParams.calNo = calNo; }
+            if (asset) { historySql += ` AND TRIM(A.ACCN) = :asset`; historyParams.asset = asset; }
+            if (ccom) { historySql += ` AND TRIM(B.CCOM) = :ccom`; historyParams.ccom = ccom; }
+            if (emid) { historySql += ` AND TRIM(B.EMID) = :emid`; historyParams.emid = emid; }
+            if (mnfc) { historySql += ` AND TRIM(A.MNFC) = :mnfc`; historyParams.mnfc = mnfc; }
+            if (certNo) { historySql += ` AND B.KOLAS_NO = :certNo`; historyParams.certNo = certNo; }
+            if (calCls) { historySql += ` AND A.CALCLS = :calCls`; historyParams.calCls = calCls; }
+
+            // Date filtering (Converting YYYY-MM-DD from FE to MMDDYYYY as per Python TO_DATE target)
+            const toMMDDYYYY = (d: string) => {
+                const parts = d.split('-');
+                if (parts.length === 3) return `${parts[1]}${parts[2]}${parts[0]}`;
+                return d;
+            };
+
+            if (recStart) { historySql += ` AND TRIM(B.CASD) <> '0' AND TO_DATE(B.CASD,'YYYYMMDD') >= TO_DATE(:recStart,'MMDDYYYY')`; historyParams.recStart = toMMDDYYYY(recStart); }
+            if (recEnd) { historySql += ` AND TO_DATE(B.CASD,'YYYYMMDD') <= TO_DATE(:recEnd,'MMDDYYYY')`; historyParams.recEnd = toMMDDYYYY(recEnd); }
+            if (calStart) { historySql += ` AND TRIM(B.CARD) <> '0' AND TO_DATE(B.CARD,'YYYYMMDD') >= TO_DATE(:calStart,'MMDDYYYY')`; historyParams.calStart = toMMDDYYYY(calStart); }
+            if (calEnd) { historySql += ` AND TO_DATE(B.CARD,'YYYYMMDD') <= TO_DATE(:calEnd,'MMDDYYYY')`; historyParams.calEnd = toMMDDYYYY(calEnd); }
+            if (retStart) { historySql += ` AND TRIM(B.ROTD) <> '0' AND TO_DATE(B.ROTD,'YYYYMMDD') >= TO_DATE(:retStart,'MMDDYYYY')`; historyParams.retStart = toMMDDYYYY(retStart); }
+            if (retEnd) { historySql += ` AND TO_DATE(B.ROTD,'YYYYMMDD') <= TO_DATE(:retEnd,'MMDDYYYY')`; historyParams.retEnd = toMMDDYYYY(retEnd); }
+
+            // OnSite/InHouse
+            if (!inHouse || !onSite) {
+                if (onSite) { historySql += ` AND B.LOCT_PRE = 'A'`; }
+                else if (inHouse) { historySql += ` AND B.LOCT_PRE = 'B'`; }
+            }
+
+            historySql += ` ORDER BY B.STAT`;
+            const historyRows = await query<any>(historySql, historyParams);
+            return NextResponse.json(historyRows);
+        }
+
         if (mode === "ongoing") {
-            const regno = searchParams.get("regno") || "";
-            const calno = searchParams.get("calno") || "";
-            const applicant = searchParams.get("applicant") || "";
+            const regno = extractCode(searchParams.get("regno") || "");
+            const calno = extractCode(searchParams.get("calno") || "");
+            const applicant = extractCode(searchParams.get("applicant") || "");
             const contactPerson = searchParams.get("contact_person") || "";
-            const engineer = searchParams.get("engineer") || "";
+            const engineer = extractCode(searchParams.get("engineer") || "");
             const startDate = searchParams.get("startDate") || "";
             const endDate = searchParams.get("endDate") || "";
             const selfExt = searchParams.get("selfExt") || ""; // '1'=Self, '0'=Extn, '2'=None, ''=Both
@@ -124,7 +217,7 @@ export async function GET(request: Request) {
             let ongoingSql = `
                 SELECT 
                     TRIM(A.ISID) as ISID,                -- 등록번호
-                    TRIM(B.EMNM) as REG_ENGINEER,        -- 완료예정자
+                    '[' || TRIM(B.EMID) || '] ' || TRIM(B.EMNM) as REG_ENGINEER,        -- 완료예정자
                     TRIM(A.EXP_DATE) as NEXT,           -- 완료예정일 (SCHEDULED DATE)
                     TRIM(A.DELAY_RSN) as DELAY_RSN,     -- 지연사유
                     TRIM(E.NAEM_SUP) as NAEM_SUP,       -- 장비이름
@@ -151,7 +244,7 @@ export async function GET(request: Request) {
                     TRIM(A.CNAM) as OWNM,               -- 담당자 이름
                     TRIM(A.CTEL) as CTEL,               -- 담당자 연락처
                     '[' || TRIM(I.MODE_CODE) || '] ' || TRIM(I.MODE_DESC) as MODE_NAME, -- 교정모드
-                    TRIM(J.EMNM) as RECEPTIONIST,       -- 접수자
+                    '[' || TRIM(J.EMID) || '] ' || TRIM(J.EMNM) as RECEPTIONIST,       -- 접수자
                     TRIM(K.CONM) as EXTN                -- 외부반출기관
                 FROM EASYCAL.TBCALMAN A
                 LEFT JOIN EASYCAL.TBEMPMAN B ON A.EXP_RESP = B.EMID
@@ -168,8 +261,8 @@ export async function GET(request: Request) {
             `;
 
             const params: any = {};
-            if (regno) { ongoingSql += ` AND A.ISID = :regno`; params.regno = regno; }
-            if (calno) { ongoingSql += ` AND A.CIDU = :calno`; params.calno = calno; }
+            if (regno) { ongoingSql += ` AND TRIM(A.ISID) = :regno`; params.regno = regno; }
+            if (calno) { ongoingSql += ` AND TRIM(A.CIDU) = :calno`; params.calno = calno; }
             if (applicant) { ongoingSql += ` AND D.CONM LIKE :applicant`; params.applicant = `%${applicant}%`; }
             if (contactPerson) { ongoingSql += ` AND A.CNAM LIKE :cp`; params.cp = `%${contactPerson}%`; }
             if (engineer) { ongoingSql += ` AND B.EMID = :eng`; params.eng = engineer; }
@@ -220,7 +313,7 @@ export async function GET(request: Request) {
                 '[' || TRIM(k.EMID) || '] ' || TRIM(k.EMNM) as ASSISTANCE,
                 TRIM(l.DESN) as STATUS_NAME,
                 '[' || TRIM(f.MODE_CODE) || '] ' || TRIM(f.MODE_DESC) as MODE_NAME, 
-                (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = a.ISID) as LATEST_CALNO
+                (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE TRIM(ISID) = TRIM(a.ISID)) as LATEST_CALNO
             FROM EASYCAL.TBMASMAN a
             LEFT JOIN EASYCAL.TBSUPMAN b ON a.MNFC = b.COID
             LEFT JOIN EASYCAL.TBSUPMAN c ON a.CUST = c.COID
@@ -246,16 +339,16 @@ export async function GET(request: Request) {
             sql += ` AND TRIM(UPPER(a.ISID)) = UPPER(:q)`;
             params.q = q;
         } else if (mode === "asset") {
-            sql += ` AND UPPER(a.ACCN) LIKE UPPER(:q)`;
+            sql += ` AND TRIM(UPPER(a.ACCN)) LIKE UPPER(:q)`;
             params.q = `%${q}%`;
         } else if (mode === "sn") {
-            sql += ` AND UPPER(a.SERN) LIKE UPPER(:q)`;
+            sql += ` AND TRIM(UPPER(a.SERN)) LIKE UPPER(:q)`;
             params.q = `%${q}%`;
         } else if (mode === "calNo") {
-            sql += ` AND a.ISID IN (SELECT ISID FROM EASYCAL.TBCALMAN WHERE UPPER(CIDU) LIKE UPPER(:q))`;
+            sql += ` AND a.ISID IN (SELECT ISID FROM EASYCAL.TBCALMAN WHERE UPPER(TRIM(CIDU)) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
         } else if (mode === "model") {
-            sql += ` AND (UPPER(a.MODL) LIKE UPPER(:q) OR UPPER(a.NAEM_SUP) LIKE UPPER(:q) OR UPPER(a.NAEM) LIKE UPPER(:q))`;
+            sql += ` AND (UPPER(TRIM(a.MODL)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM_SUP)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM)) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
         } else if (mode === "expirations") {
             sql += ` AND a.NEXT <= TO_CHAR(SYSDATE + 30, 'YYYYMMDD') AND a.NEXT >= TO_CHAR(SYSDATE - 365, 'YYYYMMDD')`;
@@ -281,10 +374,26 @@ export async function PUT(request: Request) {
 
     try {
         const body = await request.json();
-        const {
-            ISID, STAT, TYEP, MODE_CODE, TERM, LAST, NEXT, CUST, MEMO, ACC1, SELF, EXTN,
-            NAEM_SUP, ACCN, SERN, NAEM, MODL, MNFC
-        } = body;
+        
+        // Extract codes from properties if they contain [CODE] description
+        const ISID = extractCode(body.ISID);
+        const STAT = extractCode(body.STAT);
+        const TYEP = extractCode(body.TYEP);
+        const MODE_CODE = extractCode(body.MODE_CODE);
+        const TERM = body.TERM;
+        const LAST = body.LAST;
+        const NEXT = body.NEXT;
+        const CUST = extractCode(body.CUST);
+        const MEMO = body.MEMO;
+        const ACC1 = body.ACC1;
+        const SELF = body.SELF;
+        const EXTN = extractCode(body.EXTN);
+        const NAEM_SUP = body.NAEM_SUP;
+        const ACCN = body.ACCN;
+        const SERN = body.SERN;
+        const NAEM = body.NAEM;
+        const MODL = body.MODL;
+        const MNFC = extractCode(body.MNFC);
 
         if (!ISID) return NextResponse.json({ error: "ISID is required" }, { status: 400 });
 
@@ -292,7 +401,7 @@ export async function PUT(request: Request) {
 
         try {
             // 1. Get current (Before) state for logging
-            const selectBeforeSql = `SELECT * FROM EASYCAL.TBMASMAN WHERE ISID = :isid`;
+            const selectBeforeSql = `SELECT * FROM EASYCAL.TBMASMAN WHERE TRIM(ISID) = :isid`;
             console.log("🔍 [PUT STEP 1]: Checking current state...", selectBeforeSql);
             const beforeResult = await connection.execute(
                 selectBeforeSql,
@@ -328,7 +437,7 @@ export async function PUT(request: Request) {
                     COST = 0,
                     EQIP = null,
                     CAL_NEXT = null
-                WHERE ISID = :isid
+                WHERE TRIM(ISID) = :isid
             `;
             console.log("🔍 [PUT STEP 2]: Updating TBMASMAN...", updateMasSql);
             await connection.execute(updateMasSql, {

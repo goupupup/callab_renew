@@ -1,69 +1,44 @@
-# Agent Instructions
+# AI 에이전트 가이드 (Agent Instructions)
 
-> This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
+이 파일은 Antigravity(AI 에이전트)와의 원활한 협업을 위한 **행동 지침 및 프로젝트 규칙**을 담고 있습니다.
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+## 🏗 3계층 아키텍처 (The 3-Layer Architecture)
 
-## The 3-Layer Architecture
+우리는 신뢰성을 극대화하기 위해 역할을 세 가지 계층으로 분리하여 운영합니다.
 
-**Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+**1계층: 지시 (Directive - 무엇을 할 것인가)**
+- `directives/` 폴더에 작성된 마크다운 형식의 SOP(표준 운영 절차)입니다.
+- 목표, 입력값, 사용할 도구/스크립트, 기대 결과 및 예외 상황을 정의합니다.
+- 중급 직원이 이해할 수 있는 자연어 수준으로 작성됩니다.
 
-**Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+**2계층: 오케스트레이션 (Orchestration - 의사 결정)**
+- 이것은 저(Antigravity)의 역할입니다. 지능적인 경로 지정(Routing)을 담당합니다.
+- 지시 사항을 읽고, 올바른 순서로 실행 도구를 호출하며, 오류를 처리하고, 필요시 사용자에게 확인을 요청합니다.
+- 사용자의 의도와 실제 실행 사이의 가교 역할을 합니다.
 
-**Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work. Commented well.
+**3계층: 실행 (Execution - 실제 작업 수행)**
+- `execution/` 폴더 내의 결정론적인(Deterministic) Python 스크립트입니다.
+- 환경 변수나 API 토큰 등은 `.env`에서 관리합니다.
+- API 호출, 데이터 처리, 파일 조작, 데이터베이스 상호작용을 실제로 수행합니다.
+- 사람이 직접 하는 것보다 빠르고 신뢰할 수 있으며, 테스트 가능합니다.
 
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+---
 
-## Operating Principles
+## 🧭 운영 원칙 (Operating Principles)
 
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+1.  **도구 우선 확인**: 스크립트를 작성하기 전, `execution/` 폴더 내에 기존 도구가 있는지 먼저 확인합니다.
+2.  **오류 발생 시 자가 수리**: 오류가 발생하면 에러 메시지와 스택 트레이스를 분석하고 스크립트를 수정한 뒤 다시 테스트합니다.
+3.  **학습 내용 반영**: API 제약 조건이나 더 나은 접근 방식을 발견하면 `directives/` 내의 지침을 지속적으로 업데이트합니다.
 
-**2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+---
 
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+## 📂 파일 및 폴더 구조
 
-## Self-annealing loop
+- `.tmp/` - Dossier, 스크랩 데이터 등 중간 처리용 임시 파일 (Git에 포함되지 않음)
+- `execution/` - 실제 기능을 수행하는 Python 스크립트 저장소
+- `directives/` - 마크다운 형식의 표준 운영 절차서 저장소
+- `.env` - 환경 변수 및 API 키 관리
+- `Agent.md` - 지금 읽고 계신 AI 지침서
 
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
 
-## File Organization
-
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
-
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
-
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
-
-## Summary
-
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
+**핵심 원칙**: 로컬 파일은 오직 처리용으로만 사용하며, 사용자가 확인할 최종 결과물은 Google Sheets나 Slides와 같은 클라우드 서비스에 저장됩니다. `.tmp/` 폴더는 언제든 삭제하고 재생성할 수 있어야 합니다.

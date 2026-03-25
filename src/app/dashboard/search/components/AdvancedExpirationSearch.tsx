@@ -1,23 +1,8 @@
-import React, { useState } from 'react';
-import { Search, Calendar, ChevronDown, Download, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Calendar, ChevronDown, Download, AlertTriangle, ArrowUpDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-// Dummy Data for Expirations
-const DUMMY_DATA = Array.from({ length: 8 }, (_, i) => ({
-    id: `EXP-${i}`,
-    regNo: `HC${String(i + 200).padStart(3, '0')}`,
-    calNo: `250210-${String(i + 1).padStart(2, '0')}`,
-    certNo: `C-2502-${String(i + 1).padStart(2, '0')}`,
-    eqptName: i % 2 === 0 ? "SPECTRUM ANALYZER" : "POWER METER",
-    model: i % 2 === 0 ? "N9020A" : "N1911A",
-    sn: `MY5000${i}89`,
-    manufacturer: "KEYSIGHT",
-    applicant: "HCT",
-    dueDate: "2026-02-10",
-    term: "12",
-    contact: "Alice"
-}));
+import { toast } from "sonner";
 
 interface LookupItem {
     CODE: string;
@@ -38,17 +23,75 @@ interface AdvancedExpirationSearchProps {
 export default function AdvancedExpirationSearch({ lookups }: AdvancedExpirationSearchProps) {
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
 
-    const handleSearch = () => {
+    const [filters, setFilters] = useState({
+        applicant: '',
+        dueDateStart: '',
+        dueDateEnd: ''
+    });
+
+    const updateFilter = (key: string, value: string) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleSearch = async () => {
         setIsSearching(true);
-        setTimeout(() => {
-            setResults(DUMMY_DATA);
+        try {
+            const params = new URLSearchParams({ mode: "expirations" });
+            if (filters.applicant) params.append("q", filters.applicant);
+            if (filters.dueDateStart) params.append("startDate", filters.dueDateStart.replace(/-/g, ''));
+            if (filters.dueDateEnd) params.append("endDate", filters.dueDateEnd.replace(/-/g, ''));
+
+            const res = await fetch(`/api/search?${params.toString()}`);
+            if (!res.ok) throw new Error("Search failed");
+            const data = await res.json();
+            setResults(data);
+        } catch (error) {
+            toast.error("Failed to fetch expirations");
+            console.error(error);
+        } finally {
             setIsSearching(false);
-        }, 500);
+        }
+    };
+
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedResults = React.useMemo(() => {
+        if (!sortConfig.key || !sortConfig.direction) return results;
+
+        return [...results].sort((a, b) => {
+            const aVal = String(a[sortConfig.key] || '');
+            const bVal = String(b[sortConfig.key] || '');
+            return sortConfig.direction === 'asc' 
+                ? aVal.localeCompare(bVal, undefined, { numeric: true }) 
+                : bVal.localeCompare(aVal, undefined, { numeric: true });
+        });
+    }, [results, sortConfig]);
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (sortConfig.key !== columnKey) return <ArrowUpDown className="w-3 h-3 ml-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp className="w-3 h-3 ml-1 text-rose-500" /> 
+            : <ChevronDown className="w-3 h-3 ml-1 text-rose-500" />;
+    };
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr || dateStr === '0') return "—";
+        if (dateStr.length === 8) {
+            return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+        }
+        return dateStr;
     };
 
     return (
-        <div className="space-y-4 w-full animate-in fade-in duration-500">
+        <div className="space-y-4 w-full animate-in fade-in duration-500 pb-20">
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-rose-200/60 shadow-sm overflow-hidden flex flex-col xl:flex-row">
                 <div className="p-3 md:p-4 xl:p-5 border-b xl:border-b-0 xl:border-r border-rose-100 bg-rose-50/30 flex flex-col justify-center xl:w-48 shrink-0">
@@ -64,9 +107,13 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                     <div className="space-y-1.5 lg:col-span-1">
                         <label className="text-[10px] font-bold text-rose-500 uppercase tracking-widest pl-1">APPLICANT</label>
                         <div className="relative">
-                            <select className="w-full h-9 bg-white border border-rose-200 outline-none focus:ring-1 focus:ring-rose-500/50 rounded-lg px-3 text-xs font-bold text-slate-700 appearance-none shadow-sm">
+                            <select 
+                                value={filters.applicant}
+                                onChange={e => updateFilter('applicant', e.target.value)}
+                                className="w-full h-9 bg-white border border-rose-200 outline-none focus:ring-1 focus:ring-rose-500/50 rounded-lg px-3 text-xs font-bold text-slate-700 appearance-none shadow-sm"
+                            >
                                 <option value="">All Companies...</option>
-                                <option value="HCT">HCT AMERICA, INC</option>
+                                {lookups?.suppliers.map(s => <option key={s.CODE} value={s.CODE}>{s.NAME}</option>)}
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-400 pointer-events-none" />
                         </div>
@@ -75,13 +122,19 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                     <div className="space-y-1.5 lg:col-span-1">
                         <label className="text-[10px] font-bold text-rose-500 uppercase tracking-widest pl-1">DUE DATE OF CAL</label>
                         <div className="flex items-center gap-2">
-                            <div className="relative flex-1">
-                                <Input type="date" className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" />
-                            </div>
+                            <Input 
+                                type="date" 
+                                value={filters.dueDateStart}
+                                onChange={e => updateFilter('dueDateStart', e.target.value)}
+                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" 
+                            />
                             <span className="text-rose-300 font-bold">~</span>
-                            <div className="relative flex-1">
-                                <Input type="date" className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" />
-                            </div>
+                            <Input 
+                                type="date" 
+                                value={filters.dueDateEnd}
+                                onChange={e => updateFilter('dueDateEnd', e.target.value)}
+                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" 
+                            />
                         </div>
                     </div>
 
@@ -91,7 +144,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                             disabled={isSearching}
                             className="h-9 w-full bg-rose-600 hover:bg-rose-700 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-rose-600/20 transition-all active:scale-95"
                         >
-                            {isSearching ? <span className="animate-pulse">Searching Expirations...</span> : "Search Expirations"}
+                            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Expirations"}
                         </Button>
                     </div>
 
@@ -99,7 +152,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             </div>
 
             {/* Results Grid */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
@@ -113,49 +166,66 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                     </Button>
                 </div>
 
-                <div className="flex-1 overflow-auto max-h-[600px] custom-scrollbar relative">
+                <div className="flex-1 overflow-auto custom-scrollbar relative">
                     {results.length > 0 ? (
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead className="bg-slate-50/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-[#001489]">REG NO</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">CAL NO</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">CERT NO</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-[#001489]">EQPT NAME</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">MODEL</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">MANUFACTURER</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">SN</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">APPLICANT</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-rose-600">DUE DATE</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">TERM</th>
-                                    <th className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">CONTACT</th>
+                                    {[
+                                        { key: 'ISID', label: 'REG NO', color: 'text-[#001489]' },
+                                        { key: 'LATEST_CALNO', label: 'CAL NO', color: 'text-slate-400' },
+                                        { key: 'NAEM_SUP', label: 'EQPT NAME', color: 'text-slate-950' },
+                                        { key: 'MODL', label: 'MODEL', color: 'text-slate-400' },
+                                        { key: 'MANUFACTURE', label: 'MANUFACTURER', color: 'text-slate-400' },
+                                        { key: 'SERN', label: 'SN', color: 'text-slate-400' },
+                                        { key: 'APPLICANT', label: 'APPLICANT', color: 'text-slate-400' },
+                                        { key: 'NEXT', label: 'DUE DATE', color: 'text-rose-600' },
+                                        { key: 'TERM', label: 'TERM', color: 'text-slate-400' },
+                                        { key: 'OWNM', label: 'CONTACT', color: 'text-slate-400' }
+                                    ].map(col => (
+                                        <th 
+                                            key={col.key}
+                                            onClick={() => requestSort(col.key)}
+                                            className={`px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors`}
+                                        >
+                                            <div className="flex items-center">
+                                                {col.label}
+                                                <SortIcon columnKey={col.key} />
+                                            </div>
+                                        </th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {results.map((row) => (
-                                    <tr key={row.id} className="hover:bg-rose-600/5 transition-colors cursor-pointer group">
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-rose-600 transition-colors">{row.regNo}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.calNo}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.certNo}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-[#001489]">{row.eqptName}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500 bg-slate-50/50">{row.model}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.manufacturer}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.sn}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.applicant}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-rose-600 bg-rose-50/50">{row.dueDate}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-500">{row.term}m</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.contact}</td>
+                                {sortedResults.map((row, idx) => (
+                                    <tr key={row.ISID + idx} className="hover:bg-rose-600/5 transition-colors cursor-pointer group">
+                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-rose-600 transition-colors">{row.ISID}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.LATEST_CALNO || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-slate-800">{row.NAEM_SUP}</td>
+                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500 bg-slate-50/50">{row.MODL}</td>
+                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.MANUFACTURE}</td>
+                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.SERN}</td>
+                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.APPLICANT}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-rose-600 bg-rose-50/50">{formatDate(row.NEXT)}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-500">{row.TERM}m</td>
+                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.OWNM || "—"}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex flex-col items-center justify-center p-20 text-center">
-                            <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mb-4">
-                                <AlertTriangle className="w-6 h-6 text-rose-300" />
-                            </div>
-                            <p className="text-sm font-bold text-slate-400 mb-1">No upcoming expirations</p>
-                            <p className="text-[11px] font-medium text-slate-400/70">All equipment calibrations are up to date within the selected range.</p>
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            {isSearching ? (
+                                <Loader2 className="w-8 h-8 text-rose-600 animate-spin mb-4" />
+                            ) : (
+                                <>
+                                    <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+                                        <AlertTriangle className="w-6 h-6 text-rose-300" />
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-400 mb-1">No upcoming expirations</p>
+                                    <p className="text-[11px] font-medium text-slate-400/70">Click search to load real data.</p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

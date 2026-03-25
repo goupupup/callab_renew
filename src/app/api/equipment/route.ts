@@ -3,6 +3,13 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { query } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+// Helper to extract code from [CODE] Description format
+const extractCode = (str: string) => {
+    if (!str) return str;
+    const match = str.match(/\[(.*?)\]/);
+    return match ? match[1].trim() : str.trim();
+};
+
 export async function GET(request: Request) {
     const session = await getServerSession(authOptions) as any;
     const { searchParams } = new URL(request.url);
@@ -21,13 +28,13 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
 
     // Filters from searchParams
-    const serialNumber = searchParams.get("serialNumber");
-    const assetNo = searchParams.get("assetNo");
-    const regNo = searchParams.get("regNo");
-    const modelName = searchParams.get("modelName");
-    const equipmentName = searchParams.get("equipmentName");
-    const company = searchParams.get("company");
-    const manufacturer = searchParams.get("manufacturer");
+    const serialNumber = extractCode(searchParams.get("serialNumber") || "");
+    const assetNo = extractCode(searchParams.get("assetNo") || "");
+    const regNo = extractCode(searchParams.get("regNo") || "");
+    const modelName = extractCode(searchParams.get("modelName") || "");
+    const equipmentName = extractCode(searchParams.get("equipmentName") || "");
+    const company = extractCode(searchParams.get("company") || "");
+    const manufacturer = extractCode(searchParams.get("manufacturer") || "");
     const lastCalStart = searchParams.get("lastCalStart"); // YYYYMMDD
     const lastCalEnd = searchParams.get("lastCalEnd");
     const nextCalStart = searchParams.get("nextCalStart");
