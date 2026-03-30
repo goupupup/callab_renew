@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")?.trim(); // ID trim is essential for DB and FTP
     const type = searchParams.get("type"); // 'data' or 'report'
+    const requestedCalNo = searchParams.get("calno")?.trim();
 
     if (!session?.user?.corpId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -23,23 +24,29 @@ export async function GET(request: Request) {
     const isElevated = role === "MASTER" || role === "EMPLOYEE";
 
     try {
-        // 1. Verify access to this equipment and get basic info
+        // 1. Verify access to this equipment and get info
+        // If calno is provided, we verify that specific record.
+        // Otherwise, we get the latest one.
         const verifySql = `
             SELECT 
-                TRIM(ISID) as ISID, 
-                TRIM(ACCN) as ACCN,
-                (SELECT TRIM(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = EASYCAL.TBMASMAN.ISID AND CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE ISID = EASYCAL.TBMASMAN.ISID)) as CIDU
-            FROM EASYCAL.TBMASMAN 
-            WHERE TRIM(ISID) = :id 
-            ${!isElevated ? 'AND TRIM(CUST) = :corpId' : ''}
+                TRIM(m.ISID) as ISID, 
+                TRIM(m.ACCN) as ACCN,
+                TRIM(c.CIDU) as CIDU
+            FROM EASYCAL.TBMASMAN m
+            JOIN EASYCAL.TBCALMAN c ON TRIM(m.ISID) = TRIM(c.ISID)
+            WHERE TRIM(m.ISID) = :id 
+            ${requestedCalNo ? 'AND TRIM(c.CIDU) = :requestedCalNo' : 'AND c.CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE TRIM(ISID) = :id)'}
+            ${!isElevated ? 'AND TRIM(m.CUST) = :corpId' : ''}
         `;
 
         const verifyParams: any = { id };
+        if (requestedCalNo) verifyParams.requestedCalNo = requestedCalNo;
         if (!isElevated) verifyParams.corpId = corpId;
 
         const verifyResult = await query<any>(verifySql, verifyParams);
+        
         if (verifyResult.length === 0) {
-            return NextResponse.json({ error: "Forbidden: No access to this equipment" }, { status: 403 });
+            return NextResponse.json({ error: "Forbidden or record not found" }, { status: 403 });
         }
 
         const equipmentInfo = verifyResult[0];

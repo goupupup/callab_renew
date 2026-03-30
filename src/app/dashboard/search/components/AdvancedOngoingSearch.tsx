@@ -76,6 +76,28 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
         }
     };
 
+    const downloadReport = async (isid: string, calNo: string) => {
+        if (!calNo || calNo === "—") return;
+        const loadingToast = toast.loading(`Downloading certificate ${calNo}...`);
+        try {
+            const res = await fetch(`/api/equipment/download?id=${isid}&type=report&calno=${calNo}`);
+            if (!res.ok) {
+                toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${calNo}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast.success("다운로드 완료", { id: loadingToast });
+        } catch {
+            toast.error("다운로드 실패", { id: loadingToast });
+        }
+    };
+
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -109,6 +131,30 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
         }
         return dateStr;
+    };
+
+    const exportToExcel = () => {
+        if (results.length === 0) return;
+        const headers = ["REGNO", "REG_ENGINEER", "SCHEDULED_DATE", "DELAY_RSN", "EQIP_NAME", "MODEL", "SN", "APPLICANT", "CALNO", "STATUS", "RECEPTION_DATE", "MANUFACTURER", "ACCESSORIES", "MEMO_CAL", "MEMO_REG", "EXTERNAL"];
+        const csvRows = [headers.join(",")];
+        
+        results.forEach(r => {
+            const row = [
+                r.ISID, r.REG_ENGINEER, formatDate(r.NEXT), `"${(r.DELAY_RSN || "").replace(/"/g, '""')}"`,
+                `"${(r.NAEM_SUP || "").replace(/"/g, '""')}"`, r.MODL, r.SERN, `"${(r.APPLICANT || "").replace(/"/g, '""')}"`,
+                r.CALN, r.STATUS_NAME, formatDate(r.CASD), r.MANUFACTURE, `"${(r.ACC1 || "").replace(/"/g, '""')}"`,
+                `"${(r.MEMO_CAL || "").replace(/"/g, '""')}"`, `"${(r.MEMO || "").replace(/"/g, '""')}"`, r.EXTN || ""
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Ongoing_Jobs_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -282,7 +328,13 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                             <span className="bg-[#001489]/10 text-[#001489] px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
                         </h3>
                     </div>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={results.length === 0}
+                        onClick={exportToExcel}
+                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-[#001489] hover:text-white transition-all shadow-sm"
+                    >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
                     </Button>
@@ -361,7 +413,14 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         <td className="px-3 py-2 text-[11px] font-bold text-emerald-600">{formatDate(row.SCHE)}</td>
                                         <td className="px-3 py-2 text-[11px] font-black text-rose-600">{formatDate(row.NEXT)}</td>
                                         <td className="px-3 py-2 text-[11px] font-medium text-slate-600 truncate max-w-[120px]" title={row.APPLICANT}>{row.APPLICANT}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-indigo-600">{row.CALN}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-indigo-600">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); downloadReport(row.ISID, row.CALN); }}
+                                                className="hover:underline underline-offset-4 decoration-indigo-300 transition-all font-black"
+                                            >
+                                                {row.CALN || "—"}
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

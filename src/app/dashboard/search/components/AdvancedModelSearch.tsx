@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, ChevronDown, Download, Wrench, Loader2, ArrowUpDown, ChevronUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface LookupItem {
     CODE: string;
@@ -50,15 +51,51 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
             if (filters.memo) params.append("memo", filters.memo.trim());
 
             const res = await fetch(`/api/search?${params.toString()}`);
-            if (!res.ok) throw new Error("Search failed");
             const data = await res.json();
+            
+            if (!res.ok) {
+                toast.error(data.error || "Search failed");
+                return;
+            }
+
             setResults(data);
         } catch (error) {
             console.error("Search error:", error);
-            alert("Search failed. Please check your connection.");
+            toast.error("검색 중 오류가 발생했습니다.");
         } finally {
             setIsSearching(false);
         }
+    };
+
+    const exportToExcel = () => {
+        if (results.length === 0) return;
+        const headers = ["REG NO", "EQPT NAME", "MODEL", "MANUFACTURER", "SN", "APPLICANT", "LATEST CAL", "TERM", "SELF", "MODE", "MEMO"];
+        const csvRows = [headers.join(",")];
+        
+        results.forEach(r => {
+            const row = [
+                r.ISID, 
+                `"${(r.NAEM_SUP || "").replace(/"/g, '""')}"`, 
+                `"${(r.MODL || "").replace(/"/g, '""')}"`, 
+                `"${(r.MNFC_NAME || "").replace(/"/g, '""')}"`, 
+                `"${(r.SERN || "").replace(/"/g, '""')}"`, 
+                `"${(r.CUST_NAME || "").replace(/"/g, '""')}"`, 
+                formatDate(r.LAST), 
+                r.TERM ? `${r.TERM}m` : "", 
+                r.SELF || "", 
+                `"${(r.MODE_DESC || "").replace(/"/g, '""')}"`, 
+                `"${(r.MEMO || "").replace(/"/g, '""')}"`
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Model_Search_Results_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     const formatDate = (dateStr: string) => {
@@ -186,7 +223,13 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                             <span className="bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
                         </h3>
                     </div>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={results.length === 0}
+                        onClick={exportToExcel}
+                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 transition-all shadow-sm"
+                    >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
                     </Button>
@@ -337,6 +380,12 @@ function SearchableDropdown({ options, value, onChange, placeholder }: {
                     </div>
                 </>
             )}
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f8fafc; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+            `}</style>
         </div>
     );
 }

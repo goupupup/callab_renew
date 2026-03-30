@@ -44,14 +44,41 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             if (filters.dueDateEnd) params.append("endDate", filters.dueDateEnd.replace(/-/g, ''));
 
             const res = await fetch(`/api/search?${params.toString()}`);
-            if (!res.ok) throw new Error("Search failed");
             const data = await res.json();
+            
+            if (!res.ok) {
+                toast.error(data.error || "Search failed");
+                return;
+            }
+            
             setResults(data);
         } catch (error) {
-            toast.error("Failed to fetch expirations");
-            console.error(error);
+            console.error("Search error:", error);
+            toast.error("검색 중 오류가 발생했습니다.");
         } finally {
             setIsSearching(false);
+        }
+    };
+
+    const downloadReport = async (isid: string, calNo: string) => {
+        if (!calNo || calNo === "—") return;
+        const loadingToast = toast.loading(`Downloading certificate ${calNo}...`);
+        try {
+            const res = await fetch(`/api/equipment/download?id=${isid}&type=report&calno=${calNo}`);
+            if (!res.ok) {
+                toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${calNo}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast.success("다운로드 완료", { id: loadingToast });
+        } catch {
+            toast.error("다운로드 실패", { id: loadingToast });
         }
     };
 
@@ -88,6 +115,29 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
         }
         return dateStr;
+    };
+
+    const exportToExcel = () => {
+        if (results.length === 0) return;
+        const headers = ["REGNO", "EQIP_NAME", "NAEM", "MODEL", "SN", "ASSET", "APPLICANT", "TERM", "LAST_CAL", "DUE_DATE", "STATE"];
+        const csvRows = [headers.join(",")];
+        
+        results.forEach(r => {
+            const row = [
+                r.ISID, `"${(r.NAEM_SUP || "").replace(/"/g, '""')}"`, `"${(r.NAEM || "").replace(/"/g, '""')}"`, 
+                r.MODL, r.SERN || "", r.ACCN || "", `"${(r.APPLICANT || "").replace(/"/g, '""')}"`,
+                r.TERM ? `${r.TERM}m` : "", r.LAST || "", r.NEXT || "", r.STATUS_NAME || ""
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Expirations_List_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -160,7 +210,13 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                             <span className="bg-rose-600/10 text-rose-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
                         </h3>
                     </div>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={results.length === 0}
+                        onClick={exportToExcel}
+                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm"
+                    >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
                     </Button>
@@ -199,8 +255,15 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                             <tbody className="divide-y divide-slate-100">
                                 {sortedResults.map((row, idx) => (
                                     <tr key={row.ISID + idx} className="hover:bg-rose-600/5 transition-colors cursor-pointer group">
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-rose-600 transition-colors">{row.ISID}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.LATEST_CALNO || "—"}</td>
+                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-rose-600 transition-colors uppercase cursor-pointer">{row.ISID}</td>
+                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); downloadReport(row.ISID, row.LATEST_CALNO); }}
+                                                className="hover:text-indigo-600 hover:underline underline-offset-4 decoration-indigo-300 transition-all font-black"
+                                            >
+                                                {row.LATEST_CALNO || "—"}
+                                            </button>
+                                        </td>
                                         <td className="px-3 py-2 text-[11px] font-black text-slate-800">{row.NAEM_SUP}</td>
                                         <td className="px-3 py-2 text-[11px] font-medium text-slate-500 bg-slate-50/50">{row.MODL}</td>
                                         <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.MANUFACTURE}</td>

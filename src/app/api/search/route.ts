@@ -126,8 +126,8 @@ export async function GET(request: Request) {
             const ccom = extractCode(searchParams.get("ccom") || "");
             const mnfc = extractCode(searchParams.get("mnfc") || "");
             const emid = extractCode(searchParams.get("emid") || "");
-            const calCls = extractCode(searchParams.get("calCls") || "");
-            const recStart = searchParams.get("recStart") || ""; // expects YYYY-MM-DD from FE
+            const state = extractCode(searchParams.get("state") || "");
+            const recStart = searchParams.get("recStart") || "";
             const recEnd = searchParams.get("recEnd") || "";
             const calStart = searchParams.get("calStart") || "";
             const calEnd = searchParams.get("calEnd") || "";
@@ -136,12 +136,17 @@ export async function GET(request: Request) {
             const inHouse = searchParams.get("inHouse") === "true";
             const onSite = searchParams.get("onSite") === "true";
 
+            if (!isid && !calNo && !asset && !certNo && !ccom && !mnfc && !emid && !state &&
+                !recStart && !recEnd && !calStart && !calEnd && !retStart && !retEnd) {
+                return NextResponse.json({ error: "검색 조건을 입력해주세요. (최소 1개)" }, { status: 400 });
+            }
+
             let historySql = `
                 SELECT
                     TRIM(A.ISID) as ISID,
                     TRIM(B.CIDU) as CIDU,
                     TRIM(B.KOLAS_NO) as CERTNO,
-                    (SELECT TRIM(DESN) FROM EASYCAL.TBSTAMAN WHERE STAT = B.STAT) as STATUS_NAME,
+                    (SELECT '[' || TRIM(STAT) || '] ' || TRIM(DESN) FROM EASYCAL.TBSTAMAN WHERE STAT = B.STAT) as STATUS_NAME,
                     (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.CUST) as APPLICANT,
                     TRIM(A.NAEM_SUP) as EQIP_NAME,
                     TRIM(A.MODL) as MODEL,
@@ -168,17 +173,15 @@ export async function GET(request: Request) {
 
             const historyParams: any = {};
 
-            // Filters based on README rules
             if (isid) { historySql += ` AND TRIM(A.ISID) = :isid`; historyParams.isid = isid; }
             if (calNo) { historySql += ` AND TRIM(B.CIDU) = :calNo`; historyParams.calNo = calNo; }
             if (asset) { historySql += ` AND TRIM(A.ACCN) = :asset`; historyParams.asset = asset; }
             if (ccom) { historySql += ` AND TRIM(B.CCOM) = :ccom`; historyParams.ccom = ccom; }
             if (emid) { historySql += ` AND TRIM(B.EMID) = :emid`; historyParams.emid = emid; }
             if (mnfc) { historySql += ` AND TRIM(A.MNFC) = :mnfc`; historyParams.mnfc = mnfc; }
-            if (certNo) { historySql += ` AND B.KOLAS_NO = :certNo`; historyParams.certNo = certNo; }
-            if (calCls) { historySql += ` AND A.CALCLS = :calCls`; historyParams.calCls = calCls; }
+            if (certNo) { historySql += ` AND TRIM(B.KOLAS_NO) = :certNo`; historyParams.certNo = certNo; }
+            if (state) { historySql += ` AND TRIM(B.STAT) = :state`; historyParams.state = state; }
 
-            // Date filtering (Converting YYYY-MM-DD from FE to MMDDYYYY as per Python TO_DATE target)
             const toMMDDYYYY = (d: string) => {
                 const parts = d.split('-');
                 if (parts.length === 3) return `${parts[1]}${parts[2]}${parts[0]}`;
@@ -192,15 +195,76 @@ export async function GET(request: Request) {
             if (retStart) { historySql += ` AND TRIM(B.ROTD) <> '0' AND TO_DATE(B.ROTD,'YYYYMMDD') >= TO_DATE(:retStart,'MMDDYYYY')`; historyParams.retStart = toMMDDYYYY(retStart); }
             if (retEnd) { historySql += ` AND TO_DATE(B.ROTD,'YYYYMMDD') <= TO_DATE(:retEnd,'MMDDYYYY')`; historyParams.retEnd = toMMDDYYYY(retEnd); }
 
-            // OnSite/InHouse
             if (!inHouse || !onSite) {
                 if (onSite) { historySql += ` AND B.LOCT_PRE = 'A'`; }
                 else if (inHouse) { historySql += ` AND B.LOCT_PRE = 'B'`; }
             }
 
-            historySql += ` ORDER BY B.STAT`;
+            historySql += ` ORDER BY B.CIDU DESC`;
             const historyRows = await query<any>(historySql, historyParams);
             return NextResponse.json(historyRows);
+        }
+
+        if (mode === "advancedModel") {
+            const cust = extractCode(searchParams.get("cust") || "");
+            const mnfc = extractCode(searchParams.get("mnfc") || "");
+            const eqptName = searchParams.get("eqptName") || "";
+            const modelSearch = searchParams.get("model") || "";
+            const isExact = searchParams.get("isExact") === "true";
+            const memo = searchParams.get("memo") || "";
+
+            if (!cust && !mnfc && !eqptName && !modelSearch && !memo) {
+                return NextResponse.json({ error: "검색 조건을 입력해주세요. (최소 1개)" }, { status: 400 });
+            }
+
+            let modelSql = `
+                SELECT 
+                    TRIM(a.ISID) as ISID,
+                    TRIM(a.NAEM_SUP) as NAEM_SUP,
+                    TRIM(a.NAEM) as NAEM,
+                    TRIM(a.MODL) as MODL,
+                    TRIM(a.SERN) as SERN,
+                    TRIM(a.ACCN) as ACCN,
+                    TRIM(a.TERM) as TERM,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = a.MNFC) as MNFC_NAME,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = a.CUST) as CUST_NAME,
+                    TRIM(a.LAST) as LAST,
+                    TRIM(a.SELF) as SELF,
+                    TRIM(a.MEMO) as MEMO,
+                    (SELECT TRIM(MODE_DESC) FROM EASYCAL.TBMODMAN WHERE MODE_CODE = a.MODE_CODE) as MODE_DESC
+                FROM EASYCAL.TBMASMAN a
+                WHERE 1=1
+            `;
+            const modelParams: any = {};
+
+            if (!isMaster) {
+                modelSql += ` AND a.CUST = :corpId`;
+                modelParams.corpId = session.user.corpId;
+            }
+
+            if (cust) { modelSql += ` AND TRIM(a.CUST) = :cust`; modelParams.cust = cust; }
+            if (mnfc) { modelSql += ` AND TRIM(a.MNFC) = :mnfc`; modelParams.mnfc = mnfc; }
+            if (eqptName) {
+                modelSql += ` AND (UPPER(TRIM(a.NAEM_SUP)) LIKE :eqptName OR UPPER(TRIM(a.NAEM)) LIKE :eqptName)`;
+                modelParams.eqptName = `%${eqptName.toUpperCase()}%`;
+            }
+            if (modelSearch) {
+                if (isExact) {
+                    modelSql += ` AND UPPER(TRIM(a.MODL)) = :modelSearch`;
+                    modelParams.modelSearch = modelSearch.toUpperCase();
+                } else {
+                    modelSql += ` AND UPPER(TRIM(a.MODL)) LIKE :modelSearch`;
+                    modelParams.modelSearch = `%${modelSearch.toUpperCase()}%`;
+                }
+            }
+            if (memo) {
+                modelSql += ` AND UPPER(TRIM(a.MEMO)) LIKE :memo`;
+                modelParams.memo = `%${memo.toUpperCase()}%`;
+            }
+
+            modelSql += ` ORDER BY a.ISID DESC`;
+            const modelRows = await query<any>(modelSql, modelParams);
+            return NextResponse.json(modelRows);
         }
 
         if (mode === "ongoing") {
@@ -345,13 +409,38 @@ export async function GET(request: Request) {
             sql += ` AND TRIM(UPPER(a.SERN)) LIKE UPPER(:q)`;
             params.q = `%${q}%`;
         } else if (mode === "calNo") {
+            if (!q) return NextResponse.json({ error: "검색어를 입력해주세요. (CAL NO)" }, { status: 400 });
             sql += ` AND a.ISID IN (SELECT ISID FROM EASYCAL.TBCALMAN WHERE UPPER(TRIM(CIDU)) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
         } else if (mode === "model") {
+            if (!q) return NextResponse.json({ error: "검색어를 입력해주세요. (MODEL)" }, { status: 400 });
             sql += ` AND (UPPER(TRIM(a.MODL)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM_SUP)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM)) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
         } else if (mode === "expirations") {
-            sql += ` AND a.NEXT <= TO_CHAR(SYSDATE + 30, 'YYYYMMDD') AND a.NEXT >= TO_CHAR(SYSDATE - 365, 'YYYYMMDD')`;
+            const startDate = searchParams.get("startDate");
+            const endDate = searchParams.get("endDate");
+            const applicant = searchParams.get("q");
+
+            if (!startDate && !endDate && !applicant) {
+                return NextResponse.json({ error: "조회 조건(업체 또는 날짜)을 입력해주세요." }, { status: 400 });
+            }
+
+            if (applicant) {
+                sql += ` AND c.CONM LIKE :applicant`;
+                params.applicant = `%${applicant}%`;
+            }
+            if (startDate) {
+                sql += ` AND a.NEXT >= :startDate`;
+                params.startDate = startDate;
+            }
+            if (endDate) {
+                sql += ` AND a.NEXT <= :endDate`;
+                params.endDate = endDate;
+            }
+
+            if (!startDate && !endDate) {
+                sql += ` AND a.NEXT <= TO_CHAR(SYSDATE + 30, 'YYYYMMDD') AND a.NEXT >= TO_CHAR(SYSDATE - 365, 'YYYYMMDD')`;
+            }
         }
 
         sql += ` ORDER BY a.ISID DESC`;
@@ -374,7 +463,7 @@ export async function PUT(request: Request) {
 
     try {
         const body = await request.json();
-        
+
         // Extract codes from properties if they contain [CODE] description
         const ISID = extractCode(body.ISID);
         const STAT = extractCode(body.STAT);

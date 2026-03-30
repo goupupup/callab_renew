@@ -375,7 +375,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const downloadReport = async (calNo: string) => {
         const loadingToast = toast.loading("Downloading report...");
         try {
-            const res = await fetch(`/api/equipment/download?id=${selectedEquipment?.ISID}&type=report`);
+            const res = await fetch(`/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`);
             if (!res.ok) {
                 toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
                 return;
@@ -425,43 +425,43 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     if (activeTab === "expirations") return <AdvancedExpirationSearch lookups={lookups} />;
 
     return (
-        <div className="space-y-8 w-full animate-in fade-in duration-500">
+        <div className="space-y-4 w-full animate-in fade-in duration-500">
             {/* ── Dynamic Header ──────────────────────────── */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-10 relative">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#001489]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
 
-                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
-                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm ${currentCategory.color}`}>
-                            <currentCategory.icon className="w-7 h-7 md:w-8 md:h-8" />
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm ${currentCategory.color}`}>
+                            <currentCategory.icon className="w-6 h-6 md:w-7 h-7" />
                         </div>
                         <div>
-                            <h2 className="text-2xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+                            <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-tight">
                                 {currentCategory.title.split(' ')[0]} <span className="text-[#001489]">{currentCategory.title.split(' ').slice(1).join(' ')}</span>
                             </h2>
-                            <p className="text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mt-1 italic">{currentCategory.subtitle}</p>
+                            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-0.5 italic">{currentCategory.subtitle}</p>
                         </div>
                     </div>
 
                     {/* ── Integrated Search Bar ────────────────── */}
                     {["regNo", "asset", "sn", "calNo", "model"].includes(activeTab) && (
-                        <div className="flex items-center gap-3 w-full md:max-w-xl bg-slate-50 p-2 rounded-2xl border border-slate-100 shadow-inner">
+                        <div className="flex items-center gap-2 w-full md:max-w-md bg-slate-50 p-1.5 rounded-xl border border-slate-100 shadow-inner">
                             {activeTab === "regNo" && (
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                                        className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-700 hover:border-[#001489] transition-all shadow-sm min-w-[110px]"
+                                        className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-wider text-slate-700 hover:border-[#001489] transition-all shadow-sm min-w-[90px]"
                                     >
                                         {searchTypeLabels[searchType]}
                                         <ChevronDown className="w-3 h-3 text-slate-400" />
                                     </button>
                                     {showTypeDropdown && (
-                                        <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[130px] animate-in slide-in-from-top-2 duration-200">
+                                        <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden min-w-[110px] animate-in slide-in-from-top-2 duration-200">
                                             {(Object.keys(searchTypeLabels) as SearchType[]).map(t => (
                                                 <button
                                                     key={t}
                                                     onClick={() => { setSearchType(t); setShowTypeDropdown(false); }}
-                                                    className={`w-full text-left px-5 py-3 text-[10px] font-black uppercase tracking-wider transition-colors ${searchType === t ? "bg-[#001489] text-white" : "text-slate-600 hover:bg-slate-50"
+                                                    className={`w-full text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-wider transition-colors ${searchType === t ? "bg-[#001489] text-white" : "text-slate-600 hover:bg-slate-50"
                                                         }`}
                                                 >
                                                     {searchTypeLabels[t]}
@@ -483,7 +483,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         }
                                     }}
                                     placeholder={`ENTER ${searchTypeLabels[searchType]}...`}
-                                    className="h-12 border-none bg-transparent shadow-none text-sm font-black uppercase placeholder:text-slate-300 focus-visible:ring-0"
+                                    className="h-9 border-none bg-transparent shadow-none text-xs font-black uppercase placeholder:text-slate-300 focus-visible:ring-0"
                                 />
                             </div>
 
@@ -493,9 +493,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     handleSearch(mode as SearchMode);
                                 }}
                                 disabled={isSearching}
-                                className="h-12 px-8 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20 transition-all"
+                                className="h-9 px-6 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20 transition-all"
                             >
-                                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "SEARCH"}
+                                {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "SEARCH"}
                             </Button>
                         </div>
                     )}
@@ -504,40 +504,40 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
             {/* Results List (Equipment Picker for standard search) */}
             {results.length > 1 && !showSelectModal && selectedEquipment && (
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-top-4 duration-500">
-                    <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Activity className="w-4 h-4 text-[#001489]" />
-                            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                            <Activity className="w-3.5 h-3.5 text-[#001489]" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                 Search Results — <span className="text-[#001489] font-black text-xs">{results.length}</span> records found
                             </p>
                         </div>
                     </div>
-                    <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         <div className="grid grid-cols-1 divide-y divide-slate-50">
                             {results.map((eq) => (
                                 <button
                                     key={eq.ISID}
                                     onClick={() => selectEquipment(eq)}
-                                    className={`w-full flex items-center justify-between px-8 py-4.5 text-left transition-all hover:bg-slate-50 group ${selectedEquipment?.ISID === eq.ISID ? "bg-[#001489]/5 border-l-4 border-l-[#001489]" : "border-l-4 border-l-transparent"
+                                    className={`w-full flex items-center justify-between px-6 py-2.5 text-left transition-all hover:bg-slate-50 group ${selectedEquipment?.ISID === eq.ISID ? "bg-[#001489]/5 border-l-4 border-l-[#001489]" : "border-l-4 border-l-transparent"
                                         }`}
                                 >
-                                    <div className="flex items-center gap-8">
+                                    <div className="flex items-center gap-6">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">REG NO</span>
-                                            <span className={`text-sm font-black transition-colors ${selectedEquipment?.ISID === eq.ISID ? "text-[#001489]" : "text-slate-900"}`}>{eq.ISID}</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">REG NO</span>
+                                            <span className={`text-xs font-black transition-colors ${selectedEquipment?.ISID === eq.ISID ? "text-[#001489]" : "text-slate-900"}`}>{eq.ISID}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Equipment</span>
-                                            <span className="text-sm font-bold text-slate-700 truncate max-w-md">{eq.NAEM_SUP || eq.NAEM}</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Equipment</span>
+                                            <span className="text-xs font-bold text-slate-700 truncate max-w-sm">{eq.NAEM_SUP || eq.NAEM}</span>
                                         </div>
                                         <div className="hidden lg:flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Model</span>
-                                            <span className="text-sm font-medium text-slate-500">{eq.MODL || "—"}</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Model</span>
+                                            <span className="text-xs font-medium text-slate-500">{eq.MODL || "—"}</span>
                                         </div>
                                     </div>
-                                    <div className={`p-2 rounded-xl transition-all ${selectedEquipment?.ISID === eq.ISID ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400 group-hover:bg-[#001489]/10 group-hover:text-[#001489]"}`}>
-                                        <ChevronRight className="w-4 h-4" />
+                                    <div className={`p-1.5 rounded-lg transition-all ${selectedEquipment?.ISID === eq.ISID ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400 group-hover:bg-[#001489]/10 group-hover:text-[#001489]"}`}>
+                                        <ChevronRight className="w-3.5 h-3.5" />
                                     </div>
                                 </button>
                             ))}
@@ -548,57 +548,57 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
             {/* Equipment Detail Card (Only for non-ongoing or specific selection) */}
             {selectedEquipment && editData && (
-                <div className="grid grid-cols-1 gap-8 animate-in slide-in-from-bottom-6 duration-700">
-                    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                        <div className="p-8 md:p-12 border-b border-slate-100 bg-gradient-to-br from-white via-slate-50/30 to-[#001489]/5">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                                <div className="space-y-4">
-                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#001489] rounded-full text-[9px] font-black uppercase tracking-[0.3em] text-white shadow-lg shadow-blue-900/20">
+                <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-bottom-6 duration-700 pb-12">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+                        <div className="p-4 md:p-6 border-b border-slate-100 bg-gradient-to-br from-white via-slate-50/30 to-[#001489]/5">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="space-y-2">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#001489] rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white shadow-lg shadow-blue-900/20">
                                         Active Asset Configuration
                                     </div>
-                                    <h3 className="text-3xl md:text-5xl font-black text-slate-950 tracking-tighter leading-none">{selectedEquipment.NAEM_SUP || selectedEquipment.NAEM || "UNNAMED EQUIPMENT"}</h3>
-                                    <div className="flex flex-wrap gap-6">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">System Operational</span>
+                                    <h3 className="text-xl md:text-3xl font-black text-slate-950 tracking-tighter leading-none">{selectedEquipment.NAEM_SUP || selectedEquipment.NAEM || "UNNAMED EQUIPMENT"}</h3>
+                                    <div className="flex flex-wrap gap-4">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Operational</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5">
                                             <span className="text-slate-300 font-bold">|</span>
-                                            <span className="text-[11px] font-black text-[#001489] uppercase tracking-widest">ID: {selectedEquipment.ISID}</span>
+                                            <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest">ID: {selectedEquipment.ISID}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                     <Button
                                         onClick={openCalHistory}
                                         variant="outline"
-                                        className="h-14 px-8 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] border-slate-200 hover:border-[#001489] hover:bg-[#001489]/5 hover:text-[#001489] shadow-sm transition-all"
+                                        className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border-slate-200 hover:border-[#001489] hover:bg-[#001489]/5 hover:text-[#001489] shadow-sm transition-all"
                                     >
-                                        <History className="w-4 h-4 mr-3" />
+                                        <History className="w-3.5 h-3.5 mr-2" />
                                         Cal History
                                     </Button>
                                     <Button
                                         onClick={handleSave}
                                         disabled={isSaving}
-                                        className="h-14 px-10 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 transition-all"
+                                        className="h-10 px-8 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 transition-all"
                                     >
-                                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-3" /> : <Save className="w-4 h-4 mr-3" />}
+                                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
                                         Save Changes
                                     </Button>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-3 md:p-8 xl:p-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 xl:gap-12">
+                        <div className="p-4 md:p-6 xl:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10">
                             {/* Primary Info (LHS) */}
-                            <div className="lg:col-span-6 xl:col-span-8 space-y-8 md:space-y-12">
-                                <div className="space-y-8">
+                            <div className="lg:col-span-6 xl:col-span-8 space-y-6 md:space-y-8">
+                                <div className="space-y-6">
                                     <div className="flex items-center gap-4">
                                         <div className="h-px bg-slate-100 flex-1" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Basic Information</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Basic Information</span>
                                         <div className="h-px bg-slate-100 flex-1" />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldCombo
                                             label="Ownership / Customer"
                                             value={editData.CUST || ""}
@@ -608,7 +608,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         />
                                         <div />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldEditable label="Equipment Display Name" value={editData.NAEM_SUP || ""} onChange={(v) => updateField("NAEM_SUP", v)} primary />
                                         <div className="relative group">
                                             <FieldReadOnly label="Master Database Name" value={editData.NAEM || selectedEquipment.NAEM} />
@@ -620,39 +620,39 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                         setSelectedMaster({});
                                                         setShowMasterModal(true);
                                                     }}
-                                                    className="absolute right-2 top-8 p-3 rounded-xl bg-white border border-slate-200 text-[#001489] hover:bg-[#001489] hover:text-white shadow-sm transition-all z-10"
+                                                    className="absolute right-1 top-6 p-2 rounded-lg bg-white border border-slate-200 text-[#001489] hover:bg-[#001489] hover:text-white shadow-sm transition-all z-10"
                                                     title="Manage Master Database"
                                                 >
-                                                    <Database className="w-4 h-4" />
+                                                    <Database className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldReadOnly label="Model Specification" value={editData.MODL || selectedEquipment.MODL} />
                                         <FieldReadOnly label="Manufacturer Identity" value={editData.MANUFACTURE || selectedEquipment.MANUFACTURE || selectedEquipment.MNFC || ""} />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldReadOnly label="Division" value={selectedEquipment.DIVN || "—"} />
                                         <FieldReadOnly label="Department" value={selectedEquipment.DEPART || "—"} />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldReadOnly label="Owner Name" value={selectedEquipment.OWNM || "—"} />
                                         <FieldReadOnly label="DPCD" value={selectedEquipment.DPCD || "—"} />
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
+                                <div className="space-y-6">
                                     <div className="flex items-center gap-4">
                                         <div className="h-px bg-slate-100 flex-1" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Administrative Identifiers</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Administrative Identifiers</span>
                                         <div className="h-px bg-slate-100 flex-1" />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldEditable label="Internal Asset No" value={editData.ACCN || ""} onChange={(v) => updateField("ACCN", v)} />
                                         <FieldEditable label="Hardware Serial No" value={editData.SERN || ""} onChange={(v) => updateField("SERN", v)} />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FieldEditable label="Operation Memo / Remarks" value={editData.MEMO || ""} onChange={(v) => updateField("MEMO", v)} multiline />
                                         <FieldEditable label="ACC (Accessories)" value={editData.ACC1 || ""} onChange={(v) => updateField("ACC1", v)} multiline />
                                     </div>
@@ -660,10 +660,10 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             </div>
 
                             {/* Secondary Info (RHS - Side Panel Style) */}
-                            <div className="lg:col-span-6 xl:col-span-4 space-y-8 bg-slate-50/50 p-6 md:p-10 rounded-[2rem] border border-slate-100">
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-4">Management Status</span>
+                            <div className="lg:col-span-6 xl:col-span-4 space-y-4 bg-slate-50/50 p-4 md:p-6 rounded-2xl border border-slate-100">
+                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-2">Management Status</span>
 
-                                <div className="space-y-6">
+                                <div className="space-y-3">
                                     <FieldCombo
                                         label="Management category"
                                         value={editData.TYEP || ""}
@@ -699,16 +699,16 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-slate-200">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-6">Calibration Metrics</span>
-                                    <div className="space-y-6">
+                                <div className="pt-4 border-t border-slate-200">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-4">Calibration Metrics</span>
+                                    <div className="space-y-3">
                                         <FieldEditable
                                             label="Interval (Months)"
                                             value={editData.TERM || ""}
                                             onChange={(v) => { if (/^\d*$/.test(v)) updateField("TERM", v); }}
                                             textAlign="center"
                                         />
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {isMaster ? (
                                                 <>
                                                     <FieldEditable label="Last Date" value={editData.LAST || ""} onChange={(v) => updateField("LAST", v)} isDate masterOnly />
@@ -1020,9 +1020,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
 function FieldReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
-            <div className={`px-6 py-5 rounded-2xl border text-sm transition-all ${highlight
+        <div className="space-y-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
+            <div className={`px-4 py-2.5 rounded-xl border text-[13px] transition-all ${highlight
                 ? "bg-[#001489]/5 border-[#001489]/30 text-[#001489] font-black shadow-inner"
                 : "bg-slate-50 shadow-inner border-slate-100 text-slate-600 font-bold"
                 }`}>
@@ -1038,19 +1038,19 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
     const displayValue = isDate ? formatDate(value) : value;
 
     return (
-        <div className="space-y-3 group/field">
+        <div className="space-y-1.5 group/field">
             <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
                 {masterOnly && (
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Auth Required</span>
+                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100">Auth Required</span>
                 )}
             </div>
             {multiline ? (
                 <textarea
                     value={displayValue || ""}
                     onChange={(e) => onChange(e.target.value)}
-                    rows={4}
-                    className="w-full px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all resize-none placeholder:text-slate-200"
+                    rows={2}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all resize-none placeholder:text-slate-200"
                 />
             ) : isDate ? (
                 <div className="relative">
@@ -1063,7 +1063,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                             if (picker.showPicker) picker.showPicker();
                             else picker.focus();
                         }}
-                        className={`w-full px-4 md:px-6 py-4 md:py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
+                        className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-sm font-black border-[#001489]/20" : ""}`}
                     />
                     <input
                         type="date"
@@ -1074,14 +1074,14 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                             onChange(ymd);
                         }}
                     />
-                    <Clock className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
+                    <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
                 </div>
             ) : (
                 <input
                     type="text"
                     value={displayValue || ""}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`w-full px-4 md:px-6 py-4 md:py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-base font-black border-[#001489]/20" : ""}`}
+                    className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-sm font-black border-[#001489]/20" : ""}`}
                 />
             )}
         </div>
@@ -1101,42 +1101,42 @@ function FieldCombo({ label, value, displayValue, options, onChange }: {
     );
 
     return (
-        <div className="space-y-3 relative group/field">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
+        <div className="space-y-1.5 relative group/field">
+            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
             <button
                 onClick={() => { setOpen(!open); setFilter(""); }}
-                className={`w-full flex items-center justify-between px-6 py-5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 bg-white hover:border-[#001489] transition-all shadow-sm ${open ? "ring-4 ring-[#001489]/5 border-[#001489]" : ""}`}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white hover:border-[#001489] transition-all shadow-sm ${open ? "ring-4 ring-[#001489]/5 border-[#001489]" : ""}`}
             >
                 <span className="truncate">{displayValue || "SELECT OPTION"}</span>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${open ? "rotate-180 text-[#001489]" : ""}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${open ? "rotate-180 text-[#001489]" : ""}`} />
             </button>
             {open && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-                    <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-200 rounded-[2rem] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
-                        <div className="p-4 bg-slate-50 border-b border-slate-100">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+                        <div className="p-3 bg-slate-50 border-b border-slate-100">
                             <input
                                 autoFocus
                                 value={filter}
                                 onChange={e => setFilter(e.target.value)}
                                 placeholder="Search Options..."
-                                className="w-full px-5 py-3 text-xs font-black uppercase tracking-widest rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#001489]/10 focus:border-[#001489] transition-all"
+                                className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#001489]/10 focus:border-[#001489] transition-all"
                             />
                         </div>
-                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        <div className="max-h-52 overflow-y-auto custom-scrollbar">
                             {filtered.slice(0, 100).map(o => (
                                 <button
                                     key={o.CODE}
                                     onClick={() => { onChange(o.CODE); setOpen(false); }}
-                                    className={`w-full flex items-center justify-between px-8 py-4 text-xs font-bold hover:bg-slate-50 transition-colors text-left ${value === o.CODE ? "bg-[#001489]/5 text-[#001489] font-black" : "text-slate-600"
+                                    className={`w-full flex items-center justify-between px-6 py-3 text-[11px] font-bold hover:bg-slate-50 transition-colors text-left ${value === o.CODE ? "bg-[#001489]/5 text-[#001489] font-black" : "text-slate-600"
                                         }`}
                                 >
                                     <span className="truncate">{o.NAME || o.CODE}</span>
-                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${value === o.CODE ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400"}`}>{o.CODE}</span>
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase ${value === o.CODE ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400"}`}>{o.CODE}</span>
                                 </button>
                             ))}
                             {filtered.length === 0 && (
-                                <p className="px-8 py-8 text-xs font-black uppercase tracking-[0.2em] text-slate-300 text-center italic">No results found</p>
+                                <p className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 text-center italic">No results found</p>
                             )}
                         </div>
                     </div>
