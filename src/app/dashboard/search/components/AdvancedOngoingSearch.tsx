@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Calendar, ChevronDown, CheckSquare, Clock, Download, Info, ArrowUpDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { SearchableDropdown } from './SearchableDropdown';
 
 interface LookupItem {
     CODE: string;
@@ -32,6 +33,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
         applicant: '',
         contact: '',
         engineer: '',
+        mnfc: '',
         startDate: '',
         endDate: '',
         selfExt: '', // '1'=Self, '0'=Extn
@@ -41,6 +43,11 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
     const updateFilter = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
+
+    // Auto-load on mount
+    React.useEffect(() => {
+        handleSearch();
+    }, []);
 
     const toggleRow = (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -59,6 +66,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             if (filters.applicant) params.append("applicant", filters.applicant);
             if (filters.contact) params.append("contact_person", filters.contact);
             if (filters.engineer) params.append("engineer", filters.engineer);
+            if (filters.mnfc) params.append("mnfc", filters.mnfc);
             if (filters.startDate) params.append("startDate", filters.startDate.replace(/-/g, ''));
             if (filters.endDate) params.append("endDate", filters.endDate.replace(/-/g, ''));
             if (filters.selfExt) params.append("selfExt", filters.selfExt);
@@ -188,17 +196,12 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">APPLICANT</label>
-                        <div className="relative">
-                            <select 
-                                value={filters.applicant}
-                                onChange={e => updateFilter('applicant', e.target.value)}
-                                className="w-full h-9 bg-slate-50 border border-slate-200 outline-none focus:ring-1 focus:ring-[#001489]/50 rounded-lg px-3 text-xs font-medium text-slate-700 appearance-none"
-                            >
-                                <option value="">All Companies</option>
-                                {lookups?.suppliers.map(s => <option key={s.CODE} value={s.CODE}>{s.NAME}</option>)}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        </div>
+                        <SearchableDropdown 
+                            options={lookups?.suppliers || []}
+                            value={filters.applicant}
+                            onChange={(v) => updateFilter("applicant", v)}
+                            placeholder="Select Company..."
+                        />
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CONTACT PERSON</label>
@@ -212,17 +215,21 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
 
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">RESERVED ENGINEER</label>
-                        <div className="relative">
-                            <select 
-                                value={filters.engineer}
-                                onChange={e => updateFilter('engineer', e.target.value)}
-                                className="w-full h-9 bg-slate-50 border border-slate-200 outline-none focus:ring-1 focus:ring-[#001489]/50 rounded-lg px-3 text-xs font-medium text-slate-700 appearance-none"
-                            >
-                                <option value="">Any Engineer</option>
-                                {lookups?.employees.map(e => <option key={e.CODE} value={e.CODE}>{e.NAME}</option>)}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        </div>
+                        <SearchableDropdown 
+                            options={lookups?.employees || []}
+                            value={filters.engineer}
+                            onChange={(v) => updateFilter("engineer", v)}
+                            placeholder="Any Engineer..."
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">MANUFACTURER</label>
+                        <SearchableDropdown 
+                            options={lookups?.suppliers || []}
+                            value={filters.mnfc}
+                            onChange={(v) => updateFilter("mnfc", v)}
+                            placeholder="Select Maker..."
+                        />
                     </div>
                     <div className="space-y-1.5 lg:col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">REC DATE</label>
@@ -295,13 +302,13 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             <div className="bg-[#001489]/5 rounded-2xl border border-[#001489]/10 p-4 flex flex-col md:flex-row md:items-center gap-4 animate-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center gap-2 w-full md:w-1/4">
                     <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest shrink-0">Reserved Person:</span>
-                    <div className="relative flex-1">
-                        <select className="w-full h-9 bg-white border border-[#001489]/20 outline-none focus:border-[#001489] rounded-lg px-3 text-xs font-bold text-slate-700 appearance-none">
-                            <option value="">Select...</option>
-                            {lookups?.employees.map(e => <option key={e.CODE} value={e.CODE}>{e.NAME}</option>)}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#001489]/50 pointer-events-none" />
-                    </div>
+                    <SearchableDropdown 
+                        options={lookups?.employees || []}
+                        value=""
+                        onChange={(v) => {}}
+                        placeholder="Select..."
+                        className="flex-1"
+                    />
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-1/4">
                     <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest shrink-0">Scheduled Date:</span>

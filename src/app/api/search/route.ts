@@ -277,6 +277,7 @@ export async function GET(request: Request) {
             const endDate = searchParams.get("endDate") || "";
             const selfExt = searchParams.get("selfExt") || ""; // '1'=Self, '0'=Extn, '2'=None, ''=Both
             const onoffSite = searchParams.get("onoffSite") || ""; // 'A'=OnSite, 'B'=InHouse, 'Z'=None, ''=Both
+            const mnfc = extractCode(searchParams.get("mnfc") || "");
 
             let ongoingSql = `
                 SELECT 
@@ -327,9 +328,10 @@ export async function GET(request: Request) {
             const params: any = {};
             if (regno) { ongoingSql += ` AND TRIM(A.ISID) = :regno`; params.regno = regno; }
             if (calno) { ongoingSql += ` AND TRIM(A.CIDU) = :calno`; params.calno = calno; }
-            if (applicant) { ongoingSql += ` AND D.CONM LIKE :applicant`; params.applicant = `%${applicant}%`; }
-            if (contactPerson) { ongoingSql += ` AND A.CNAM LIKE :cp`; params.cp = `%${contactPerson}%`; }
+            if (applicant) { ongoingSql += ` AND A.CCOM = :applicant`; params.applicant = applicant; }
+            if ( contactPerson ) { ongoingSql += ` AND A.CNAM LIKE :cp`; params.cp = `%${contactPerson}%`; }
             if (engineer) { ongoingSql += ` AND B.EMID = :eng`; params.eng = engineer; }
+            if (mnfc) { ongoingSql += ` AND E.MNFC = :mnfc`; params.mnfc = mnfc; }
             if (selfExt) { ongoingSql += ` AND E.SELF = :selfExt`; params.selfExt = selfExt; }
             if (onoffSite) { ongoingSql += ` AND A.LOCT_PRE = :onoffSite`; params.onoffSite = onoffSite; }
             if (startDate) { ongoingSql += ` AND TO_DATE(A.CASD,'YYYYMMDD') >= TO_DATE(:startDate,'YYYYMMDD')`; params.startDate = startDate; }
@@ -417,30 +419,55 @@ export async function GET(request: Request) {
             sql += ` AND (UPPER(TRIM(a.MODL)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM_SUP)) LIKE UPPER(:q) OR UPPER(TRIM(a.NAEM)) LIKE UPPER(:q))`;
             params.q = `%${q}%`;
         } else if (mode === "expirations") {
-            const startDate = searchParams.get("startDate");
-            const endDate = searchParams.get("endDate");
-            const applicant = searchParams.get("q");
+            const applicant = searchParams.get("applicant") || "";
+            const mnfc = extractCode(searchParams.get("mnfc") || "");
+            const startDate = searchParams.get("startDate")?.replace(/-/g, "") || "";
+            const endDate = searchParams.get("endDate")?.replace(/-/g, "") || "";
 
-            if (!startDate && !endDate && !applicant) {
-                return NextResponse.json({ error: "조회 조건(업체 또는 날짜)을 입력해주세요." }, { status: 400 });
-            }
+            let expirationSql = `
+                SELECT
+                    A.ISID,
+                    A.NAEM_SUP,
+                    A.MODL,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.MNFC) as MANUFACTURE,
+                    A.SERN,
+                    (SELECT TRIM(CONM) FROM EASYCAL.TBSUPMAN WHERE COID = A.CUST) as APPLICANT,
+                    A.LAST,
+                    A.NEXT,
+                    A.TERM,                        
+                    (SELECT TRIM(MODE_DESC) FROM EASYCAL.TBMODMAN WHERE MODE_CODE = A.MODE_CODE) as MODE_NAME,
+                    A.LAST_NAM,
+                    CASE
+                        WHEN (
+                            SELECT LOCT_PRE
+                            FROM EASYCAL.TBCALMAN
+                            WHERE TRIM(ISID) = TRIM(A.ISID)
+                                AND CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE TRIM(ISID) = TRIM(A.ISID))
+                        ) = 'A' THEN 'ON SITE'
+                        ELSE 'VISIT'
+                    END as LOCATION
+                FROM EASYCAL.TBMASMAN A
+                WHERE A.STAT = '10' AND A.TYEP = '01'
+            `;
 
+            const params: any = {};
             if (applicant) {
-                sql += ` AND c.CONM LIKE :applicant`;
-                params.applicant = `%${applicant}%`;
+                expirationSql += ` AND A.CUST = :applicant`;
+                params.applicant = applicant;
             }
-            if (startDate) {
-                sql += ` AND a.NEXT >= :startDate`;
+            if (mnfc) {
+                expirationSql += ` AND A.MNFC = :mnfc`;
+                params.mnfc = mnfc;
+            }
+            if (startDate && endDate) {
+                expirationSql += ` AND A.NEXT >= :startDate AND A.NEXT <= :endDate AND TRIM(A.NEXT) <> '0'`;
                 params.startDate = startDate;
-            }
-            if (endDate) {
-                sql += ` AND a.NEXT <= :endDate`;
                 params.endDate = endDate;
             }
 
-            if (!startDate && !endDate) {
-                sql += ` AND a.NEXT <= TO_CHAR(SYSDATE + 30, 'YYYYMMDD') AND a.NEXT >= TO_CHAR(SYSDATE - 365, 'YYYYMMDD')`;
-            }
+            expirationSql += ` ORDER BY A.NEXT ASC`;
+            const rows = await query<any>(expirationSql, params);
+            return NextResponse.json(rows);
         }
 
         sql += ` ORDER BY a.ISID DESC`;

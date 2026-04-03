@@ -172,10 +172,13 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const [selectedMaster, setSelectedMaster] = useState<Partial<MasterRecord>>({});
     const [isLoadingMasterResults, setIsLoadingMasterResults] = useState(false);
 
-    // Ongoing Specific State
+    // Search Filters
     const [ongoingFilter, setOngoingFilter] = useState({
         regno: "", calno: "", applicant: "", contact: "", engineer: "",
         startDate: "", endDate: "", selfExt: "1", onoffSite: "B"
+    });
+    const [expirationFilter, setExpirationFilter] = useState({
+        applicant: "", startDate: "", endDate: ""
     });
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [batchUpdate, setBatchUpdate] = useState({ engineer: "", date: "", reason: "" });
@@ -194,7 +197,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setSearchQuery("");
         setSelectedEquipment(null);
         setResults([]);
-        if (defaultTab === "ongoing" || defaultTab === "expirations") {
+        if (defaultTab === "ongoing") {
             setTimeout(() => handleSearch(defaultTab, ""), 100);
         }
     }, [defaultTab]);
@@ -258,6 +261,38 @@ function SearchInner({ defaultTab }: SearchContentProps) {
             if (data.length === 0) toast.info("No ongoing results found");
         } catch {
             toast.error("진행 내역 검색 중 오류가 발생했습니다");
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleExpirationSearch = async () => {
+        if (!expirationFilter.startDate && !expirationFilter.endDate) {
+            toast.error("Please enter the due date of cal");
+            return;
+        }
+
+        setIsSearching(true);
+        setSelectedEquipment(null);
+        setResults([]);
+
+        try {
+            const params = new URLSearchParams({ 
+                mode: "expirations", 
+                applicant: expirationFilter.applicant,
+                startDate: expirationFilter.startDate,
+                endDate: expirationFilter.endDate
+            });
+            const res = await fetch(`/api/search?${params.toString()}`);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Search Error");
+            }
+            const data = await res.json();
+            setResults(data);
+            if (data.length === 0) toast.info("No data found");
+        } catch (err: any) {
+            toast.error(err.message);
         } finally {
             setIsSearching(false);
         }
