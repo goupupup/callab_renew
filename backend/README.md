@@ -83,4 +83,6 @@ GET  /api/schedules/employees
 POST /api/schedules
 PUT  /api/schedules/{schedule_id}
 DELETE /api/schedules/{schedule_id}
+GET  /api/accounts
+POST /api/accounts
 ```
