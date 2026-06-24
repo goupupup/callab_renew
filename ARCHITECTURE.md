@@ -34,7 +34,7 @@
 - 브라우저와 프론트엔드 서버에는 Oracle/FTP 접속 정보가 없어야 합니다.
 - `/api/*` 요청은 Apache에서 FastAPI 백엔드로 프록시하고, 나머지 요청은 Next.js로 라우팅합니다.
 
-백엔드 구현은 기존 시스템과 동일하게 Spring Boot로 맞출 필요는 없습니다. 현재 Oracle 레거시 스키마와 수작업 SQL이 많기 때문에, 1차 권장안은 `Python 3.12+ + FastAPI + Pydantic + python-oracledb Thick mode`입니다.
+백엔드 구현은 기존 시스템과 동일하게 Spring Boot로 맞출 필요는 없습니다. 현재 Oracle 레거시 스키마와 수작업 SQL이 많기 때문에, 1차 권장안은 `Python 3.11+ + FastAPI + Pydantic + python-oracledb Thick mode`입니다.
 
 상세 전환 지침은 [directives/frontend_backend_split.md](./directives/frontend_backend_split.md)를 따릅니다.
 

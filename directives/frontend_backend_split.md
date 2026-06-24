@@ -49,7 +49,7 @@ The frontend must never connect directly to Oracle, FTP, or other internal servi
 Recommended stack:
 
 ```text
-Python 3.12+
+Python 3.11+
 FastAPI for REST API
 Pydantic v2 for request/response schemas
 python-oracledb in Thick mode for Oracle access

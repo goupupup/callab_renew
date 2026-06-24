@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.venv
+backend/.venv
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,6 +14,8 @@
 
 # testing
 /coverage
+.pytest_cache/
+**/.pytest_cache/
 
 # next.js
 /.next/
@@ -45,3 +49,7 @@ debug_ftp.js
 out_ftp*.txt
 test_init.js
 .tmp/
+
+# python
+__pycache__/
+*.py[cod]

@@ -36,7 +36,7 @@ The frontend calls relative `/api/*` endpoints in production. In local developme
 Recommended stack:
 
 ```text
-Python 3.12+
+Python 3.11+
 FastAPI
 Pydantic v2
 python-oracledb in Thick mode
