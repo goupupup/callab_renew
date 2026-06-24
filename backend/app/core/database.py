@@ -21,6 +21,13 @@ class OracleDatabase:
                 columns = [column[0] for column in cursor.description or []]
                 return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
+    def execute(self, sql: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        with self._get_pool().acquire() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                connection.commit()
+                return {"rowsAffected": cursor.rowcount}
+
     def _get_pool(self):
         if self._pool is None:
             if self.settings.oracle_thick_mode:

@@ -78,4 +78,9 @@ GET  /api/search/cal-no
 GET  /api/search/model
 GET  /api/search/ongoing
 GET  /api/search/expirations
+GET  /api/schedules
+GET  /api/schedules/employees
+POST /api/schedules
+PUT  /api/schedules/{schedule_id}
+DELETE /api/schedules/{schedule_id}
 ```
