@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -20,13 +19,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth-client";
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { data: session, status } = useSession();
+    const { data: session, status, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     
@@ -261,7 +261,7 @@ export default function DashboardLayout({
 
                             {/* Refined Logout Button */}
                             <button
-                                onClick={() => signOut()}
+                                onClick={() => logout()}
                                 className="group h-10 md:h-12 pl-4 md:pl-5 pr-5 md:pr-6 rounded-2xl border border-slate-100 bg-white hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center space-x-3 shadow-sm active:scale-95"
                             >
                                 <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-950 flex items-center justify-center text-white transition-colors group-hover:bg-rose-600">

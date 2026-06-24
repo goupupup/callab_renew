@@ -1,10 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-client";
 import {
     Search, ChevronDown, Save, History, Download, X, Loader2,
     FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database, Check
@@ -137,7 +137,7 @@ export default function SearchContent({ defaultTab }: SearchContentProps) {
 }
 
 function SearchInner({ defaultTab }: SearchContentProps) {
-    const { data: session, status } = useSession();
+    const { data: session, status } = useAuth();
     const router = useRouter();
     const role = (session?.user as any)?.role;
     const isMaster = role === "MASTER";

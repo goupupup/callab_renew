@@ -1,6 +1,6 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
+import { AuthProvider } from "@/lib/auth-client";
 import { Toaster } from "@/components/ui/sonner";
 import "@/app/globals.css";
 
@@ -12,10 +12,10 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
-        <SessionProvider>
+        <AuthProvider>
           {children}
           <Toaster position="top-right" />
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );

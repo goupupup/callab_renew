@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +10,10 @@ import { Plus, ChevronLeft, ChevronRight, Trash2, Edit, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-client";
 
 export default function SchedulePage() {
-    const { data: session } = useSession();
+    const { data: session } = useAuth();
     const router = useRouter();
     const [schedules, setSchedules] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);

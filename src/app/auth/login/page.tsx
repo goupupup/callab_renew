@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LogIn, Search, Mail, UserPlus, Download, Bell, Cpu, Shield, Globe, Activity, HelpCircle, FileText, PhoneCall, ClipboardCheck, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth-client";
 
 export default function LoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         username: "",
@@ -23,13 +24,8 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const result = await signIn("credentials", {
-                redirect: false,
-                username: formData.username,
-                password: formData.password,
-            });
-
-            if (result?.error) {
+            const ok = await login(formData.username, formData.password);
+            if (!ok) {
                 toast.error("Authentication Failed", {
                     description: "Invalid credentials. Please verify your identity.",
                 });

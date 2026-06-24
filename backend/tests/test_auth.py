@@ -56,6 +56,22 @@ def test_login_sets_http_only_session_cookie_and_auth_me_returns_user():
     }
 
 
+def test_logout_clears_session_cookie():
+    client = TestClient(create_app(auth_service=FakeAuthService()))
+    login_response = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "correct-password"},
+    )
+    assert login_response.status_code == 200
+
+    logout_response = client.post("/api/auth/logout")
+
+    assert logout_response.status_code == 200
+    assert logout_response.json() == {"success": True}
+    assert "callab_session=" in logout_response.headers["set-cookie"]
+    assert "max-age=0" in logout_response.headers["set-cookie"].lower()
+
+
 def test_login_failure_returns_generic_unauthorized_response():
     client = TestClient(create_app(auth_service=FakeAuthService()))
 

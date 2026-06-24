@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +11,10 @@ import { UserPlus, Search, Key, Activity, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-client";
 
 export default function AccountsPage() {
-    const { data: session } = useSession();
+    const { data: session } = useAuth();
     const router = useRouter();
     const [accounts, setAccounts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);

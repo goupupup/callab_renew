@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, History, BarChart3, HardDrive, Zap, ShieldCheck, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -8,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-client";
 
 export default function DashboardPage() {
-    const { data: session } = useSession();
+    const { data: session } = useAuth();
     const router = useRouter();
     const [stats, setStats] = useState<any>({
         totalEquipment: "---",

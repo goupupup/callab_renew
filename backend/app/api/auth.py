@@ -39,3 +39,10 @@ def login(payload: LoginRequest, request: Request, response: Response):
 @router.get("/me", response_model=CurrentUser)
 def read_current_user(current_user: CurrentUser = Depends(current_user_from_request)):
     return current_user
+
+
+@router.post("/logout")
+def logout(request: Request, response: Response):
+    settings = request.app.state.settings
+    response.delete_cookie(settings.session_cookie_name, path="/")
+    return {"success": True}

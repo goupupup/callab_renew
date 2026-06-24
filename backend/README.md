@@ -66,9 +66,11 @@ Use Oracle Thick mode in production unless Oracle compatibility testing proves T
 GET  /api/health
 POST /api/auth/login
 GET  /api/auth/me
+POST /api/auth/logout
 GET  /api/dashboard/stats
 GET  /api/dashboard/expirations
 GET  /api/equipment
+PUT  /api/equipment/{equipment_id}
 GET  /api/equipment/export
 GET  /api/equipment/download
 POST /api/equipment/upload
@@ -78,6 +80,8 @@ GET  /api/search/cal-no
 GET  /api/search/model
 GET  /api/search/ongoing
 GET  /api/search/expirations
+GET  /api/search/master
+GET  /api/search/cal-history
 GET  /api/schedules
 GET  /api/schedules/employees
 POST /api/schedules

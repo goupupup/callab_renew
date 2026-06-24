@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
     Search, FileText, Download, Trash2, Eye,
@@ -22,6 +21,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { apiFetch, apiUrl } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-client";
 
 export default function EquipmentPage() {
     return (
@@ -36,7 +36,7 @@ export default function EquipmentPage() {
 }
 
 function EquipmentContent() {
-    const { data: session } = useSession();
+    const { data: session } = useAuth();
     const searchParams = useSearchParams();
     const filterParam = searchParams.get("filter");
 
