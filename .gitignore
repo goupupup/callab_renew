@@ -4,6 +4,7 @@
 /node_modules
 /.venv
 backend/.venv
+/.oracle
 /.pnp
 .pnp.*
 .yarn/*
