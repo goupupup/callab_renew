@@ -147,6 +147,51 @@ class EquipmentRepository:
             params,
         )
 
+    def get_file_context(
+        self,
+        corp_id: str,
+        is_elevated: bool,
+        equipment_id: str,
+        cal_no: str = "",
+    ):
+        cal_filter = (
+            "AND TRIM(c.CIDU) = :cal_no"
+            if cal_no
+            else "AND c.CIDU = (SELECT MAX(CIDU) FROM EASYCAL.TBCALMAN WHERE TRIM(ISID) = :equipment_id)"
+        )
+        tenant_filter = "" if is_elevated else "AND TRIM(m.CUST) = :corp_id"
+        params = {"equipment_id": equipment_id.strip()}
+        if cal_no:
+            params["cal_no"] = cal_no.strip()
+        if not is_elevated:
+            params["corp_id"] = corp_id
+
+        return self.database.fetch_one(
+            f"""
+            SELECT
+                TRIM(m.ISID) as ISID,
+                TRIM(m.ACCN) as ACCN,
+                TRIM(c.CIDU) as CIDU
+            FROM EASYCAL.TBMASMAN m
+            JOIN EASYCAL.TBCALMAN c ON TRIM(m.ISID) = TRIM(c.ISID)
+            WHERE TRIM(m.ISID) = :equipment_id
+            {cal_filter}
+            {tenant_filter}
+            """,
+            params,
+        )
+
+    def get_asset_no(self, equipment_id: str):
+        row = self.database.fetch_one(
+            """
+            SELECT TRIM(ACCN) as ACCN
+            FROM EASYCAL.TBMASMAN
+            WHERE TRIM(ISID) = :equipment_id
+            """,
+            {"equipment_id": equipment_id.strip()},
+        )
+        return row.get("ACCN") if row else ""
+
     def _build_where_sql(
         self,
         corp_id: str,

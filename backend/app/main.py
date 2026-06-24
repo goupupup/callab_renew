@@ -33,8 +33,9 @@ def create_app(
     auth_service = auth_service or AuthService(AuthRepository(database))
     account_service = account_service or AccountService(AccountRepository(database))
     dashboard_service = dashboard_service or DashboardService(DashboardRepository(database))
-    equipment_service = equipment_service or EquipmentService(EquipmentRepository(database))
-    file_service = file_service or EquipmentFileService()
+    equipment_repository = EquipmentRepository(database)
+    equipment_service = equipment_service or EquipmentService(equipment_repository)
+    file_service = file_service or EquipmentFileService(settings, equipment_repository)
     search_service = search_service or SearchService(SearchRepository(database))
     schedule_service = schedule_service or ScheduleService(ScheduleRepository(database))
 

@@ -21,3 +21,15 @@ def test_settings_support_legacy_oracle_environment_names(monkeypatch):
     assert settings.oracle_password == "legacy_password"
     assert settings.oracle_dsn == "legacy_dsn"
     assert settings.oracle_lib_dir == "/opt/oracle"
+
+
+def test_settings_support_legacy_ftp_environment_names(monkeypatch):
+    monkeypatch.setenv("FTP_HOST", "ftp.internal")
+    monkeypatch.setenv("FTP_USER", "ftp_user")
+    monkeypatch.setenv("FTP_PASSWORD", "ftp_password")
+
+    settings = Settings()
+
+    assert settings.ftp_host == "ftp.internal"
+    assert settings.ftp_user == "ftp_user"
+    assert settings.ftp_password == "ftp_password"

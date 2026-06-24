@@ -35,4 +35,10 @@ class Settings(BaseSettings):
             self.oracle_dsn = os.getenv("ORACLE_CONN_STR", "")
         if not self.oracle_lib_dir:
             self.oracle_lib_dir = os.getenv("ORACLE_LIB_DIR", "")
+        if not self.ftp_host:
+            self.ftp_host = os.getenv("FTP_HOST", "")
+        if not self.ftp_user:
+            self.ftp_user = os.getenv("FTP_USER", "")
+        if not self.ftp_password:
+            self.ftp_password = os.getenv("FTP_PASSWORD", "")
         return self

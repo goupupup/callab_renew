@@ -4,7 +4,12 @@ from app.core.config import Settings
 from app.core.security import create_session_token
 from app.main import create_app
 from app.schemas.auth import CurrentUser
-from app.services.equipment_file_service import FileResult
+from app.services.equipment_file_service import (
+    EquipmentFileService,
+    FileResult,
+    build_candidate_paths,
+    build_download_filename,
+)
 
 
 class FakeFileService:
@@ -86,3 +91,36 @@ def test_equipment_upload_accepts_employee_user():
     assert response.status_code == 200
     assert response.json()["success"] is True
     assert file_service.upload_call[1:] == ("1001", "data.xlsx", b"content")
+
+
+def test_file_service_returns_not_configured_when_ftp_settings_are_missing():
+    service = EquipmentFileService(settings=Settings(), equipment_repository=None)
+
+    assert service.get_download(CurrentUser(user_id="u", name="U", corp_id="C", corp_name="C", role="MASTER"), "1001", "data") is None
+    assert service.upload(None, "1001", "data.xlsx", b"content") == {
+        "success": False,
+        "message": "FTP upload is not configured",
+    }
+
+
+def test_report_candidate_paths_follow_legacy_ftp_layout():
+    paths = build_candidate_paths("1001", "ASSET1", "CAL2024001", "report")
+
+    assert paths[:3] == [
+        "/report/report_cust_pdf/2024/CAL2024001.pdf",
+        "/report/report_cust_pdf/2024/CAL2024001.PDF",
+        "/report/report_cust_pdf/CAL2024001.pdf",
+    ]
+    assert "/HCT_CALLAB/gear/CAL2024001.pdf" in paths
+
+
+def test_data_download_filename_uses_actual_remote_extension():
+    filename = build_download_filename(
+        "1001",
+        "ASSET1",
+        "CAL2024001",
+        "/HCT_CALLAB/gear/1001.zip",
+        "data",
+    )
+
+    assert filename == "ASSET1 - 2024_CAL2024001_1001.zip"
