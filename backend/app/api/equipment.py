@@ -71,3 +71,22 @@ async def upload_equipment_file(
 
     content = await file.read()
     return request.app.state.file_service.upload(current_user, id.strip(), file.filename, content)
+
+
+@router.put("/{equipment_id}")
+async def update_equipment(
+    request: Request,
+    equipment_id: str,
+    current_user: CurrentUser = Depends(current_user_from_request),
+):
+    if current_user.role not in ("MASTER", "EMPLOYEE"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Elevated role required",
+        )
+
+    payload = await request.json()
+    result = request.app.state.equipment_service.update(current_user, equipment_id.strip(), payload)
+    if not result.get("success"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Equipment not found")
+    return result

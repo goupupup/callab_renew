@@ -221,11 +221,17 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setResults([]);
 
         try {
-            const searchMode = m === "regNo" || m === "asset" || m === "sn" ? m : m;
-            const res = await fetch(`/api/search?mode=${searchMode}&q=${encodeURIComponent(q)}`);
+            const searchPath =
+                m === "regNo" ? `/api/search/reg-no?q=${encodeURIComponent(q)}` :
+                    m === "calNo" ? `/api/search/cal-no?q=${encodeURIComponent(q)}` :
+                        m === "model" ? `/api/search/model?q=${encodeURIComponent(q)}` :
+                            m === "asset" ? `/api/equipment?assetNo=${encodeURIComponent(q)}&limit=9999` :
+                                `/api/equipment?serialNumber=${encodeURIComponent(q)}&limit=9999`;
+            const res = await apiFetch(searchPath);
             if (!res.ok) throw new Error("Search failed");
 
-            const data: Equipment[] = await res.json();
+            const responseData = await res.json();
+            const data: Equipment[] = Array.isArray(responseData) ? responseData : responseData.data;
 
             if (data.length === 0) {
                 toast.info("No Data");
@@ -254,8 +260,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setSelectedRows([]);
 
         try {
-            const params = new URLSearchParams({ mode: "ongoing", ...ongoingFilter });
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const params = new URLSearchParams(ongoingFilter);
+            const res = await apiFetch(`/api/search/ongoing?${params.toString()}`);
             if (!res.ok) throw new Error();
             const data = await res.json();
             setResults(data);
@@ -278,13 +284,12 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setResults([]);
 
         try {
-            const params = new URLSearchParams({ 
-                mode: "expirations", 
+            const params = new URLSearchParams({
                 applicant: expirationFilter.applicant,
                 startDate: expirationFilter.startDate,
                 endDate: expirationFilter.endDate
             });
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const res = await apiFetch(`/api/search/expirations?${params.toString()}`);
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.error || "Search Error");
@@ -335,7 +340,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                 NEXT: isMaster ? editData.NEXT : undefined,
             };
 
-            const res = await fetch("/api/search", {
+            const res = await apiFetch(`/api/equipment/${encodeURIComponent(selectedEquipment.ISID)}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -355,12 +360,11 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setIsLoadingMasterResults(true);
         try {
             const params = new URLSearchParams({
-                mode: "masterSearch",
                 name: masterSearch.name,
                 model: masterSearch.model,
                 manufacturer: masterSearch.manufacturer
             });
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const res = await apiFetch(`/api/search/master?${params.toString()}`);
             if (!res.ok) throw new Error();
             const data = await res.json();
             setMasterResults(data);
@@ -398,7 +402,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         setIsLoadingHistory(true);
         setShowHistoryModal(true);
         try {
-            const res = await fetch(`/api/search?mode=calHistory&isid=${selectedEquipment.ISID}`);
+            const res = await apiFetch(
+                `/api/search/cal-history?isid=${encodeURIComponent(selectedEquipment.ISID)}`
+            );
             const data = await res.json();
             setCalHistory(data);
         } catch {
@@ -411,7 +417,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const downloadReport = async (calNo: string) => {
         const loadingToast = toast.loading("Downloading report...");
         try {
-            const res = await fetch(`/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`);
+            const res = await apiFetch(`/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`);
             if (!res.ok) {
                 toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
                 return;

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { SearchableDropdown } from './SearchableDropdown';
+import { apiFetch } from "@/lib/api-client";
 
 interface LookupItem {
     CODE: string;
@@ -53,7 +54,7 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
     const handleSearch = async () => {
         setIsSearching(true);
         try {
-            const params = new URLSearchParams({ mode: "advancedCalHistory" });
+            const params = new URLSearchParams();
             if (filters.isid) params.append("isid", filters.isid.trim());
             if (filters.calNo) params.append("calNo", filters.calNo.trim());
             if (filters.asset) params.append("asset", filters.asset.trim());
@@ -73,7 +74,7 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
             params.append("inHouse", filters.inHouse.toString());
             params.append("onSite", filters.onSite.toString());
 
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const res = await apiFetch(`/api/search/cal-no?${params.toString()}`);
             const data = await res.json();
             
             if (!res.ok) {
@@ -93,7 +94,7 @@ export default function AdvancedCalNoSearch({ lookups }: AdvancedCalNoSearchProp
     const downloadReport = async (isid: string, calNo: string) => {
         const loadingToast = toast.loading(`Downloading certificate ${calNo}...`);
         try {
-            const res = await fetch(`/api/equipment/download?id=${isid}&type=report&calno=${calNo}`);
+            const res = await apiFetch(`/api/equipment/download?id=${isid}&type=report&calno=${calNo}`);
             if (!res.ok) {
                 toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
                 return;

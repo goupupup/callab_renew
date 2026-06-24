@@ -3,6 +3,7 @@ import { Search, ChevronDown, Download, Wrench, Loader2, ArrowUpDown, ChevronUp 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api-client";
 
 interface LookupItem {
     CODE: string;
@@ -42,7 +43,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
     const handleSearch = async () => {
         setIsSearching(true);
         try {
-            const params = new URLSearchParams({ mode: "advancedModel" });
+            const params = new URLSearchParams();
             if (filters.cust) params.append("cust", filters.cust);
             if (filters.mnfc) params.append("mnfc", filters.mnfc);
             if (filters.eqptName) params.append("eqptName", filters.eqptName.trim());
@@ -50,7 +51,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
             if (filters.isExact) params.append("isExact", "true");
             if (filters.memo) params.append("memo", filters.memo.trim());
 
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const res = await apiFetch(`/api/search/model?${params.toString()}`);
             const data = await res.json();
             
             if (!res.ok) {

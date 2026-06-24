@@ -52,6 +52,10 @@ class EquipmentService:
             ),
         )
 
+    def update(self, user: CurrentUser, equipment_id: str, payload: dict):
+        result = self.equipment_repository.update_equipment(equipment_id, payload)
+        return {"success": bool(result.get("rowsAffected", 0))}
+
 
 def _map_item(row) -> EquipmentItem:
     return EquipmentItem(

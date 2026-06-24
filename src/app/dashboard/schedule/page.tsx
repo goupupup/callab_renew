@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus, ChevronLeft, ChevronRight, Trash2, Edit, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
 
 export default function SchedulePage() {
     const { data: session } = useSession();
@@ -49,8 +50,8 @@ export default function SchedulePage() {
         setIsLoading(true);
         try {
             const [schedRes, empRes] = await Promise.all([
-                fetch("/api/schedule"),
-                fetch("/api/schedule?mode=employees")
+                apiFetch("/api/schedules"),
+                apiFetch("/api/schedules/employees")
             ]);
 
             if (schedRes.ok && empRes.ok) {
@@ -81,7 +82,7 @@ export default function SchedulePage() {
                 schId: editingId
             };
 
-            const res = await fetch("/api/schedule", {
+            const res = await apiFetch(editingId ? `/api/schedules/${editingId}` : "/api/schedules", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(submissionData)
@@ -111,7 +112,7 @@ export default function SchedulePage() {
     const handleDelete = async (id: string) => {
         if (!confirm("Confirm schedule termination?")) return;
         try {
-            const res = await fetch(`/api/schedule?id=${id}`, { method: "DELETE" });
+            const res = await apiFetch(`/api/schedules/${id}`, { method: "DELETE" });
             if (res.ok) {
                 toast.success("Entry purged.");
                 fetchData();

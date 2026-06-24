@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { SearchableDropdown } from './SearchableDropdown';
+import { apiFetch } from "@/lib/api-client";
 
 interface LookupItem {
     CODE: string;
@@ -44,14 +45,13 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
 
         setIsSearching(true);
         try {
-            const params = new URLSearchParams({ 
-                mode: "expirations",
+            const params = new URLSearchParams({
                 applicant: filters.applicant,
                 startDate: filters.dueDateStart,
                 endDate: filters.dueDateEnd
             });
 
-            const res = await fetch(`/api/search?${params.toString()}`);
+            const res = await apiFetch(`/api/search/expirations?${params.toString()}`);
             const data = await res.json();
             
             if (!res.ok) {

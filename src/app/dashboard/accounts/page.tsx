@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserPlus, Search, Key, Activity, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
 
 export default function AccountsPage() {
     const { data: session } = useSession();
@@ -43,7 +44,7 @@ export default function AccountsPage() {
     const fetchAccounts = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch("/api/accounts");
+            const res = await apiFetch("/api/accounts");
             if (res.ok) {
                 const data = await res.json();
                 setAccounts(data);
@@ -61,7 +62,7 @@ export default function AccountsPage() {
         const loadingToast = toast.loading("Registering new encrypted profile...");
 
         try {
-            const res = await fetch("/api/accounts", {
+            const res = await apiFetch("/api/accounts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)

@@ -26,6 +26,25 @@ class EquipmentSort:
 
 
 class EquipmentRepository:
+    UPDATE_COLUMNS = {
+        "STAT",
+        "TYEP",
+        "MODE_CODE",
+        "TERM",
+        "LAST",
+        "NEXT",
+        "CUST",
+        "MEMO",
+        "ACC1",
+        "SELF",
+        "EXTN",
+        "NAEM_SUP",
+        "ACCN",
+        "SERN",
+        "NAEM",
+        "MODL",
+        "MNFC",
+    }
     SORT_COLUMNS = {
         "assetNo": "TRIM(m.ACCN)",
         "hctNo": "TO_NUMBER(REGEXP_REPLACE(TRIM(m.ISID), '[^0-9]', ''))",
@@ -105,6 +124,29 @@ class EquipmentRepository:
             "rows": self.database.fetch_all(final_data_sql, data_params),
         }
 
+    def update_equipment(self, equipment_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        values = {}
+        for key, value in payload.items():
+            column = key.upper()
+            if column in self.UPDATE_COLUMNS:
+                values[column] = _extract_code(value)
+
+        if not values:
+            return {"rowsAffected": 0}
+
+        assignments = [f"{column} = :{column.lower()}" for column in values]
+        params = {column.lower(): value for column, value in values.items()}
+        params["isid"] = equipment_id.strip()
+
+        return self.database.execute(
+            f"""
+            UPDATE EASYCAL.TBMASMAN
+            SET {", ".join(assignments)}
+            WHERE TRIM(ISID) = :isid
+            """,
+            params,
+        )
+
     def _build_where_sql(
         self,
         corp_id: str,
@@ -173,3 +215,10 @@ class EquipmentRepository:
 
 def _date_param(value: str) -> str:
     return value.replace("-", "")
+
+
+def _extract_code(value) -> str:
+    text = str(value or "").strip()
+    if text.startswith("[") and "]" in text:
+        return text[1 : text.index("]")].strip()
+    return text
