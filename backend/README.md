@@ -70,5 +70,7 @@ GET  /api/dashboard/stats
 GET  /api/dashboard/expirations
 GET  /api/equipment
 GET  /api/equipment/export
+GET  /api/equipment/download
+POST /api/equipment/upload
 GET  /api/search/lookups
 ```

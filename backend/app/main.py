@@ -10,6 +10,7 @@ from app.repositories.search_repo import SearchRepository
 from app.services.auth_service import AuthService
 from app.services.dashboard_service import DashboardService
 from app.services.equipment_service import EquipmentService
+from app.services.equipment_file_service import EquipmentFileService
 from app.services.search_service import SearchService
 
 
@@ -18,6 +19,7 @@ def create_app(
     auth_service=None,
     dashboard_service=None,
     equipment_service=None,
+    file_service=None,
     search_service=None,
 ) -> FastAPI:
     settings = settings or Settings()
@@ -25,6 +27,7 @@ def create_app(
     auth_service = auth_service or AuthService(AuthRepository(database))
     dashboard_service = dashboard_service or DashboardService(DashboardRepository(database))
     equipment_service = equipment_service or EquipmentService(EquipmentRepository(database))
+    file_service = file_service or EquipmentFileService()
     search_service = search_service or SearchService(SearchRepository(database))
 
     app = FastAPI(title="CALLAB Backend", version="0.1.0")
@@ -32,6 +35,7 @@ def create_app(
     app.state.auth_service = auth_service
     app.state.dashboard_service = dashboard_service
     app.state.equipment_service = equipment_service
+    app.state.file_service = file_service
     app.state.search_service = search_service
     app.include_router(health.router)
     app.include_router(auth.router)
