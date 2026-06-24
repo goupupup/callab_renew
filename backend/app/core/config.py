@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     session_secret: str = "change-me-in-production"
     session_cookie_name: str = "callab_session"
     session_max_age_seconds: int = 60 * 60 * 8
+    cors_origins: str = "http://127.0.0.1:3000,http://localhost:3000"
 
     model_config = SettingsConfigDict(
         env_file=".env",

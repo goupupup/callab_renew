@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import accounts, auth, dashboard, equipment, health, schedules, search
 from app.core.config import Settings
@@ -40,6 +41,15 @@ def create_app(
     schedule_service = schedule_service or ScheduleService(ScheduleRepository(database))
 
     app = FastAPI(title="CALLAB Backend", version="0.1.0")
+    cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     app.state.settings = settings
     app.state.auth_service = auth_service
     app.state.account_service = account_service
