@@ -9,11 +9,34 @@
 ## 🛠 기술 스택 (Tech Stack)
 
 - **Frontend**: Next.js 15+ (App Router), Tailwind CSS
-- **Backend API**: Next.js Server Components 및 API Routes
-- **Database**: Oracle Database (EASYCAL 스키마 연동)
+- **Backend API (Target)**: Python FastAPI REST API
+- **Backend API (Current Transition State)**: Next.js API Routes
+- **Database**: Oracle Database (EASYCAL 스키마 연동, 백엔드 서버에서만 접근)
 - **UI Components**: Shadcn UI 기반 커스텀 컴포넌트
 - **Icons**: Lucide React
 - **Auth**: NextAuth.js (Oracle DB 기반 사용자 인증)
+
+## 🎯 목표 아키텍처 (Frontend / Backend Split)
+
+현재 구현은 Next.js API Routes가 Oracle DB와 FTP에 직접 연결하는 전환기 구조입니다. 운영 목표는 기존 회사 인프라와 맞춰 프론트엔드와 백엔드를 분리하는 것입니다.
+
+```text
+사용자(외부/사내망)
+  -> 회사 도메인 / 회사 공인 IP
+  -> Apache HTTPD
+  -> Next.js Frontend
+  -> FastAPI Backend API
+  -> Oracle DB / FTP / Legacy Systems
+```
+
+- Next.js는 화면 렌더링과 API 호출 클라이언트만 담당합니다.
+- FastAPI 백엔드는 인증, 권한, Oracle 조회/수정, FTP 파일 처리, 감사 로그를 담당합니다.
+- 브라우저와 프론트엔드 서버에는 Oracle/FTP 접속 정보가 없어야 합니다.
+- `/api/*` 요청은 Apache에서 FastAPI 백엔드로 프록시하고, 나머지 요청은 Next.js로 라우팅합니다.
+
+백엔드 구현은 기존 시스템과 동일하게 Spring Boot로 맞출 필요는 없습니다. 현재 Oracle 레거시 스키마와 수작업 SQL이 많기 때문에, 1차 권장안은 `Python 3.12+ + FastAPI + Pydantic + python-oracledb Thick mode`입니다.
+
+상세 전환 지침은 [directives/frontend_backend_split.md](./directives/frontend_backend_split.md)를 따릅니다.
 
 ## 📂 주요 폴더 구조 (Folder Structure)
 
@@ -32,9 +55,10 @@ src/
 
 ## 🔐 데이터베이스 연동 (Oracle DB)
 
-- `src/lib/db.ts`에서 `oracledb` 패키지를 사용하여 직접 연결을 관리합니다.
-- `EASYCAL` 스키마의 `TBMASMAN`, `TBCALMAN`, `TBSUPMAN` 등 기존 테이블과 연동합니다.
-- 복잡한 검색 로직은 `UPPER`, `LIKE`, `TRIM` 등을 활용한 동적 SQL 쿼리로 처리합니다.
+- 전환기에는 `src/lib/db.ts`에서 `oracledb` 패키지를 사용합니다.
+- 목표 구조에서는 FastAPI 백엔드만 Oracle에 직접 연결합니다.
+- `EASYCAL` 스키마의 `TBMASMAN`, `TBCALMAN`, `TBSUPMAN` 등 기존 테이블은 백엔드 DTO로 감싸서 프론트엔드에 노출합니다.
+- 복잡한 검색 로직은 백엔드 서비스/리포지토리 계층으로 이동합니다.
 
 ## ⚙️ 특이 사항 및 최적화
 
