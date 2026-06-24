@@ -17,6 +17,24 @@ class FakeDashboardRepository:
             }
         ]
 
+    def list_expirations(self, corp_id: str, is_master: bool):
+        return [
+            {
+                "ISID": " 1001 ",
+                "NAEM_SUP": " Equipment ",
+                "MODL": " Model ",
+                "MNFC_NAME": " Maker ",
+                "SERN": " SN ",
+                "CUST_NAME": " Customer ",
+                "LAST": "20250101",
+                "NEXT": "20260101",
+                "TERM": "12",
+                "MODE_NAME": "Mode",
+                "OWNER_NAME": "Owner",
+                "LOCATION_STATUS": "VISIT",
+            }
+        ]
+
 
 def test_dashboard_service_hides_company_stats_for_customer_user():
     service = DashboardService(FakeDashboardRepository(), today_provider=lambda: "20260623")
@@ -48,3 +66,19 @@ def test_dashboard_service_includes_company_stats_for_master():
 
     assert stats.companyStats is not None
     assert stats.companyStats[0].corpId == "C001"
+
+
+def test_dashboard_service_maps_expiration_rows():
+    service = DashboardService(FakeDashboardRepository(), today_provider=lambda: "20260623")
+    user = CurrentUser(
+        user_id="customer",
+        name="Customer",
+        corp_id="C001",
+        corp_name="Customer Corp",
+        role="USER",
+    )
+
+    expirations = service.list_expirations(user)
+
+    assert expirations[0]["ISID"] == "1001"
+    assert expirations[0]["NAEM_SUP"] == "Equipment"

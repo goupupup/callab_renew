@@ -67,6 +67,7 @@ GET  /api/health
 POST /api/auth/login
 GET  /api/auth/me
 GET  /api/dashboard/stats
+GET  /api/dashboard/expirations
 GET  /api/equipment
 GET  /api/search/lookups
 ```

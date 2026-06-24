@@ -13,3 +13,11 @@ def read_dashboard_stats(
     current_user: CurrentUser = Depends(current_user_from_request),
 ):
     return request.app.state.dashboard_service.get_stats(current_user)
+
+
+@router.get("/expirations")
+def read_dashboard_expirations(
+    request: Request,
+    current_user: CurrentUser = Depends(current_user_from_request),
+):
+    return request.app.state.dashboard_service.list_expirations(current_user)

@@ -36,3 +36,27 @@ def test_dashboard_repository_company_stats_uses_bound_today_param():
     _, sql, params = database.calls[0]
     assert "GROUP BY TRIM(m.CUST)" in sql
     assert params == {"today": "20260623"}
+
+
+def test_dashboard_repository_scopes_expirations_for_customer_user():
+    database = FakeDatabase()
+    repo = DashboardRepository(database)
+
+    repo.list_expirations(corp_id="C001", is_master=False)
+
+    _kind, sql, params = database.calls[0]
+    assert "WHERE A.STAT = '10'" in sql
+    assert "TRIM(A.CUST) = :corp_id" in sql
+    assert params == {"corp_id": "C001"}
+
+
+def test_dashboard_repository_does_not_scope_expirations_for_master():
+    database = FakeDatabase()
+    repo = DashboardRepository(database)
+
+    repo.list_expirations(corp_id="HCT", is_master=True)
+
+    _kind, sql, params = database.calls[0]
+    assert "WHERE A.STAT = '10'" in sql
+    assert "TRIM(A.CUST) = :corp_id" not in sql
+    assert params == {}

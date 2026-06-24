@@ -34,6 +34,15 @@ class DashboardService:
             companyStats=company_stats,
         )
 
+    def list_expirations(self, user: CurrentUser):
+        return [
+            {key: _clean(value) for key, value in row.items()}
+            for row in self.dashboard_repository.list_expirations(
+                corp_id=user.corp_id,
+                is_master=user.role == "MASTER",
+            )
+        ]
+
 
 def _today_yyyymmdd() -> str:
     return datetime.utcnow().strftime("%Y%m%d")
