@@ -73,4 +73,9 @@ GET  /api/equipment/export
 GET  /api/equipment/download
 POST /api/equipment/upload
 GET  /api/search/lookups
+GET  /api/search/reg-no
+GET  /api/search/cal-no
+GET  /api/search/model
+GET  /api/search/ongoing
+GET  /api/search/expirations
 ```

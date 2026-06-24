@@ -16,6 +16,21 @@ class SearchService:
             subcontractors=_map_items(rows["subcontractors"]),
         )
 
+    def search_reg_no(self, user, q: str):
+        return _clean_rows(self.search_repository.search_reg_no(q))
+
+    def search_cal_no(self, user, q: str):
+        return _clean_rows(self.search_repository.search_cal_no(q))
+
+    def search_model(self, user, q: str):
+        return _clean_rows(self.search_repository.search_model(q))
+
+    def search_ongoing(self, user, filters):
+        return _clean_rows(self.search_repository.search_ongoing(filters))
+
+    def search_expirations(self, user, filters):
+        return _clean_rows(self.search_repository.search_expirations(filters))
+
 
 def _map_items(rows):
     return [
@@ -29,3 +44,7 @@ def _map_items(rows):
 
 def _clean(value) -> str:
     return str(value).strip() if value is not None else ""
+
+
+def _clean_rows(rows):
+    return [{key: _clean(value) for key, value in row.items()} for row in rows]
