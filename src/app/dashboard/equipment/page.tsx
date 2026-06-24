@@ -21,6 +21,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { apiFetch, apiUrl } from "@/lib/api-client";
 
 export default function EquipmentPage() {
     return (
@@ -111,7 +112,7 @@ function EquipmentContent() {
             queryParams.append("sortBy", sort.key);
             queryParams.append("order", sort.direction);
 
-            const response = await fetch(`/api/equipment?${queryParams.toString()}`);
+            const response = await apiFetch(`/api/equipment?${queryParams.toString()}`);
             if (response.ok) {
                 const result = await response.json();
                 setEquipment(result.data);
@@ -158,7 +159,7 @@ function EquipmentContent() {
     const handleFileDownload = async (id: string, type: "data" | "report") => {
         const loadingToast = toast.loading("Connecting to secure server...");
         try {
-            const response = await fetch(`/api/equipment/download?id=${encodeURIComponent(id)}&type=${type}`);
+            const response = await apiFetch(`/api/equipment/download?id=${encodeURIComponent(id)}&type=${type}`);
 
             if (response.ok) {
                 const contentType = response.headers.get('Content-Type');
@@ -212,7 +213,7 @@ function EquipmentContent() {
                 const formData = new FormData();
                 formData.append("file", file);
                 formData.append("id", id);
-                const res = await fetch("/api/equipment/upload", { method: "POST", body: formData });
+                const res = await apiFetch("/api/equipment/upload", { method: "POST", body: formData });
                 if (res.ok) {
                     toast.success("Sector index updated.", { description: `File: ${file.name}`, id: loadingToast });
                 } else {
@@ -235,7 +236,7 @@ function EquipmentContent() {
         params.append("order", sortConfig.direction);
         params.append("page", pagination.page.toString());
         params.append("limit", pagination.limit.toString());
-        window.location.href = `/api/equipment/export?${params.toString()}`;
+        window.location.href = apiUrl(`/api/equipment/export?${params.toString()}`);
     };
 
     // Dynamic Pagination Logic (Centered 5-page window)

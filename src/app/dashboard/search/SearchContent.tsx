@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api-client";
 import {
     Search, ChevronDown, Save, History, Download, X, Loader2,
     FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database, Check
@@ -185,7 +186,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
     // Load Lookups
     useEffect(() => {
-        fetch("/api/search?mode=lookups")
+        apiFetch("/api/search/lookups")
             .then(r => r.json())
             .then(setLookups)
             .catch(() => toast.error("Failed to load lookup data"));

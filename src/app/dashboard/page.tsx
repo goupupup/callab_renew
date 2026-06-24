@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
 
 export default function DashboardPage() {
     const { data: session } = useSession();
@@ -26,7 +27,7 @@ export default function DashboardPage() {
             if (!session) return;
 
             try {
-                const statsResponse = await fetch("/api/dashboard/stats");
+                const statsResponse = await apiFetch("/api/dashboard/stats");
                 if (statsResponse.ok) {
                     const statsData = await statsResponse.json();
                     setStats(statsData);
