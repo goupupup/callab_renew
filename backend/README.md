@@ -59,3 +59,12 @@ ORACLE_LIB_DIR=
 ```
 
 Use Oracle Thick mode in production unless Oracle compatibility testing proves Thin mode is sufficient.
+
+## Implemented API Slice
+
+```text
+GET  /api/health
+POST /api/auth/login
+GET  /api/auth/me
+GET  /api/dashboard/stats
+```
