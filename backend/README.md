@@ -49,4 +49,13 @@ CALLAB_FTP_USER=
 CALLAB_FTP_PASSWORD=
 ```
 
+For compatibility with the existing Next.js environment, the backend also reads these legacy Oracle variable names when `CALLAB_` values are absent:
+
+```env
+ORACLE_USER=
+ORACLE_PASS=
+ORACLE_CONN_STR=
+ORACLE_LIB_DIR=
+```
+
 Use Oracle Thick mode in production unless Oracle compatibility testing proves Thin mode is sufficient.
