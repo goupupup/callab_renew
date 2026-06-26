@@ -2,7 +2,7 @@ from app.core.config import Settings
 
 
 def test_settings_use_safe_defaults_for_local_development():
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.app_name == "CALLAB Backend"
     assert settings.api_prefix == "/api"
@@ -18,7 +18,7 @@ def test_settings_support_legacy_oracle_environment_names(monkeypatch):
     monkeypatch.setenv("ORACLE_CONN_STR", "legacy_dsn")
     monkeypatch.setenv("ORACLE_LIB_DIR", "/opt/oracle")
 
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.oracle_user == "legacy_user"
     assert settings.oracle_password == "legacy_password"
@@ -31,7 +31,7 @@ def test_settings_support_legacy_ftp_environment_names(monkeypatch):
     monkeypatch.setenv("FTP_USER", "ftp_user")
     monkeypatch.setenv("FTP_PASSWORD", "ftp_password")
 
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.ftp_host == "ftp.internal"
     assert settings.ftp_user == "ftp_user"

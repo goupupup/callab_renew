@@ -33,6 +33,14 @@ python -m pip install -e ".[dev]"
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+For local Oracle 19 testing on Apple Silicon, use Rosetta and the x64 venv:
+
+```bash
+export CALLAB_ORACLE_USER=...
+export CALLAB_ORACLE_PASSWORD=...
+./scripts/run-backend-macos-oracle19.sh
+```
+
 Frontend:
 
 ```bash

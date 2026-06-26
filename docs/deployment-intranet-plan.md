@@ -29,7 +29,7 @@ The existing Spring Boot/Tomcat CALLAB service can stay on its current connector
 
 ## Backend Service
 
-Use Python 3.11+ and Oracle Instant Client in production. Thin mode failed against the current legacy Oracle server, so Thick mode is the expected deployment mode.
+Use Python 3.11+ and Oracle Instant Client in production. Thin mode failed against the current legacy Oracle server, so Thick mode is the expected deployment mode. On Windows Server, install the 64-bit Oracle Instant Client, normally under `C:\oracle\instantclient_19_20`, and set `CALLAB_ORACLE_LIB_DIR` to that directory.
 
 ```ini
 [Unit]
@@ -55,7 +55,7 @@ Required backend environment:
 CALLAB_ORACLE_USER=
 CALLAB_ORACLE_PASSWORD=
 CALLAB_ORACLE_DSN=
-CALLAB_ORACLE_LIB_DIR=/opt/oracle/instantclient
+CALLAB_ORACLE_LIB_DIR=C:\oracle\instantclient_19_20
 CALLAB_ORACLE_THICK_MODE=true
 CALLAB_SESSION_SECRET=
 CALLAB_FTP_HOST=

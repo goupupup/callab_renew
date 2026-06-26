@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+import logging
 
 from app.core.security import create_session_token, current_user_from_request
 from app.schemas.auth import CurrentUser, LoginRequest, LoginResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -12,6 +14,7 @@ def login(payload: LoginRequest, request: Request, response: Response):
     try:
         user = auth_service.authenticate(payload.username, payload.password)
     except Exception:
+        logger.exception("Authentication backend failed")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authentication service unavailable",

@@ -4,7 +4,8 @@ from pydantic import model_validator
 
 class Settings(BaseSettings):
     default_oracle_dsn: str = (
-        "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))"
+        "(DESCRIPTION=(TRANSPORT_CONNECT_TIMEOUT=5)(CONNECT_TIMEOUT=10)(RETRY_COUNT=0)"
+        "(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))"
         "(CONNECT_DATA=(SID=XE)))"
     )
     app_name: str = "CALLAB Backend"
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://127.0.0.1:3000,http://localhost:3000"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env"),
         env_prefix="CALLAB_",
         extra="ignore",
     )
