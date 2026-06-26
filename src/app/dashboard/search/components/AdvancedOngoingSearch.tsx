@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, ChevronDown, CheckSquare, Clock, Download, Info, ArrowUpDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Search, ChevronDown, Download, ArrowUpDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";

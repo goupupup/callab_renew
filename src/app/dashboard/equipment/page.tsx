@@ -4,9 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import {
-    Search, FileText, Download, Trash2, Eye,
-    Printer, FileSpreadsheet, ChevronLeft, ChevronRight,
-    Loader2, Package, ShieldCheck, Upload,
+    Search, FileText, Trash2, Eye,
+    FileSpreadsheet, ChevronLeft, ChevronRight,
+    Loader2, ShieldCheck, Upload,
     ChevronsLeft, ChevronsRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

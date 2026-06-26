@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronDown, Download, Wrench, Loader2, ArrowUpDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, Download, Wrench, Loader2, ArrowUpDown, ChevronUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";

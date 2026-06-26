@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogIn, Search, Mail, UserPlus, Download, Bell, Cpu, Shield, Globe, Activity, HelpCircle, FileText, PhoneCall, ClipboardCheck, ArrowUpRight } from "lucide-react";
+import { LogIn, Shield, Globe, Activity, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-client";
 
