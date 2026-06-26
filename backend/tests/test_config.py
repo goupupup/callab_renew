@@ -7,6 +7,8 @@ def test_settings_use_safe_defaults_for_local_development():
     assert settings.app_name == "CALLAB Backend"
     assert settings.api_prefix == "/api"
     assert settings.oracle_thick_mode is True
+    assert "HOST=172.20.25.2" in settings.oracle_dsn
+    assert "SID=XE" in settings.oracle_dsn
     assert "http://127.0.0.1:3000" in settings.cors_origins
 
 

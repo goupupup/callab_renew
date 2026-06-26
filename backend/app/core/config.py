@@ -3,6 +3,10 @@ from pydantic import model_validator
 
 
 class Settings(BaseSettings):
+    default_oracle_dsn: str = (
+        "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.20.25.2)(PORT=1521))"
+        "(CONNECT_DATA=(SID=XE)))"
+    )
     app_name: str = "CALLAB Backend"
     api_prefix: str = "/api"
     oracle_user: str = ""
@@ -34,6 +38,8 @@ class Settings(BaseSettings):
             self.oracle_password = os.getenv("ORACLE_PASS", "")
         if not self.oracle_dsn:
             self.oracle_dsn = os.getenv("ORACLE_CONN_STR", "")
+        if not self.oracle_dsn:
+            self.oracle_dsn = self.default_oracle_dsn
         if not self.oracle_lib_dir:
             self.oracle_lib_dir = os.getenv("ORACLE_LIB_DIR", "")
         if not self.ftp_host:
