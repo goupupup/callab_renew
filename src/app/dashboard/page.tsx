@@ -1,12 +1,21 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { FileText, History, BarChart3, HardDrive, Zap, ShieldCheck } from "lucide-react";
+import { Award, BarChart3, ClipboardList, Download, ExternalLink, FileText, HardDrive, History, Phone, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+type CompanyStat = {
+    corpId: string;
+    corpName: string;
+    total: number;
+    ongoing: number;
+    expired: number;
+};
 
 export default function DashboardPage() {
     const { data: session } = useAuth();
@@ -18,6 +27,7 @@ export default function DashboardPage() {
         companyStats: null
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
     const isMaster = (session?.user as any)?.role === "MASTER";
 
@@ -45,6 +55,39 @@ export default function DashboardPage() {
         { label: "Total Equipment", value: stats.totalEquipment?.toString() || "0", icon: HardDrive, color: "text-[#001489]", bg: "bg-blue-50", link: "/dashboard/equipment" },
         { label: "On-Going", value: stats.ongoingCount?.toString() || "0", icon: FileText, color: "text-[#001489]", bg: "bg-blue-50", link: "/dashboard/equipment?filter=onGoingOnly" },
         { label: "Expirations", value: stats.upcomingExpirations?.toString() || "0", icon: History, color: "text-amber-600", bg: "bg-amber-50", link: "/dashboard/equipment?filter=expirationOnly" },
+    ];
+
+    const serviceActions = [
+        {
+            label: "Our Calibration Services",
+            description: "Review HCT America's calibration service scope.",
+            icon: Award,
+            action: () => window.open("/calibration-services.pdf", "_blank", "noopener,noreferrer"),
+        },
+        {
+            label: "Certification Download",
+            description: "Open the certificate download guide.",
+            icon: Download,
+            action: () => window.open("/certification-download.pdf", "_blank", "noopener,noreferrer"),
+        },
+        {
+            label: "Membership Procedure",
+            description: "Check the membership approval process.",
+            icon: Users,
+            action: () => setIsMembershipOpen(true),
+        },
+        {
+            label: "Contact Us",
+            description: "Go to the HCT Calibration contact page.",
+            icon: Phone,
+            action: () => window.open("https://hctcalibration.com/contact/", "_blank", "noopener,noreferrer"),
+        },
+        {
+            label: "Request Quote",
+            description: "Quote request workflow is being prepared.",
+            icon: ClipboardList,
+            action: () => router.push("/dashboard/request-quote"),
+        },
     ];
 
     return (
@@ -120,33 +163,33 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
-                        {stats.companyStats.map((company: any) => (
+                        {stats.companyStats.map((company: CompanyStat) => (
                             <Card
-                                key={company.CORP_ID}
+                                key={company.corpId}
                                 className="bg-white border-slate-100 hover:border-[#001489]/30 transition-all rounded-xl md:rounded-[1.5rem] shadow-sm overflow-hidden group h-full flex flex-col"
-                                onClick={() => router.push(`/dashboard/equipment?company=${company.CORP_ID}`)}
+                                onClick={() => router.push(`/dashboard/equipment?company=${encodeURIComponent(company.corpId)}`)}
                             >
                                 <div className="p-4 md:p-5 pb-2 bg-slate-50/5 group-hover:bg-[#001489]/5 transition-colors border-b border-transparent group-hover:border-slate-100 flex-none">
                                     <h4 className="text-[10px] md:text-[11px] font-black text-slate-900 truncate uppercase tracking-wider">
-                                        {company.CORP_NAME || "Untitled Corp"}
+                                        {company.corpName || "Untitled Corp"}
                                     </h4>
-                                    <p className="text-[8px] font-bold text-slate-400">ID: {company.CORP_ID}</p>
+                                    <p className="text-[8px] font-bold text-slate-400">ID: {company.corpId}</p>
                                 </div>
                                 <CardContent className="p-4 md:p-5 flex-1 flex flex-col justify-center">
                                     <div className="flex items-center justify-between gap-1 md:gap-2">
                                         <div className="text-center flex-1">
                                             <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Total</p>
-                                            <p className="text-sm md:text-lg font-black text-slate-900">{company.TOTAL}</p>
+                                            <p className="text-sm md:text-lg font-black text-slate-900">{company.total}</p>
                                         </div>
                                         <div className="w-[1px] h-6 md:h-8 bg-slate-100" />
                                         <div className="text-center flex-1">
                                             <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">On-Going</p>
-                                            <p className="text-sm md:text-lg font-black text-[#001489]">{company.ONGOING}</p>
+                                            <p className="text-sm md:text-lg font-black text-[#001489]">{company.ongoing}</p>
                                         </div>
                                         <div className="w-[1px] h-6 md:h-8 bg-slate-100" />
                                         <div className="text-center flex-1">
                                             <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Expired</p>
-                                            <p className="text-sm md:text-lg font-black text-rose-600">{company.EXPIRED}</p>
+                                            <p className="text-sm md:text-lg font-black text-rose-600">{company.expired}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -156,31 +199,65 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Security Monitor Interface */}
-            <div className="grid grid-cols-1 gap-8">
-                <Card className="bg-white border-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative group shadow-sm flex flex-col justify-between">
-                    <CardHeader className="p-6 md:p-10 pb-4 relative z-10">
-                        <div className="flex items-center space-x-3 mb-4 md:mb-6">
-                            <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-[#001489]" />
-                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-slate-400">Security Monitor</span>
-                        </div>
-                        <h3 className="text-xl md:text-2xl font-black tracking-tighter leading-tight text-slate-900 uppercase">
-                            Protected Session <span className="text-[#001489]">Level 01</span>
-                        </h3>
-                    </CardHeader>
-                    <CardContent className="p-6 md:p-10 pt-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 border-t border-slate-50 pt-6">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500">Live Connection</span>
+            {/* Service Actions */}
+            <section className="space-y-5 md:space-y-6">
+                <div className="flex flex-col gap-2 border-l-4 border-[#001489] pl-4 md:pl-6">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">HCT America Support</p>
+                    <h3 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">Service Resources</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4">
+                    {serviceActions.map((item) => (
+                        <button
+                            key={item.label}
+                            type="button"
+                            onClick={item.action}
+                            className="min-h-[150px] rounded-xl border border-slate-100 bg-white p-4 md:p-5 text-left shadow-sm transition-all hover:border-[#001489]/30 hover:shadow-lg hover:shadow-[#001489]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#001489]/30"
+                        >
+                            <div className="flex h-full flex-col justify-between gap-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-[#001489]">
+                                        <item.icon className="h-5 w-5" />
+                                    </div>
+                                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-900 leading-snug">{item.label}</p>
+                                    <p className="text-[10px] font-semibold leading-relaxed text-slate-400">{item.description}</p>
+                                </div>
                             </div>
-                            <div className="text-[9px] md:text-[10px] font-mono text-slate-400">
-                                AES-256-GCM / {new Date().toLocaleTimeString()}
+                        </button>
+                    ))}
+                </div>
+            </section>
+
+            <Dialog open={isMembershipOpen} onOpenChange={setIsMembershipOpen}>
+                <DialogContent className="max-w-2xl border-none bg-white p-0 shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden">
+                    <DialogHeader className="border-b border-slate-100 bg-slate-50/60 p-6 md:p-8">
+                        <DialogTitle className="text-lg md:text-2xl font-black tracking-tight text-slate-900">Membership Procedure</DialogTitle>
+                        <DialogDescription className="text-xs md:text-sm font-semibold text-slate-500">
+                            HAS membership approval process
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[70vh] overflow-y-auto p-6 md:p-8">
+                        <ol className="space-y-4 text-sm font-semibold leading-relaxed text-slate-600">
+                            <li>1. Membership registration is available only to customers or companies with an existing transaction history with HCT America.</li>
+                            <li>2. Click "Sign Up" and enter the required information to register as a temporary member.</li>
+                            <li>3. Enter your business registration number accurately so we can verify your customer status.</li>
+                            <li>4. Once your customer status is confirmed, full membership will be granted. An approval notice will be sent to the registered email address within 7 days of the application.</li>
+                            <li>5. Only approved users can log in and use HAS normally.</li>
+                        </ol>
+                        <div className="mt-6 border-t border-slate-100 pt-6 space-y-4 text-sm font-semibold leading-relaxed text-slate-600">
+                            <p>The full membership approval process is required to maintain authorized access and security for third-party equipment.</p>
+                            <div className="rounded-xl bg-slate-50 p-4">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Additional Inquiries</p>
+                                <p>Phone 510-933-8848</p>
+                                <p>Email calsales@hctamerica.com</p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

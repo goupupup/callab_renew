@@ -32,21 +32,29 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def apply_legacy_oracle_env_fallbacks(self):
         import os
+        from dotenv import dotenv_values
+
+        legacy_env = {}
+        for env_path in (".env", "backend/.env"):
+            legacy_env.update({key: value for key, value in dotenv_values(env_path).items() if value})
+
+        def legacy_value(key: str) -> str:
+            return os.getenv(key) or legacy_env.get(key, "")
 
         if not self.oracle_user:
-            self.oracle_user = os.getenv("ORACLE_USER", "")
+            self.oracle_user = legacy_value("ORACLE_USER")
         if not self.oracle_password:
-            self.oracle_password = os.getenv("ORACLE_PASS", "")
+            self.oracle_password = legacy_value("ORACLE_PASS")
         if not self.oracle_dsn:
-            self.oracle_dsn = os.getenv("ORACLE_CONN_STR", "")
+            self.oracle_dsn = legacy_value("ORACLE_CONN_STR")
         if not self.oracle_dsn:
             self.oracle_dsn = self.default_oracle_dsn
         if not self.oracle_lib_dir:
-            self.oracle_lib_dir = os.getenv("ORACLE_LIB_DIR", "")
+            self.oracle_lib_dir = legacy_value("ORACLE_LIB_DIR")
         if not self.ftp_host:
-            self.ftp_host = os.getenv("FTP_HOST", "")
+            self.ftp_host = legacy_value("FTP_HOST")
         if not self.ftp_user:
-            self.ftp_user = os.getenv("FTP_USER", "")
+            self.ftp_user = legacy_value("FTP_USER")
         if not self.ftp_password:
-            self.ftp_password = os.getenv("FTP_PASSWORD", "")
+            self.ftp_password = legacy_value("FTP_PASSWORD")
         return self

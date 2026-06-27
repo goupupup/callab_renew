@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
     LayoutDashboard,
     Settings,
+    UserCog,
     FileText,
     LogOut,
     Bell,
@@ -62,6 +63,7 @@ export default function DashboardLayout({
     const commonNavItems = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         { icon: Settings, label: "Equipments", href: "/dashboard/equipment" },
+        { icon: UserCog, label: "Account", href: "/dashboard/account" },
     ];
 
     const adminNavItems: any[] = [];

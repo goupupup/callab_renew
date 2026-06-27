@@ -41,3 +41,46 @@ class AccountRepository:
                 "corpType": payload.get("corpType", ""),
             },
         )
+
+    def get_account_by_user_id(self, user_id: str):
+        return self.database.fetch_one(
+            """
+            SELECT
+                USERID,
+                USERNAME,
+                CORPID,
+                CORPNAME,
+                PASSWORD,
+                TELNO,
+                EMAIL
+            FROM CUSTCAL.TWUSRMAN
+            WHERE UPPER(TRIM(USERID)) = UPPER(TRIM(:user_id))
+              AND STATE = '1'
+            """,
+            {"user_id": user_id},
+        )
+
+    def update_my_account(self, user_id: str, payload):
+        password = (payload.get("password") or "").strip()
+        params = {
+            "user_id": user_id,
+            "tel_no": payload.get("telNo") or None,
+            "email": payload.get("email") or None,
+        }
+        password_sql = ""
+        if password:
+            password_sql = ", PASSWORD = :password"
+            params["password"] = password
+
+        return self.database.execute(
+            f"""
+            UPDATE CUSTCAL.TWUSRMAN
+            SET
+                TELNO = :tel_no,
+                EMAIL = :email
+                {password_sql}
+            WHERE UPPER(TRIM(USERID)) = UPPER(TRIM(:user_id))
+              AND STATE = '1'
+            """,
+            params,
+        )
