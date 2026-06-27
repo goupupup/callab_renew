@@ -39,7 +39,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder, clas
                         setIsOpen(true);
                         setSearch("");
                     }}
-                    className="h-9 pr-8 text-xs bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300 font-medium"
+                    className="h-9 pr-8 type-control-sm bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-lg placeholder:text-slate-300"
                     placeholder={placeholder}
                 />
                 <button 
@@ -59,7 +59,7 @@ export function SearchableDropdown({ options, value, onChange, placeholder, clas
                             <button 
                                 type="button"
                                 onClick={() => { onChange(""); setIsOpen(false); }}
-                                className="w-full px-4 py-2.5 text-left text-xs text-slate-400 hover:bg-slate-50 transition-colors italic border-b border-slate-50"
+                                className="w-full px-4 py-2.5 text-left type-control-sm text-slate-400 hover:bg-slate-50 transition-colors italic border-b border-slate-50"
                             >
                                 Clear Selection
                             </button>
@@ -72,18 +72,18 @@ export function SearchableDropdown({ options, value, onChange, placeholder, clas
                                         setIsOpen(false);
                                         setSearch("");
                                     }}
-                                    className={`w-full px-4 py-2.5 text-left text-[11px] transition-colors border-b border-slate-50 last:border-0 ${
-                                        value === o.CODE ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full px-4 py-2.5 text-left type-dropdown-option transition-colors border-b border-slate-50 last:border-0 ${
+                                        value === o.CODE ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50"
                                     }`}
                                 >
                                     <div className="flex justify-between items-center">
                                         <span className="truncate pr-2">{o.NAME}</span>
-                                        <span className="text-[9px] font-black text-slate-300 uppercase shrink-0">{o.CODE}</span>
+                                        <span className="type-label-sm text-slate-300 uppercase shrink-0">{o.CODE}</span>
                                     </div>
                                 </button>
                             ))}
                             {filtered.length === 0 && (
-                                <div className="px-4 py-6 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                                <div className="px-4 py-6 text-center type-label text-slate-300">
                                     No matches found
                                 </div>
                             )}

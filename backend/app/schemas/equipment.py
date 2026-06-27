@@ -23,6 +23,19 @@ class EquipmentQuery(BaseModel):
     expirationOnly: bool = False
 
 
+class CertDownloadQuery(BaseModel):
+    company: str = ""
+    regNo: str = ""
+    equipmentName: str = ""
+    modelName: str = ""
+    manufacturer: str = ""
+    calDateStart: str = ""
+    calDateEnd: str = ""
+    returnDateStart: str = ""
+    returnDateEnd: str = ""
+    limit: int = Field(default=500, ge=1, le=2000)
+
+
 class EquipmentItem(BaseModel):
     ISID: str
     ACCN: str = ""
@@ -34,8 +47,38 @@ class EquipmentItem(BaseModel):
     LAST: str = ""
     NEXT: str = ""
     STAT: str = ""
+    CIDU: str = ""
     MANUFACTURER_NAME: str = ""
     CUSTOMER_NAME: str = ""
+
+
+class CertDownloadItem(BaseModel):
+    ISID: str
+    CIDU: str = ""
+    ACCN: str = ""
+    NAEM_SUP: str = ""
+    MODL: str = ""
+    SERN: str = ""
+    CUSTOMER_NAME: str = ""
+    MANUFACTURER_NAME: str = ""
+    CAL_DATE: str = ""
+    RETURN_DATE: str = ""
+
+
+class CertDownloadSearchResponse(BaseModel):
+    data: List[CertDownloadItem]
+    total: int
+    limit: int
+
+
+class BulkDownloadItem(BaseModel):
+    ISID: str
+    CIDU: str = ""
+
+
+class BulkDownloadRequest(BaseModel):
+    type: str
+    items: List[BulkDownloadItem] = Field(default_factory=list, max_length=200)
 
 
 class EquipmentPagination(BaseModel):

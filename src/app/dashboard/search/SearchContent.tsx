@@ -478,10 +478,10 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             <currentCategory.icon className="w-6 h-6 md:w-7 h-7" />
                         </div>
                         <div>
-                            <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-tight">
+                            <h2 className="type-subpage-title text-slate-900">
                                 {currentCategory.title.split(' ')[0]} <span className="text-[#001489]">{currentCategory.title.split(' ').slice(1).join(' ')}</span>
                             </h2>
-                            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-0.5 italic">{currentCategory.subtitle}</p>
+                            <p className="type-label-sm text-slate-400 mt-0.5 italic">{currentCategory.subtitle}</p>
                         </div>
                     </div>
 
@@ -492,7 +492,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-wider text-slate-700 hover:border-[#001489] transition-all shadow-sm min-w-[90px]"
+                                        className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg type-nav-section tracking-wider text-slate-700 hover:border-[#001489] transition-all shadow-sm min-w-[90px]"
                                     >
                                         {searchTypeLabels[searchType]}
                                         <ChevronDown className="w-3 h-3 text-slate-400" />
@@ -503,7 +503,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                 <button
                                                     key={t}
                                                     onClick={() => { setSearchType(t); setShowTypeDropdown(false); }}
-                                                    className={`w-full text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-wider transition-colors ${searchType === t ? "bg-[#001489] text-white" : "text-slate-600 hover:bg-slate-50"
+                                                    className={`w-full text-left px-4 py-2.5 type-nav-section tracking-wider transition-colors ${searchType === t ? "bg-[#001489] text-white" : "text-slate-600 hover:bg-slate-50"
                                                         }`}
                                                 >
                                                     {searchTypeLabels[t]}
@@ -525,7 +525,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                         }
                                     }}
                                     placeholder={`ENTER ${searchTypeLabels[searchType]}...`}
-                                    className="h-9 border-none bg-transparent shadow-none text-xs font-black uppercase placeholder:text-slate-300 focus-visible:ring-0"
+                                    className="h-9 border-none bg-transparent shadow-none type-table-body-strong uppercase placeholder:text-slate-300 focus-visible:ring-0"
                                 />
                             </div>
 
@@ -535,7 +535,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     handleSearch(mode as SearchMode);
                                 }}
                                 disabled={isSearching}
-                                className="h-9 px-6 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20 transition-all"
+                                className="h-9 px-6 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-lg type-overline shadow-lg shadow-blue-900/20 transition-all"
                             >
                                 {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "SEARCH"}
                             </Button>
@@ -550,8 +550,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                     <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Activity className="w-3.5 h-3.5 text-[#001489]" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                Search Results — <span className="text-[#001489] font-black text-xs">{results.length}</span> records found
+                            <p className="type-overline text-slate-500">
+                                Search Results — <span className="text-[#001489] type-nav-item">{results.length}</span> records found
                             </p>
                         </div>
                     </div>
@@ -566,16 +566,16 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 >
                                     <div className="flex items-center gap-6">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">REG NO</span>
-                                            <span className={`text-xs font-black transition-colors ${selectedEquipment?.ISID === eq.ISID ? "text-[#001489]" : "text-slate-900"}`}>{eq.ISID}</span>
+                                            <span className="type-label-sm text-slate-400 mb-0.5">REG NO</span>
+                                            <span className={`type-table-body-strong transition-colors ${selectedEquipment?.ISID === eq.ISID ? "text-[#001489]" : "text-slate-900"}`}>{eq.ISID}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Equipment</span>
-                                            <span className="text-xs font-bold text-slate-700 truncate max-w-sm">{eq.NAEM_SUP || eq.NAEM}</span>
+                                            <span className="type-label-sm text-slate-400 mb-0.5">Equipment</span>
+                                            <span className="type-table-body text-slate-700 truncate max-w-sm">{eq.NAEM_SUP || eq.NAEM}</span>
                                         </div>
                                         <div className="hidden lg:flex flex-col">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Model</span>
-                                            <span className="text-xs font-medium text-slate-500">{eq.MODL || "—"}</span>
+                                            <span className="type-label-sm text-slate-400 mb-0.5">Model</span>
+                                            <span className="type-table-body text-slate-500">{eq.MODL || "—"}</span>
                                         </div>
                                     </div>
                                     <div className={`p-1.5 rounded-lg transition-all ${selectedEquipment?.ISID === eq.ISID ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400 group-hover:bg-[#001489]/10 group-hover:text-[#001489]"}`}>
@@ -595,18 +595,18 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                         <div className="p-4 md:p-6 border-b border-slate-100 bg-gradient-to-br from-white via-slate-50/30 to-[#001489]/5">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="space-y-2">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#001489] rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white shadow-lg shadow-blue-900/20">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#001489] rounded-full type-caption tracking-[0.3em] text-white shadow-lg shadow-blue-900/20">
                                         Active Asset Configuration
                                     </div>
-                                    <h3 className="text-xl md:text-3xl font-black text-slate-950 tracking-tighter leading-none">{selectedEquipment.NAEM_SUP || selectedEquipment.NAEM || "UNNAMED EQUIPMENT"}</h3>
+                                    <h3 className="type-detail-title text-slate-950">{selectedEquipment.NAEM_SUP || selectedEquipment.NAEM || "UNNAMED EQUIPMENT"}</h3>
                                     <div className="flex flex-wrap gap-4">
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Operational</span>
+                                            <span className="type-label text-slate-400">System Operational</span>
                                         </div>
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-slate-300 font-bold">|</span>
-                                            <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest">ID: {selectedEquipment.ISID}</span>
+                                            <span className="text-slate-300">|</span>
+                                            <span className="type-label text-[#001489]">ID: {selectedEquipment.ISID}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -614,7 +614,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <Button
                                         onClick={openCalHistory}
                                         variant="outline"
-                                        className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border-slate-200 hover:border-[#001489] hover:bg-[#001489]/5 hover:text-[#001489] shadow-sm transition-all"
+                                        className="h-10 px-6 rounded-xl type-overline border-slate-200 hover:border-[#001489] hover:bg-[#001489]/5 hover:text-[#001489] shadow-sm transition-all"
                                     >
                                         <History className="w-3.5 h-3.5 mr-2" />
                                         Cal History
@@ -622,7 +622,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <Button
                                         onClick={handleSave}
                                         disabled={isSaving}
-                                        className="h-10 px-8 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 transition-all"
+                                        className="h-10 px-8 bg-[#001489] hover:bg-[#001489]/90 hover:scale-[1.02] active:scale-95 rounded-xl type-overline shadow-xl shadow-blue-900/20 transition-all"
                                     >
                                         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
                                         Save Changes
@@ -637,7 +637,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-4">
                                         <div className="h-px bg-slate-100 flex-1" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Basic Information</span>
+                                        <span className="type-divider-label text-slate-300">Basic Information</span>
                                         <div className="h-px bg-slate-100 flex-1" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -687,7 +687,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-4">
                                         <div className="h-px bg-slate-100 flex-1" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Administrative Identifiers</span>
+                                        <span className="type-divider-label text-slate-300">Administrative Identifiers</span>
                                         <div className="h-px bg-slate-100 flex-1" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -703,7 +703,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
                             {/* Secondary Info (RHS - Side Panel Style) */}
                             <div className="lg:col-span-6 xl:col-span-4 space-y-4 bg-slate-50/50 p-4 md:p-6 rounded-2xl border border-slate-100">
-                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-2">Management Status</span>
+                                <span className="type-divider-label text-slate-400 block text-center mb-2">Management Status</span>
 
                                 <div className="space-y-3">
                                     <FieldCombo
@@ -742,7 +742,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                 </div>
 
                                 <div className="pt-4 border-t border-slate-200">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 block text-center mb-4">Calibration Metrics</span>
+                                    <span className="type-divider-label text-slate-400 block text-center mb-4">Calibration Metrics</span>
                                     <div className="space-y-3">
                                         <FieldEditable
                                             label="Interval (Months)"
@@ -779,8 +779,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-7xl max-h-[98vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
                         <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2">Master Management</p>
-                                <h3 className="text-2xl font-black text-slate-950">Master Database Search & Editor</h3>
+                                <p className="type-overline tracking-[0.4em] text-slate-400 mb-2">Master Management</p>
+                                <h3 className="type-subpage-title text-slate-950">Master Database Search & Editor</h3>
                             </div>
                             <button onClick={() => setShowMasterModal(false)} className="p-3 hover:bg-rose-50 hover:text-rose-500 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-5 h-5" /></button>
                         </div>
@@ -789,44 +789,44 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             {/* Master Search Section */}
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489]">Master Search</span>
+                                    <span className="type-overline tracking-[0.4em] text-[#001489]">Master Search</span>
                                     <div className="h-px bg-[#001489]/10 flex-1" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Equipment Name</label>
+                                        <label className="type-label text-slate-400 ml-1">Equipment Name</label>
                                         <input
                                             type="text"
                                             value={masterSearch.name}
                                             onChange={e => setMasterSearch({ ...masterSearch, name: e.target.value })}
                                             onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
-                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
+                                        <label className="type-label text-slate-400 ml-1">Model</label>
                                         <input
                                             type="text"
                                             value={masterSearch.model}
                                             onChange={e => setMasterSearch({ ...masterSearch, model: e.target.value })}
                                             onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
-                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
+                                        <label className="type-label text-slate-400 ml-1">Manufacturer</label>
                                         <input
                                             type="text"
                                             value={masterSearch.manufacturer}
                                             onChange={e => setMasterSearch({ ...masterSearch, manufacturer: e.target.value })}
                                             onKeyDown={e => e.key === 'Enter' && handleMasterSearch()}
-                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
+                                            className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all"
                                         />
                                     </div>
                                     <Button
                                         onClick={handleMasterSearch}
                                         disabled={isLoadingMasterResults}
-                                        className="h-12 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-xl shadow-lg"
+                                        className="h-12 bg-[#001489] type-action rounded-xl shadow-lg"
                                     >
                                         {isLoadingMasterResults ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
                                         Search Master
@@ -840,26 +840,26 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <thead className="bg-[#001489]/5">
                                         <tr>
                                             {['Master Name', 'Model', 'Manu', 'Interval', 'Mode', 'Self', 'Category', 'Code'].map(h => (
-                                                <th key={h} className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500">{h}</th>
+                                                <th key={h} className="px-6 py-4 type-label-sm text-slate-500">{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {masterResults.length === 0 ? (
                                             <tr>
-                                                <td colSpan={8} className="px-6 py-12 text-center text-xs font-bold text-slate-300 italic">No search results</td>
+                                                <td colSpan={8} className="px-6 py-12 text-center type-table-body text-slate-300 italic">No search results</td>
                                             </tr>
                                         ) : (
                                             masterResults.map((m, idx) => (
                                                 <tr key={idx} className="hover:bg-white cursor-pointer transition-colors" onClick={() => setSelectedMaster(m)}>
-                                                    <td className="px-6 py-4 text-[11px] font-black text-slate-900">{m.EQPNAM}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MDLNAM}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MNFCTR}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.CALTRM}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.MODE_CODE}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.SELF === '1' ? 'SELF' : 'EXT'}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{m.CLSMAN_EXT}</td>
-                                                    <td className="px-6 py-4 text-[11px] font-black text-[#001489]">{m.MDLNO}</td>
+                                                    <td className="px-6 py-4 type-nav-item text-slate-900">{m.EQPNAM}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.MDLNAM}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.MNFCTR}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.CALTRM}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.MODE_CODE}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.SELF === '1' ? 'SELF' : 'EXT'}</td>
+                                                    <td className="px-6 py-4 type-dropdown-option text-slate-600">{m.CLSMAN_EXT}</td>
+                                                    <td className="px-6 py-4 type-nav-item text-[#001489]">{m.MDLNO}</td>
                                                 </tr>
                                             ))
                                         )}
@@ -870,55 +870,55 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             {/* Master Detail Editor */}
                             <div className="space-y-8 bg-slate-50 p-8 rounded-[2rem] border border-slate-100 shadow-inner">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489]">Master Detail</span>
+                                    <span className="type-overline tracking-[0.4em] text-[#001489]">Master Detail</span>
                                     <div className="h-px bg-[#001489]/10 flex-1" />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Name</label>
-                                        <input type="text" value={selectedMaster.EQPNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, EQPNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Master Name</label>
+                                        <input type="text" value={selectedMaster.EQPNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, EQPNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Model</label>
-                                        <input type="text" value={selectedMaster.MDLNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MDLNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Model</label>
+                                        <input type="text" value={selectedMaster.MDLNAM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MDLNAM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Manufacturer</label>
-                                        <input type="text" value={selectedMaster.MNFCTR || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MNFCTR: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Manufacturer</label>
+                                        <input type="text" value={selectedMaster.MNFCTR || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MNFCTR: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Interval</label>
-                                        <input type="text" value={selectedMaster.CALTRM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CALTRM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Interval</label>
+                                        <input type="text" value={selectedMaster.CALTRM || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CALTRM: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cal Mode</label>
-                                        <input type="text" value={selectedMaster.MODE_CODE || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MODE_CODE: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Cal Mode</label>
+                                        <input type="text" value={selectedMaster.MODE_CODE || ""} onChange={e => setSelectedMaster({ ...selectedMaster, MODE_CODE: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Self/Ext</label>
-                                        <select value={selectedMaster.SELF || "1"} onChange={e => setSelectedMaster({ ...selectedMaster, SELF: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white">
+                                        <label className="type-label text-slate-400 ml-1">Self/Ext</label>
+                                        <select value={selectedMaster.SELF || "1"} onChange={e => setSelectedMaster({ ...selectedMaster, SELF: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white">
                                             <option value="1">SELF</option>
                                             <option value="0">EXT</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
-                                        <input type="text" value={selectedMaster.CLSMAN_EXT || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CLSMAN_EXT: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold focus:ring-[#001489] transition-all bg-white" />
+                                        <label className="type-label text-slate-400 ml-1">Category</label>
+                                        <input type="text" value={selectedMaster.CLSMAN_EXT || ""} onChange={e => setSelectedMaster({ ...selectedMaster, CLSMAN_EXT: e.target.value })} className="w-full px-5 py-3 rounded-xl border border-slate-200 type-control focus:ring-[#001489] transition-all bg-white" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Master Code</label>
-                                        <input type="text" readOnly value={selectedMaster.MDLNO || ""} className="w-full px-5 py-3 rounded-xl border border-slate-100 text-sm font-black text-[#001489] bg-slate-100/50" />
+                                        <label className="type-label text-slate-400 ml-1">Master Code</label>
+                                        <input type="text" readOnly value={selectedMaster.MDLNO || ""} className="w-full px-5 py-3 rounded-xl border border-slate-100 type-form-input text-[#001489] bg-slate-100/50" />
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
                                     <Button
                                         onClick={applyMasterSelection}
-                                        className="flex-1 h-14 bg-[#001489] font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-[1.02] transition-all ring-4 ring-[#001489]/10"
+                                        className="flex-1 h-14 bg-[#001489] type-action rounded-2xl shadow-xl hover:scale-[1.02] transition-all ring-4 ring-[#001489]/10"
                                     >
                                         <Check className="w-4 h-4 mr-2" /> Apply to Equipment
                                     </Button>
-                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 font-bold uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-50 transition-all">Update Master</Button>
-                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 font-bold uppercase tracking-widest text-xs rounded-2xl hover:bg-slate-50 transition-all">Add New Master</Button>
+                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 type-action rounded-2xl hover:bg-slate-50 transition-all">Update Master</Button>
+                                    <Button className="flex-1 h-14 bg-white border border-slate-200 text-slate-400 type-action rounded-2xl hover:bg-slate-50 transition-all">Add New Master</Button>
                                 </div>
                             </div>
                         </div>
@@ -932,8 +932,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-5xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
                         <div className="p-6 md:p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-2">Refine Selection</p>
-                                <h3 className="text-2xl font-black text-slate-950">Found {results.length} Matching Records</h3>
+                                <p className="type-overline tracking-[0.4em] text-slate-400 mb-2">Refine Selection</p>
+                                <h3 className="type-subpage-title text-slate-950">Found {results.length} Matching Records</h3>
                             </div>
                             <button onClick={() => setShowSelectModal(false)} className="p-3 hover:bg-rose-50 hover:text-rose-500 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-5 h-5" /></button>
                         </div>
@@ -941,9 +941,9 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-[#001489]/5 sticky top-0 z-10">
                                     <tr>
-                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">System ID</th>
-                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Asset Detail</th>
-                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">Action</th>
+                                        <th className="px-10 py-5 type-overline text-slate-500">System ID</th>
+                                        <th className="px-10 py-5 type-overline text-slate-500">Asset Detail</th>
+                                        <th className="px-10 py-5 type-overline text-slate-500 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -953,15 +953,15 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             onClick={() => selectEquipment(eq)}
                                             className="hover:bg-slate-50 cursor-pointer transition-colors group"
                                         >
-                                            <td className="px-10 py-6 font-black text-[#001489] text-base">{eq.ISID}</td>
+                                            <td className="px-10 py-6 type-control text-[#001489]">{eq.ISID}</td>
                                             <td className="px-10 py-6">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 line-clamp-1">{eq.NAEM_SUP || eq.NAEM}</span>
-                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{eq.MODL} • {eq.SERN}</span>
+                                                    <span className="type-table-body-strong text-slate-900 line-clamp-1">{eq.NAEM_SUP || eq.NAEM}</span>
+                                                    <span className="type-dropdown-option text-slate-400">{eq.MODL} • {eq.SERN}</span>
                                                 </div>
                                             </td>
                                             <td className="px-10 py-6 text-right">
-                                                <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#001489] opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="inline-flex items-center gap-2 type-label text-[#001489] opacity-0 group-hover:opacity-100 transition-opacity">
                                                     Select <ChevronRight className="w-3.5 h-3.5" />
                                                 </div>
                                             </td>
@@ -980,8 +980,8 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[98%] xl:max-w-7xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
                         <div className="p-6 md:p-10 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-[#001489]/5 to-white">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#001489] mb-2 uppercase">Calibration Lifecycle</p>
-                                <h3 className="text-2xl font-black text-slate-950">History for ID: {selectedEquipment?.ISID}</h3>
+                                <p className="type-overline tracking-[0.4em] text-[#001489] mb-2 uppercase">Calibration Lifecycle</p>
+                                <h3 className="type-subpage-title text-slate-950">History for ID: {selectedEquipment?.ISID}</h3>
                             </div>
                             <button onClick={() => setShowHistoryModal(false)} className="p-3 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100 shadow-sm"><X className="w-5 h-5" /></button>
                         </div>
@@ -989,26 +989,26 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                             {isLoadingHistory ? (
                                 <div className="flex flex-col items-center justify-center p-24">
                                     <div className="w-12 h-12 border-4 border-[#001489]/10 border-t-[#001489] rounded-full animate-spin mb-4" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading History...</p>
+                                    <p className="type-label text-slate-400">Loading History...</p>
                                 </div>
                             ) : calHistory.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center p-24 text-slate-400">
                                     <AlertTriangle className="w-12 h-12 mb-4 text-slate-200" />
-                                    <p className="text-sm font-bold uppercase tracking-widest">No Calibration Records Available</p>
+                                    <p className="type-control">No Calibration Records Available</p>
                                 </div>
                             ) : (
                                 <div className="p-2">
                                     <table className="w-full text-left border-collapse min-w-[1000px]">
                                         <thead className="bg-[#001489]/5 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Actions</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CAL NO</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CERTI NO</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">REC DATE</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">CAL DATE</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">ENGINEER</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">BILL COMPANY</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">SUBCON</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 text-center">Actions</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">CAL NO</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">CERTI NO</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">REC DATE</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">CAL DATE</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">ENGINEER</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">BILL COMPANY</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">SUBCON</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
@@ -1026,17 +1026,17 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                                     <td className="px-8 py-6 text-left">
                                                         <button
                                                             onClick={() => downloadReport(h.CIDU)}
-                                                            className="text-sm font-black text-[#001489] hover:underline transition-all underline-offset-4"
+                                                            className="type-table-body-strong text-[#001489] hover:underline transition-all underline-offset-4"
                                                         >
                                                             {h.CIDU}
                                                         </button>
                                                     </td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.KOLAS_NO || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap text-left">{formatDate(h.CARD)}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-900 whitespace-nowrap text-left">{formatDate(h.CASD)}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.ENGINEER || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 text-left">{h.SALE_COMPANY || "—"}</td>
-                                                    <td className="px-8 py-6 text-xs font-bold text-slate-600 font-medium italic text-left">{h.SUBCON || "—"}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-600 text-left">{h.KOLAS_NO || "—"}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-900 whitespace-nowrap text-left">{formatDate(h.CARD)}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-900 whitespace-nowrap text-left">{formatDate(h.CASD)}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-600 text-left">{h.ENGINEER || "—"}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-600 text-left">{h.SALE_COMPANY || "—"}</td>
+                                                    <td className="px-8 py-6 type-table-body text-slate-600 italic text-left">{h.SUBCON || "—"}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1063,10 +1063,10 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 function FieldReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
     return (
         <div className="space-y-1.5">
-            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
-            <div className={`px-4 py-2.5 rounded-xl border text-[13px] transition-all ${highlight
-                ? "bg-[#001489]/5 border-[#001489]/30 text-[#001489] font-black shadow-inner"
-                : "bg-slate-50 shadow-inner border-slate-100 text-slate-600 font-bold"
+            <label className="type-label-sm text-slate-400 ml-1">{label}</label>
+            <div className={`px-4 py-2.5 rounded-xl border type-form-input transition-all ${highlight
+                ? "bg-[#001489]/5 border-[#001489]/30 text-[#001489] shadow-inner"
+                : "bg-slate-50 shadow-inner border-slate-100 text-slate-600"
                 }`}>
                 {value || "-"}
             </div>
@@ -1082,9 +1082,9 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
     return (
         <div className="space-y-1.5 group/field">
             <div className="flex items-center justify-between ml-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
+                <label className="type-label-sm text-slate-400 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
                 {masterOnly && (
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100">Auth Required</span>
+                    <span className="type-status-badge text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100">Auth Required</span>
                 )}
             </div>
             {multiline ? (
@@ -1092,7 +1092,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                     value={displayValue || ""}
                     onChange={(e) => onChange(e.target.value)}
                     rows={2}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all resize-none placeholder:text-slate-200"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 type-form-input text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all resize-none placeholder:text-slate-200"
                 />
             ) : isDate ? (
                 <div className="relative">
@@ -1105,7 +1105,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                             if (picker.showPicker) picker.showPicker();
                             else picker.focus();
                         }}
-                        className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-sm font-black border-[#001489]/20" : ""}`}
+                        className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 type-form-input text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all cursor-pointer ${textAlign === "center" ? "text-center" : ""} ${primary ? "type-table-body-strong border-[#001489]/20" : ""}`}
                     />
                     <input
                         type="date"
@@ -1123,7 +1123,7 @@ function FieldEditable({ label, value, onChange, multiline, masterOnly, textAlig
                     type="text"
                     value={displayValue || ""}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "text-sm font-black border-[#001489]/20" : ""}`}
+                    className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 type-form-input text-slate-900 bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-[#001489]/5 focus:border-[#001489] transition-all placeholder:text-slate-200 ${textAlign === "center" ? "text-center" : ""} ${primary ? "type-table-body-strong border-[#001489]/20" : ""}`}
                 />
             )}
         </div>
@@ -1144,10 +1144,10 @@ function FieldCombo({ label, value, displayValue, options, onChange }: {
 
     return (
         <div className="space-y-1.5 relative group/field">
-            <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
+            <label className="type-label-sm text-slate-400 ml-1 group-focus-within/field:text-[#001489] transition-colors">{label}</label>
             <button
                 onClick={() => { setOpen(!open); setFilter(""); }}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-900 bg-white hover:border-[#001489] transition-all shadow-sm ${open ? "ring-4 ring-[#001489]/5 border-[#001489]" : ""}`}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-slate-200 type-form-input text-slate-900 bg-white hover:border-[#001489] transition-all shadow-sm ${open ? "ring-4 ring-[#001489]/5 border-[#001489]" : ""}`}
             >
                 <span className="truncate">{displayValue || "SELECT OPTION"}</span>
                 <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${open ? "rotate-180 text-[#001489]" : ""}`} />
@@ -1162,7 +1162,7 @@ function FieldCombo({ label, value, displayValue, options, onChange }: {
                                 value={filter}
                                 onChange={e => setFilter(e.target.value)}
                                 placeholder="Search Options..."
-                                className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#001489]/10 focus:border-[#001489] transition-all"
+                                className="w-full px-4 py-2 type-label rounded-lg border border-slate-200 focus:outline-none focus:ring-4 focus:ring-[#001489]/10 focus:border-[#001489] transition-all"
                             />
                         </div>
                         <div className="max-h-52 overflow-y-auto custom-scrollbar">
@@ -1170,15 +1170,15 @@ function FieldCombo({ label, value, displayValue, options, onChange }: {
                                 <button
                                     key={o.CODE}
                                     onClick={() => { onChange(o.CODE); setOpen(false); }}
-                                    className={`w-full flex items-center justify-between px-6 py-3 text-[11px] font-bold hover:bg-slate-50 transition-colors text-left ${value === o.CODE ? "bg-[#001489]/5 text-[#001489] font-black" : "text-slate-600"
+                                    className={`w-full flex items-center justify-between px-6 py-3 type-dropdown-option hover:bg-slate-50 transition-colors text-left ${value === o.CODE ? "bg-[#001489]/5 text-[#001489] type-nav-item" : "text-slate-600"
                                         }`}
                                 >
                                     <span className="truncate">{o.NAME || o.CODE}</span>
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase ${value === o.CODE ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400"}`}>{o.CODE}</span>
+                                    <span className={`type-caption px-1.5 py-0.5 rounded-full ${value === o.CODE ? "bg-[#001489] text-white" : "bg-slate-100 text-slate-400"}`}>{o.CODE}</span>
                                 </button>
                             ))}
                             {filtered.length === 0 && (
-                                <p className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 text-center italic">No results found</p>
+                                <p className="px-6 py-6 type-overline text-slate-300 text-center italic">No results found</p>
                             )}
                         </div>
                     </div>

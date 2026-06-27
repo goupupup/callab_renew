@@ -132,17 +132,17 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-rose-200/60 shadow-sm relative z-20 flex flex-col xl:flex-row overflow-visible">
                 <div className="p-3 md:p-4 xl:p-5 border-b xl:border-b-0 xl:border-r border-rose-100 bg-rose-50/30 flex flex-col justify-center xl:w-48 shrink-0">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-600 flex items-center gap-2 mb-1">
+                    <h3 className="type-overline text-rose-600 flex items-center gap-2 mb-1">
                         <AlertTriangle className="w-4 h-4" />
                         Next Cal Date
                     </h3>
-                    <p className="text-[10px] font-bold text-rose-400 leading-tight">Expiration Tracking Engine</p>
+                    <p className="type-label text-rose-400 leading-tight">Expiration Tracking Engine</p>
                 </div>
 
                 <div className="p-4 md:p-5 xl:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-x-5 md:gap-y-4 flex-1 items-end overflow-visible">
                     
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-rose-500 uppercase tracking-widest pl-1">APPLICANT</label>
+                        <label className="type-label text-rose-500 pl-1">APPLICANT</label>
                         <SearchableDropdown 
                             options={lookups?.suppliers || []}
                             value={filters.applicant}
@@ -152,20 +152,20 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-rose-500 uppercase tracking-widest pl-1">DUE DATE OF CAL</label>
+                        <label className="type-label text-rose-500 pl-1">DUE DATE OF CAL</label>
                         <div className="flex items-center gap-2">
                             <Input 
                                 type="date" 
                                 value={filters.dueDateStart}
                                 onChange={e => updateFilter('dueDateStart', e.target.value)}
-                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" 
+                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg type-control-sm px-2 shadow-sm" 
                             />
-                            <span className="text-rose-300 font-bold">~</span>
+                            <span className="text-rose-300">~</span>
                             <Input 
                                 type="date" 
                                 value={filters.dueDateEnd}
                                 onChange={e => updateFilter('dueDateEnd', e.target.value)}
-                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg text-xs px-2 shadow-sm" 
+                                className="h-9 bg-white border-rose-200 focus:border-rose-500 rounded-lg type-control-sm px-2 shadow-sm" 
                             />
                         </div>
                     </div>
@@ -174,7 +174,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                         <Button
                             onClick={handleSearch}
                             disabled={isSearching}
-                            className="h-9 w-full bg-rose-600 hover:bg-rose-700 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-rose-600/20 transition-all active:scale-95"
+                            className="h-9 w-full bg-rose-600 hover:bg-rose-700 rounded-lg type-overline shadow-lg shadow-rose-600/20 transition-all active:scale-95"
                         >
                             {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Expirations"}
                         </Button>
@@ -187,9 +187,9 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                        <h3 className="type-overline text-slate-900 flex items-center gap-2">
                             Expirations List
-                            <span className="bg-rose-600/10 text-rose-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
+                            <span className="bg-rose-600/10 text-rose-600 px-2 py-0.5 rounded-full type-label-sm ml-2">{results.length}</span>
                         </h3>
                     </div>
                     <Button 
@@ -197,7 +197,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                         size="sm" 
                         disabled={results.length === 0}
                         onClick={exportToExcel}
-                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm"
+                        className="h-7 px-3 rounded-md type-label-sm text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm"
                     >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
@@ -226,7 +226,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                                         <th 
                                             key={col.key}
                                             onClick={() => requestSort(col.key)}
-                                            className={`px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors`}
+                                            className={`px-3 py-2 border-b border-slate-200 type-label-sm ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors`}
                                         >
                                             <div className="flex items-center">
                                                 {col.label}
@@ -239,18 +239,18 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                             <tbody className="divide-y divide-slate-100">
                                 {sortedResults.map((row, idx) => (
                                     <tr key={row.ISID + idx} className="hover:bg-rose-600/5 transition-colors cursor-pointer group">
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-rose-600 transition-colors uppercase cursor-pointer">{row.ISID}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-800">{row.NAEM_SUP}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500 bg-slate-50/50">{row.MODL}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.MANUFACTURE}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.SERN}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.APPLICANT}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-400">{formatDate(row.LAST)}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-rose-600 bg-rose-50/50">{formatDate(row.NEXT)}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-500">{row.TERM}m</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.MODE_NAME || "—"}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{row.LAST_NAM || "—"}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-emerald-600 italic uppercase">{row.LOCATION || "—"}</td>
+                                        <td className="px-3 py-2 type-nav-item text-slate-900 group-hover:text-rose-600 transition-colors uppercase cursor-pointer">{row.ISID}</td>
+                                        <td className="px-3 py-2 type-nav-item text-slate-800">{row.NAEM_SUP}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500 bg-slate-50/50">{row.MODL}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.MANUFACTURE}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.SERN}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600">{row.APPLICANT}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-400">{formatDate(row.LAST)}</td>
+                                        <td className="px-3 py-2 type-nav-item text-rose-600 bg-rose-50/50">{formatDate(row.NEXT)}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.TERM}m</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600">{row.MODE_NAME || "—"}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600">{row.LAST_NAM || "—"}</td>
+                                        <td className="px-3 py-2 type-nav-item text-emerald-600 italic uppercase">{row.LOCATION || "—"}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -264,8 +264,8 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
                                     <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center mb-4">
                                         <AlertTriangle className="w-6 h-6 text-rose-300" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-400 mb-1">No upcoming expirations</p>
-                                    <p className="text-[11px] font-medium text-slate-400/70">Click search to load real data.</p>
+                                    <p className="type-control text-slate-400 mb-1">No upcoming expirations</p>
+                                    <p className="type-dropdown-option text-slate-400/70">Click search to load real data.</p>
                                 </>
                             )}
                         </div>

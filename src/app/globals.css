@@ -126,3 +126,129 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .type-page-title {
+    @apply text-2xl md:text-4xl font-black tracking-tighter leading-tight;
+  }
+
+  .type-page-meta {
+    @apply text-[10px] md:text-xs font-bold;
+  }
+
+  .type-card-title {
+    @apply text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.4em];
+  }
+
+  .type-panel-title {
+    @apply text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] md:tracking-[0.6em];
+  }
+
+  .type-section-title {
+    @apply text-lg md:text-xl font-black tracking-[0.1em] md:tracking-[0.2em] uppercase;
+  }
+
+  .type-subpage-title {
+    @apply text-xl md:text-2xl font-black tracking-tight leading-tight;
+  }
+
+  .type-detail-title {
+    @apply text-xl md:text-3xl font-black tracking-tighter leading-none;
+  }
+
+  .type-section-eyebrow {
+    @apply text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em];
+  }
+
+  .type-overline {
+    @apply text-[10px] font-black uppercase tracking-[0.2em];
+  }
+
+  .type-divider-label {
+    @apply text-[9px] font-black uppercase tracking-[0.4em];
+  }
+
+  .type-label {
+    @apply text-[10px] font-black uppercase tracking-widest;
+  }
+
+  .type-label-sm {
+    @apply text-[9px] md:text-[10px] font-black uppercase tracking-widest;
+  }
+
+  .type-caption {
+    @apply text-[8px] md:text-[9px] font-black uppercase tracking-widest;
+  }
+
+  .type-status-badge {
+    @apply text-[7px] md:text-[8px] font-black uppercase tracking-[0.2em];
+  }
+
+  .type-control {
+    @apply text-sm font-bold;
+  }
+
+  .type-control-sm {
+    @apply text-xs font-bold;
+  }
+
+  .type-form-input {
+    @apply text-[13px] font-bold;
+  }
+
+  .type-action {
+    @apply text-[10px] md:text-xs font-black uppercase tracking-widest;
+  }
+
+  .type-action-sm {
+    @apply text-[10px] font-black uppercase tracking-widest;
+  }
+
+  .type-table-head {
+    @apply text-xs font-black uppercase tracking-widest;
+  }
+
+  .type-table-body {
+    @apply text-xs font-bold;
+  }
+
+  .type-table-body-strong {
+    @apply text-xs font-black;
+  }
+
+  .type-metric-value {
+    @apply text-2xl md:text-4xl font-black tracking-tighter;
+  }
+
+  .type-metric-label {
+    @apply text-xs md:text-sm font-black uppercase tracking-[0.14em];
+  }
+
+  .type-company-name {
+    @apply text-xs md:text-sm font-black uppercase tracking-widest;
+  }
+
+  .type-company-code {
+    @apply text-[8px] md:text-xs font-bold uppercase tracking-widest;
+  }
+
+  .type-company-stat-label {
+    @apply text-[9px] md:text-[10px] font-black uppercase tracking-widest;
+  }
+
+  .type-company-stat-value {
+    @apply text-lg md:text-2xl font-black tracking-tight;
+  }
+
+  .type-nav-section {
+    @apply text-[9px] font-black uppercase tracking-[0.4em];
+  }
+
+  .type-nav-item {
+    @apply text-[11px] font-black uppercase tracking-widest;
+  }
+
+  .type-dropdown-option {
+    @apply text-[11px] font-bold;
+  }
+}

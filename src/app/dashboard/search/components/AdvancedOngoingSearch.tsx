@@ -171,32 +171,32 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm relative z-20">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                    <h3 className="type-overline text-slate-500 flex items-center gap-2">
                         <Search className="w-4 h-4 text-[#001489]" />
                         Search Condition
                     </h3>
                 </div>
                 <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">REG NO</label>
+                        <label className="type-label text-slate-400 pl-1">REG NO</label>
                         <Input 
                             value={filters.regno}
                             onChange={e => updateFilter('regno', e.target.value)}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
                             placeholder="e.g. 1234" 
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CAL NO</label>
+                        <label className="type-label text-slate-400 pl-1">CAL NO</label>
                         <Input 
                             value={filters.calno}
                             onChange={e => updateFilter('calno', e.target.value)}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
                             placeholder="e.g. 240401-01" 
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">APPLICANT</label>
+                        <label className="type-label text-slate-400 pl-1">APPLICANT</label>
                         <SearchableDropdown 
                             options={lookups?.suppliers || []}
                             value={filters.applicant}
@@ -205,17 +205,17 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">CONTACT PERSON</label>
+                        <label className="type-label text-slate-400 pl-1">CONTACT PERSON</label>
                         <Input 
                             value={filters.contact}
                             onChange={e => updateFilter('contact', e.target.value)}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg" 
                             placeholder="Name" 
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">RESERVED ENGINEER</label>
+                        <label className="type-label text-slate-400 pl-1">RESERVED ENGINEER</label>
                         <SearchableDropdown 
                             options={lookups?.employees || []}
                             value={filters.engineer}
@@ -224,7 +224,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">MANUFACTURER</label>
+                        <label className="type-label text-slate-400 pl-1">MANUFACTURER</label>
                         <SearchableDropdown 
                             options={lookups?.suppliers || []}
                             value={filters.mnfc}
@@ -233,18 +233,18 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                         />
                     </div>
                     <div className="space-y-1.5 lg:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">REC DATE</label>
+                        <label className="type-label text-slate-400 pl-1">REC DATE</label>
                         <div className="flex items-center gap-2">
-                            <Input type="date" value={filters.startDate} onChange={e => updateFilter('startDate', e.target.value)} className="h-9 bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg text-xs px-2" />
-                            <span className="text-slate-300 font-bold">~</span>
-                            <Input type="date" value={filters.endDate} onChange={e => updateFilter('endDate', e.target.value)} className="h-9 bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg text-xs px-2" />
+                            <Input type="date" value={filters.startDate} onChange={e => updateFilter('startDate', e.target.value)} className="h-9 bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg type-control-sm px-2" />
+                            <span className="text-slate-300">~</span>
+                            <Input type="date" value={filters.endDate} onChange={e => updateFilter('endDate', e.target.value)} className="h-9 bg-slate-50 border-slate-200 focus:border-[#001489] rounded-lg type-control-sm px-2" />
                         </div>
                     </div>
 
                     <div className="space-y-3 lg:col-span-4 mt-1 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex flex-wrap items-center gap-6">
                             <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Type:</span>
+                                <span className="type-label text-slate-500">Type:</span>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
                                         type="checkbox" 
@@ -252,7 +252,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         onChange={e => updateFilter('selfExt', e.target.checked ? '1' : '')} 
                                         className="w-3.5 h-3.5 rounded text-[#001489] focus:ring-[#001489]/20" 
                                     />
-                                    <span className="text-[10px] font-bold text-slate-700 group-hover:text-[#001489] transition-colors">SELF</span>
+                                    <span className="type-label text-slate-700 group-hover:text-[#001489] transition-colors">SELF</span>
                                 </label>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
@@ -261,12 +261,12 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         onChange={e => updateFilter('selfExt', e.target.checked ? '0' : '')} 
                                         className="w-3.5 h-3.5 rounded text-[#001489] focus:ring-[#001489]/20" 
                                     />
-                                    <span className="text-[10px] font-bold text-slate-700 group-hover:text-[#001489] transition-colors">EXTN</span>
+                                    <span className="type-label text-slate-700 group-hover:text-[#001489] transition-colors">EXTN</span>
                                 </label>
                             </div>
 
                             <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Location:</span>
+                                <span className="type-label text-slate-500">Location:</span>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
                                         type="checkbox" 
@@ -274,7 +274,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         onChange={e => updateFilter('onoffSite', e.target.checked ? 'B' : '')} 
                                         className="w-3.5 h-3.5 rounded text-[#001489] focus:ring-[#001489]/20" 
                                     />
-                                    <span className="text-[10px] font-bold text-slate-700 group-hover:text-[#001489] transition-colors">IN HOUSE</span>
+                                    <span className="type-label text-slate-700 group-hover:text-[#001489] transition-colors">IN HOUSE</span>
                                 </label>
                                 <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <input 
@@ -283,7 +283,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         onChange={e => updateFilter('onoffSite', e.target.checked ? 'A' : '')} 
                                         className="w-3.5 h-3.5 rounded text-[#001489] focus:ring-[#001489]/20" 
                                     />
-                                    <span className="text-[10px] font-bold text-slate-700 group-hover:text-[#001489] transition-colors">ON SITE</span>
+                                    <span className="type-label text-slate-700 group-hover:text-[#001489] transition-colors">ON SITE</span>
                                 </label>
                             </div>
                         </div>
@@ -291,7 +291,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                         <Button
                             onClick={handleSearch}
                             disabled={isSearching}
-                            className="h-10 px-8 bg-[#001489] hover:bg-[#001489]/90 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
+                            className="h-10 px-8 bg-[#001489] hover:bg-[#001489]/90 rounded-xl type-overline shadow-lg shadow-blue-900/20 transition-all active:scale-95 w-full md:w-auto"
                         >
                             {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
                         </Button>
@@ -302,7 +302,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             {/* Reserved Action Bar */}
             <div className="bg-[#001489]/5 rounded-2xl border border-[#001489]/10 p-4 flex flex-col md:flex-row md:items-center gap-4 animate-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center gap-2 w-full md:w-1/4">
-                    <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest shrink-0">Reserved Person:</span>
+                    <span className="type-label text-[#001489] shrink-0">Reserved Person:</span>
                     <SearchableDropdown 
                         options={lookups?.employees || []}
                         value=""
@@ -312,15 +312,15 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                     />
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-1/4">
-                    <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest shrink-0">Scheduled Date:</span>
-                    <Input type="date" className="h-9 bg-white border-[#001489]/20 focus:border-[#001489] rounded-lg text-xs px-2" />
+                    <span className="type-label text-[#001489] shrink-0">Scheduled Date:</span>
+                    <Input type="date" className="h-9 bg-white border-[#001489]/20 focus:border-[#001489] rounded-lg type-control-sm px-2" />
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-                    <span className="text-[10px] font-black text-[#001489] uppercase tracking-widest shrink-0">Delay Reason:</span>
-                    <Input className="h-9 bg-white border-[#001489]/20 focus:border-[#001489] rounded-lg text-xs" placeholder="Optional remark..." />
+                    <span className="type-label text-[#001489] shrink-0">Delay Reason:</span>
+                    <Input className="h-9 bg-white border-[#001489]/20 focus:border-[#001489] rounded-lg type-control-sm" placeholder="Optional remark..." />
                 </div>
                 <Button 
-                    className="h-9 px-6 bg-[#001489] hover:bg-[#001489]/90 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm w-full md:w-auto shrink-0 transition-transform active:scale-95"
+                    className="h-9 px-6 bg-[#001489] hover:bg-[#001489]/90 text-white rounded-lg type-label shadow-sm w-full md:w-auto shrink-0 transition-transform active:scale-95"
                     onClick={() => toast.info("Batch update feature coming soon...")}
                 >
                     Set
@@ -331,9 +331,9 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                        <h3 className="type-overline text-slate-900 flex items-center gap-2">
                             Ongoing List
-                            <span className="bg-[#001489]/10 text-[#001489] px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
+                            <span className="bg-[#001489]/10 text-[#001489] px-2 py-0.5 rounded-full type-label-sm ml-2">{results.length}</span>
                         </h3>
                     </div>
                     <Button 
@@ -341,7 +341,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                         size="sm" 
                         disabled={results.length === 0}
                         onClick={exportToExcel}
-                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-[#001489] hover:text-white transition-all shadow-sm"
+                        className="h-7 px-3 rounded-md type-label-sm text-slate-500 border-slate-200 hover:bg-[#001489] hover:text-white transition-all shadow-sm"
                     >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
@@ -379,7 +379,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                         <th 
                                             key={col.key}
                                             onClick={() => requestSort(col.key)}
-                                            className={`px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors`}
+                                            className={`px-3 py-2 border-b border-slate-200 type-label-sm ${col.color} cursor-pointer group hover:bg-slate-100 transition-colors`}
                                         >
                                             <div className="flex items-center">
                                                 {col.label}
@@ -404,27 +404,27 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                                 className="w-3.5 h-3.5 rounded text-[#001489] focus:ring-[#001489]/20"
                                             />
                                         </td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900">{row.ISID}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-600">
+                                        <td className="px-3 py-2 type-nav-item text-slate-900">{row.ISID}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600">
                                             {row.REG_ENGINEER || "—"}
                                         </td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-800">{row.NAEM_SUP}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.MODL}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.SERN}</td>
+                                        <td className="px-3 py-2 type-nav-item text-slate-800">{row.NAEM_SUP}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.MODL}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.SERN}</td>
                                         <td className="px-3 py-2">
-                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                            <span className={`px-2 py-0.5 rounded-md type-label-sm ${
                                                 row.STATUS_NAME === 'CAL Hold' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
                                             }`}>
                                                 {row.STATUS_NAME}
                                             </span>
                                         </td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-emerald-600">{formatDate(row.SCHE)}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-rose-600">{formatDate(row.NEXT)}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600 truncate max-w-[120px]" title={row.APPLICANT}>{row.APPLICANT}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-indigo-600">
+                                        <td className="px-3 py-2 type-dropdown-option text-emerald-600">{formatDate(row.SCHE)}</td>
+                                        <td className="px-3 py-2 type-nav-item text-rose-600">{formatDate(row.NEXT)}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600 truncate max-w-[120px]" title={row.APPLICANT}>{row.APPLICANT}</td>
+                                        <td className="px-3 py-2 type-nav-item text-indigo-600">
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); downloadReport(row.ISID, row.CALN); }}
-                                                className="hover:underline underline-offset-4 decoration-indigo-300 transition-all font-black"
+                                                className="type-nav-item hover:underline underline-offset-4 decoration-indigo-300 transition-all"
                                             >
                                                 {row.CALN || "—"}
                                             </button>
@@ -442,8 +442,8 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
                                     <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
                                         <Search className="w-6 h-6 text-slate-300" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-400 mb-1">No ongoing jobs found</p>
-                                    <p className="text-[11px] font-medium text-slate-400/70">Click search to load real data.</p>
+                                    <p className="type-control text-slate-400 mb-1">No ongoing jobs found</p>
+                                    <p className="type-dropdown-option text-slate-400/70">Click search to load real data.</p>
                                 </>
                             )}
                         </div>

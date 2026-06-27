@@ -3,6 +3,9 @@ import math
 from app.repositories.equipment_repo import EquipmentFilters, EquipmentSort
 from app.schemas.auth import CurrentUser
 from app.schemas.equipment import (
+    CertDownloadItem,
+    CertDownloadQuery,
+    CertDownloadSearchResponse,
     EquipmentItem,
     EquipmentListResponse,
     EquipmentPagination,
@@ -56,6 +59,22 @@ class EquipmentService:
         result = self.equipment_repository.update_equipment(equipment_id, payload)
         return {"success": bool(result.get("rowsAffected", 0))}
 
+    def search_cert_downloads(
+        self,
+        user: CurrentUser,
+        query: CertDownloadQuery,
+    ) -> CertDownloadSearchResponse:
+        rows = self.equipment_repository.search_cert_downloads(
+            corp_id=user.corp_id,
+            is_elevated=user.role in ("MASTER", "EMPLOYEE"),
+            filters=query,
+        )
+        return CertDownloadSearchResponse(
+            data=[_map_cert_download_item(row) for row in rows],
+            total=len(rows),
+            limit=query.limit,
+        )
+
 
 def _map_item(row) -> EquipmentItem:
     return EquipmentItem(
@@ -69,8 +88,24 @@ def _map_item(row) -> EquipmentItem:
         LAST=_clean(row.get("LAST")),
         NEXT=_clean(row.get("NEXT")),
         STAT=_clean(row.get("STAT")),
+        CIDU=_clean(row.get("CIDU")),
         MANUFACTURER_NAME=_clean(row.get("MANUFACTURER_NAME")),
         CUSTOMER_NAME=_clean(row.get("CUSTOMER_NAME")),
+    )
+
+
+def _map_cert_download_item(row) -> CertDownloadItem:
+    return CertDownloadItem(
+        ISID=_clean(row.get("ISID")),
+        CIDU=_clean(row.get("CIDU")),
+        ACCN=_clean(row.get("ACCN")),
+        NAEM_SUP=_clean(row.get("NAEM_SUP")),
+        MODL=_clean(row.get("MODL")),
+        SERN=_clean(row.get("SERN")),
+        CUSTOMER_NAME=_clean(row.get("CUSTOMER_NAME")),
+        MANUFACTURER_NAME=_clean(row.get("MANUFACTURER_NAME")),
+        CAL_DATE=_clean(row.get("CAL_DATE")),
+        RETURN_DATE=_clean(row.get("RETURN_DATE")),
     )
 
 

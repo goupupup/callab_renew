@@ -1,4 +1,6 @@
 from fastapi.testclient import TestClient
+from io import BytesIO
+from zipfile import ZipFile
 
 from app.core.config import Settings
 from app.core.security import create_session_token
@@ -94,7 +96,10 @@ def test_equipment_upload_accepts_employee_user():
 
 
 def test_file_service_returns_not_configured_when_ftp_settings_are_missing():
-    service = EquipmentFileService(settings=Settings(), equipment_repository=None)
+    service = EquipmentFileService(
+        settings=Settings(ftp_host="", ftp_user="", ftp_password=""),
+        equipment_repository=None,
+    )
 
     assert service.get_download(CurrentUser(user_id="u", name="U", corp_id="C", corp_name="C", role="MASTER"), "1001", "data") is None
     assert service.upload(None, "1001", "data.xlsx", b"content") == {
@@ -123,4 +128,53 @@ def test_data_download_filename_uses_actual_remote_extension():
         "data",
     )
 
-    assert filename == "ASSET1 - 2024_CAL2024001_1001.zip"
+    assert filename == "ASSET1_CAL2024001 (1001).zip"
+
+
+def test_report_download_filename_uses_asset_calno_and_regno():
+    filename = build_download_filename(
+        "1001",
+        "ASSET1",
+        "CAL2024001",
+        "/report/report_cust_pdf/2024/CAL2024001.pdf",
+        "report",
+    )
+
+    assert filename == "ASSET1_CAL2024001 (1001).pdf"
+
+
+def test_bulk_download_zip_includes_files_and_summary():
+    class BulkService(EquipmentFileService):
+        def __init__(self):
+            super().__init__()
+
+        def get_download(self, user, equipment_id: str, file_type: str, cal_no=None):
+            if equipment_id == "missing":
+                return None
+            return FileResult(
+                content=f"{equipment_id}-{file_type}-{cal_no}".encode(),
+                filename=f"ASSET1_{cal_no} ({equipment_id}).pdf",
+                media_type="application/pdf",
+            )
+
+    service = BulkService()
+    user = CurrentUser(user_id="u", name="U", corp_id="C", corp_name="C", role="MASTER")
+
+    result = service.get_bulk_download(
+        user,
+        "report",
+        [
+            {"ISID": "1001", "CIDU": "CAL2024001"},
+            {"ISID": "missing", "CIDU": "CAL2024002"},
+        ],
+    )
+
+    assert result.filename.startswith("CALLAB_Bulk_Certificates_")
+    assert result.media_type == "application/zip"
+    with ZipFile(BytesIO(result.content)) as archive:
+        names = archive.namelist()
+        assert "download-summary.txt" in names
+        assert "certificates/ASSET1_CAL2024001 (1001).pdf" in names
+        summary = archive.read("download-summary.txt").decode()
+        assert "OK\t1001\tCAL2024001" in summary
+        assert "MISS\tmissing\tCAL2024002" in summary

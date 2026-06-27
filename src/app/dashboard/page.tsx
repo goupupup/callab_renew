@@ -101,8 +101,8 @@ export default function DashboardPage() {
                             <Zap className="w-5 h-5 md:w-6 md:h-6 text-blue-200" />
                         </div>
                         <div>
-                            <h3 className="text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-blue-200 mb-1">HCTA NOTICE</h3>
-                            <p className="text-sm md:text-xl font-bold tracking-tight line-clamp-2 md:line-clamp-none">System maintenance scheduled for March 15th at 22:00 PST.</p>
+                            <h3 className="type-card-title text-blue-200 mb-1">HCTA NOTICE</h3>
+                            <p className="type-subpage-title line-clamp-2 md:line-clamp-none">System maintenance scheduled for March 15th at 22:00 PST.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -111,15 +111,15 @@ export default function DashboardPage() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>
-                    <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-slate-900 leading-tight mb-2">
+                    <h2 className="type-page-title text-slate-900 mb-2">
                         {/* @ts-ignore */}
                         {session?.user?.corpName || "Asset"} <span className="text-[#001489]">Control Center</span>
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                        <p className="text-[10px] md:text-xs font-bold text-slate-400">
-                            Authorized: <span className="text-[#001489] uppercase font-black">{session?.user?.name}</span>
+                        <p className="type-page-meta text-slate-400">
+                            Authorized: <span className="type-nav-item text-[#001489]">{session?.user?.name}</span>
                         </p>
-                        <Badge variant="outline" className="text-[8px] md:text-[9px] font-black uppercase tracking-widest border-slate-200 text-slate-400 px-2 md:px-3 py-0.5 md:py-1">
+                        <Badge variant="outline" className="type-caption border-slate-200 text-slate-400 px-2 md:px-3 py-0.5 md:py-1">
                             {/* @ts-ignore */}
                             {session?.user?.role || "USER"}
                         </Badge>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="hidden xl:flex items-center space-x-3 text-slate-300">
                     <Zap className="w-4 h-4" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.4em]">Integrated Telemetry</span>
+                    <span className="type-nav-section">Integrated Telemetry</span>
                 </div>
             </div>
 
@@ -145,8 +145,8 @@ export default function DashboardPage() {
                                     <stat.icon className="w-4 h-4 md:w-5 md:h-5" />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-slate-400">{stat.label}</p>
-                                    <p className="text-2xl md:text-4xl font-black tracking-tighter text-slate-900">{stat.value}</p>
+                                    <p className="type-metric-label text-slate-400">{stat.label}</p>
+                                    <p className="type-metric-value text-slate-900">{stat.value}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                 <div className="space-y-6 md:space-y-8 mt-10 md:mt-16 pt-10 md:pt-16 border-t border-slate-100">
                     <div className="flex items-center space-x-3">
                         <BarChart3 className="w-5 h-5 text-[#001489]" />
-                        <h3 className="text-lg md:text-xl font-black tracking-[0.1em] md:tracking-[0.2em] text-slate-900 uppercase">Company Overview</h3>
+                        <h3 className="type-section-title text-slate-900">Company Overview</h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
@@ -170,26 +170,26 @@ export default function DashboardPage() {
                                 onClick={() => router.push(`/dashboard/equipment?company=${encodeURIComponent(company.corpId)}`)}
                             >
                                 <div className="p-4 md:p-5 pb-2 bg-slate-50/5 group-hover:bg-[#001489]/5 transition-colors border-b border-transparent group-hover:border-slate-100 flex-none">
-                                    <h4 className="text-[10px] md:text-[11px] font-black text-slate-900 truncate uppercase tracking-wider">
+                                    <h4 className="type-company-name text-slate-900 truncate">
                                         {company.corpName || "Untitled Corp"}
                                     </h4>
-                                    <p className="text-[8px] font-bold text-slate-400">ID: {company.corpId}</p>
+                                    <p className="type-company-code text-slate-400">ID: {company.corpId}</p>
                                 </div>
                                 <CardContent className="p-4 md:p-5 flex-1 flex flex-col justify-center">
                                     <div className="flex items-center justify-between gap-1 md:gap-2">
                                         <div className="text-center flex-1">
-                                            <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Total</p>
-                                            <p className="text-sm md:text-lg font-black text-slate-900">{company.total}</p>
+                                            <p className="type-company-stat-label text-slate-400 mb-1">Total</p>
+                                            <p className="type-company-stat-value text-slate-900">{company.total}</p>
                                         </div>
                                         <div className="w-[1px] h-6 md:h-8 bg-slate-100" />
                                         <div className="text-center flex-1">
-                                            <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">On-Going</p>
-                                            <p className="text-sm md:text-lg font-black text-[#001489]">{company.ongoing}</p>
+                                            <p className="type-company-stat-label text-slate-400 mb-1">On-Going</p>
+                                            <p className="type-company-stat-value text-[#001489]">{company.ongoing}</p>
                                         </div>
                                         <div className="w-[1px] h-6 md:h-8 bg-slate-100" />
                                         <div className="text-center flex-1">
-                                            <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Expired</p>
-                                            <p className="text-sm md:text-lg font-black text-rose-600">{company.expired}</p>
+                                            <p className="type-company-stat-label text-slate-400 mb-1">Expired</p>
+                                            <p className="type-company-stat-value text-rose-600">{company.expired}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -202,8 +202,8 @@ export default function DashboardPage() {
             {/* Service Actions */}
             <section className="space-y-5 md:space-y-6">
                 <div className="flex flex-col gap-2 border-l-4 border-[#001489] pl-4 md:pl-6">
-                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">HCT America Support</p>
-                    <h3 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">Service Resources</h3>
+                    <p className="type-section-eyebrow text-slate-400">HCT America Support</p>
+                    <h3 className="type-subpage-title text-slate-900">Service Resources</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4">
@@ -222,8 +222,8 @@ export default function DashboardPage() {
                                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-300" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-900 leading-snug">{item.label}</p>
-                                    <p className="text-[10px] font-semibold leading-relaxed text-slate-400">{item.description}</p>
+                                    <p className="type-nav-item tracking-wider text-slate-900 leading-snug">{item.label}</p>
+                                    <p className="type-label-sm leading-relaxed text-slate-400 normal-case tracking-normal">{item.description}</p>
                                 </div>
                             </div>
                         </button>
@@ -234,23 +234,23 @@ export default function DashboardPage() {
             <Dialog open={isMembershipOpen} onOpenChange={setIsMembershipOpen}>
                 <DialogContent className="max-w-2xl border-none bg-white p-0 shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden">
                     <DialogHeader className="border-b border-slate-100 bg-slate-50/60 p-6 md:p-8">
-                        <DialogTitle className="text-lg md:text-2xl font-black tracking-tight text-slate-900">Membership Procedure</DialogTitle>
-                        <DialogDescription className="text-xs md:text-sm font-semibold text-slate-500">
+                        <DialogTitle className="type-subpage-title text-slate-900">Membership Procedure</DialogTitle>
+                        <DialogDescription className="type-control-sm text-slate-500">
                             HAS membership approval process
                         </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[70vh] overflow-y-auto p-6 md:p-8">
-                        <ol className="space-y-4 text-sm font-semibold leading-relaxed text-slate-600">
+                        <ol className="space-y-4 type-control leading-relaxed text-slate-600">
                             <li>1. Membership registration is available only to customers or companies with an existing transaction history with HCT America.</li>
                             <li>2. Click "Sign Up" and enter the required information to register as a temporary member.</li>
                             <li>3. Enter your business registration number accurately so we can verify your customer status.</li>
                             <li>4. Once your customer status is confirmed, full membership will be granted. An approval notice will be sent to the registered email address within 7 days of the application.</li>
                             <li>5. Only approved users can log in and use HAS normally.</li>
                         </ol>
-                        <div className="mt-6 border-t border-slate-100 pt-6 space-y-4 text-sm font-semibold leading-relaxed text-slate-600">
+                        <div className="mt-6 border-t border-slate-100 pt-6 space-y-4 type-control leading-relaxed text-slate-600">
                             <p>The full membership approval process is required to maintain authorized access and security for third-party equipment.</p>
                             <div className="rounded-xl bg-slate-50 p-4">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Additional Inquiries</p>
+                                <p className="type-label tracking-[0.2em] text-slate-400 mb-2">Additional Inquiries</p>
                                 <p>Phone 510-933-8848</p>
                                 <p>Email calsales@hctamerica.com</p>
                             </div>

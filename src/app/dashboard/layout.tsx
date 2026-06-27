@@ -15,7 +15,8 @@ import {
     X,
     User,
     ShieldCheck,
-    Search
+    Search,
+    Archive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -63,6 +64,7 @@ export default function DashboardLayout({
     const commonNavItems = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         { icon: Settings, label: "Equipments", href: "/dashboard/equipment" },
+        { icon: Archive, label: "Cert Download", href: "/dashboard/cert-download" },
         { icon: UserCog, label: "Account", href: "/dashboard/account" },
     ];
 
@@ -114,7 +116,7 @@ export default function DashboardLayout({
                         >
                             <div className="flex items-center space-x-4">
                                 <item.icon className={`w-4 h-4 transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#001489]"}`} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
+                                <span className="type-nav-item">{item.label}</span>
                             </div>
                             {isActive && !hasSubItems && <ChevronRight className="w-3 h-3 text-white/50" />}
                             {hasSubItems && <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""} ${isActive ? "text-white/50" : "text-slate-300"}`} />}
@@ -130,7 +132,7 @@ export default function DashboardLayout({
                                     style={{ top: flyoutPos.top, left: flyoutPos.left }}
                                 >
                                     <div className="bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 min-w-[160px]">
-                                        <p className="px-4 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Search by</p>
+                                        <p className="px-4 py-2 type-caption text-slate-300">Search by</p>
                                         {item.subItems.map((sub: any) => (
                                             <button
                                                 key={sub.tab}
@@ -139,7 +141,7 @@ export default function DashboardLayout({
                                                     router.push(sub.href);
                                                     setExpandedItem(null);
                                                 }}
-                                                className={`w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-2.5 ${pathname === sub.href
+                                                className={`w-full text-left px-4 py-2.5 type-dropdown-option transition-colors flex items-center gap-2.5 ${pathname === sub.href
                                                     ? "bg-[#001489]/5 text-[#001489]"
                                                     : "text-slate-600 hover:bg-[#001489]/5 hover:text-[#001489]"
                                                     }`}
@@ -193,7 +195,7 @@ export default function DashboardLayout({
                 <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
                     {/* Common Section */}
                     <div className="space-y-3">
-                        <p className="px-5 text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Functions</p>
+                        <p className="px-5 type-nav-section text-slate-400">Functions</p>
                         {renderNavItems(commonNavItems)}
                     </div>
 
@@ -202,7 +204,7 @@ export default function DashboardLayout({
                         <div className="space-y-3 pt-4 border-t border-slate-50">
                             <div className="flex items-center px-5 space-x-2">
                                 <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Administration</p>
+                                <p className="type-nav-section text-slate-400">Administration</p>
                             </div>
                             {renderNavItems(adminNavItems)}
                         </div>
@@ -210,7 +212,7 @@ export default function DashboardLayout({
                 </div>
 
                 <div className="p-6 bg-slate-50/50 border-t border-slate-100">
-                    <p className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.5em] text-center">
+                    <p className="type-caption text-slate-300 text-center">
                         © 2026 HCT AMERICA INC.
                     </p>
                 </div>
@@ -225,7 +227,7 @@ export default function DashboardLayout({
                             <Menu className="w-6 h-6" />
                         </Button>
                         <div className="hidden md:block">
-                            <h1 className="text-sm font-black uppercase tracking-widest text-[#001489]">
+                            <h1 className="type-action text-[#001489]">
                                 Operation <span className="text-slate-400">Hub</span>
                             </h1>
                         </div>
@@ -247,15 +249,15 @@ export default function DashboardLayout({
                         <div className="flex items-center space-x-4 md:space-x-6">
                             <div className="flex items-center space-x-3 md:space-x-4">
                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-[#001489]/5 rounded-2xl flex items-center justify-center border border-[#001489]/10 shadow-sm overflow-hidden">
-                                    <span className="font-black text-[#001489] text-base md:text-lg">
+                                    <span className="type-section-title text-[#001489]">
                                         {session?.user?.name?.[0] || (role === "MASTER" ? "M" : "U")}
                                     </span>
                                 </div>
                                 <div className="hidden xs:flex flex-col">
-                                    <p className="text-xs md:text-sm font-black text-slate-900 leading-none mb-1 uppercase tracking-tight">
+                                    <p className="type-table-body-strong text-slate-900 leading-none mb-1 uppercase tracking-tight">
                                         {(isMaster ? "MANAGER" : isEmployee ? "STAFF" : "CLIENT")}
                                     </p>
-                                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                    <p className="type-label-sm text-slate-400 leading-none">
                                         {(session?.user as any)?.corpName || "HCT AMERICA. INC"}
                                     </p>
                                 </div>
@@ -269,7 +271,7 @@ export default function DashboardLayout({
                                 <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-950 flex items-center justify-center text-white transition-colors group-hover:bg-rose-600">
                                     <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </div>
-                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-rose-600 transition-colors">Logout</span>
+                                <span className="type-action-sm text-slate-400 group-hover:text-rose-600 transition-colors">Logout</span>
                             </button>
                         </div>
                     </div>

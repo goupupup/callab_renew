@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime
 from ftplib import FTP, error_perm
 from io import BytesIO
 from pathlib import PurePosixPath
 from typing import Optional
+from zipfile import ZIP_DEFLATED, ZipFile
 
 
 @dataclass
@@ -25,7 +27,7 @@ class EquipmentFileService:
         file_type: str,
         cal_no: Optional[str] = None,
     ) -> Optional[FileResult]:
-        if not self._is_configured() or self.equipment_repository is None:
+        if not self.is_configured() or self.equipment_repository is None:
             return None
 
         context = self.equipment_repository.get_file_context(
@@ -49,8 +51,59 @@ class EquipmentFileService:
         media_type = "application/pdf" if file_type == "report" else "application/octet-stream"
         return FileResult(content=content, filename=filename, media_type=media_type)
 
+    def get_bulk_download(self, user, file_type: str, items) -> FileResult:
+        if file_type not in ("report", "data"):
+            raise ValueError("Unsupported file type")
+
+        archive = BytesIO()
+        summary = []
+        used_names = set()
+        success_count = 0
+        missing_count = 0
+        folder = "certificates" if file_type == "report" else "data-files"
+
+        with ZipFile(archive, "w", ZIP_DEFLATED) as zip_file:
+            for item in items:
+                equipment_id = _row_value(item, "ISID")
+                cal_no = _row_value(item, "CIDU")
+                if not equipment_id:
+                    continue
+
+                result = self.get_download(user, equipment_id, file_type, cal_no)
+                if result is None:
+                    missing_count += 1
+                    summary.append(f"MISS\t{equipment_id}\t{cal_no or '-'}\tFile not found")
+                    continue
+
+                success_count += 1
+                archive_name = _unique_zip_name(
+                    used_names,
+                    f"{folder}/{result.filename}",
+                )
+                zip_file.writestr(archive_name, result.content)
+                summary.append(f"OK\t{equipment_id}\t{cal_no or '-'}\t{archive_name}")
+
+            header = [
+                "CALLAB bulk download summary",
+                f"Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC",
+                f"Type: {file_type}",
+                f"Success: {success_count}",
+                f"Missing: {missing_count}",
+                "",
+                "STATUS\tREG_NO\tCAL_NO\tDETAIL",
+            ]
+            zip_file.writestr("download-summary.txt", "\n".join(header + summary) + "\n")
+
+        filename_type = "Certificates" if file_type == "report" else "Data_Files"
+        filename = f"CALLAB_Bulk_{filename_type}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.zip"
+        return FileResult(
+            content=archive.getvalue(),
+            filename=filename,
+            media_type="application/zip",
+        )
+
     def upload(self, user, equipment_id: str, filename: str, content: bytes):
-        if not self._is_configured():
+        if not self.is_configured():
             return {
                 "success": False,
                 "message": "FTP upload is not configured",
@@ -68,7 +121,7 @@ class EquipmentFileService:
             "path": target_path,
         }
 
-    def _is_configured(self) -> bool:
+    def is_configured(self) -> bool:
         return bool(
             self.settings
             and self.settings.ftp_host
@@ -125,12 +178,11 @@ def build_download_filename(
     remote_path: str,
     file_type: str,
 ):
-    if file_type == "report":
-        return PurePosixPath(remote_path).name
-
-    year = _year_from_cal_no(cal_no)
-    extension = _extension(remote_path) or "xlsx"
-    return f"{asset_no} - {year}_{cal_no}_{equipment_id}.{extension}"
+    extension = _extension(remote_path) or ("pdf" if file_type == "report" else "xlsx")
+    safe_asset_no = _filename_part(asset_no or equipment_id)
+    safe_cal_no = _filename_part(cal_no or "latest")
+    safe_equipment_id = _filename_part(equipment_id)
+    return f"{safe_asset_no}_{safe_cal_no} ({safe_equipment_id}).{extension}"
 
 
 def _ensure_remote_dirs(ftp, directory: str):
@@ -147,6 +199,37 @@ def _ensure_remote_dirs(ftp, directory: str):
 def _extension(filename: str) -> str:
     suffix = PurePosixPath(filename).suffix
     return suffix[1:] if suffix.startswith(".") else suffix
+
+
+def _filename_part(value: str) -> str:
+    text = str(value or "").strip()
+    return "".join(char if char not in '\\/:*?"<>|' else "_" for char in text) or "-"
+
+
+def _row_value(row, key: str) -> str:
+    if hasattr(row, key):
+        return str(getattr(row, key) or "").strip()
+    if isinstance(row, dict):
+        return str(row.get(key) or "").strip()
+    return ""
+
+
+def _unique_zip_name(used_names, name: str) -> str:
+    if name not in used_names:
+        used_names.add(name)
+        return name
+
+    path = PurePosixPath(name)
+    stem = path.stem
+    suffix = path.suffix
+    parent = str(path.parent)
+    index = 2
+    while True:
+        candidate = f"{parent}/{stem}_{index}{suffix}"
+        if candidate not in used_names:
+            used_names.add(candidate)
+            return candidate
+        index += 1
 
 
 def _year_from_cal_no(cal_no: str) -> str:

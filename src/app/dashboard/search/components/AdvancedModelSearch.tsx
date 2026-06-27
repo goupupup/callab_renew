@@ -137,7 +137,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm relative z-20">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2">
+                    <h3 className="type-overline text-amber-600 flex items-center gap-2">
                         <Wrench className="w-4 h-4" />
                         Model Search Condition
                     </h3>
@@ -145,7 +145,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                 <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5">
                     {/* Row 1 */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">APPLICANT</label>
+                        <label className="type-label text-slate-400 pl-1">APPLICANT</label>
                         <SearchableDropdown 
                             options={lookups?.suppliers || []}
                             value={filters.cust}
@@ -154,7 +154,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">MANUFACTURER</label>
+                        <label className="type-label text-slate-400 pl-1">MANUFACTURER</label>
                         <SearchableDropdown 
                             options={lookups?.suppliers || []}
                             value={filters.mnfc}
@@ -163,17 +163,17 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">EQPT NAME</label>
+                        <label className="type-label text-slate-400 pl-1">EQPT NAME</label>
                         <Input 
                             value={filters.eqptName}
                             onChange={(e) => updateFilter("eqptName", e.target.value)}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg" 
                             placeholder="Equipment Name" 
                         />
                     </div>
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between pl-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">MODEL</label>
+                            <label className="type-label text-slate-400 leading-none">MODEL</label>
                             <label className="flex items-center gap-1.5 cursor-pointer group leading-none">
                                 <input 
                                     type="checkbox" 
@@ -181,25 +181,25 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                                     onChange={(e) => updateFilter("isExact", e.target.checked)}
                                     className="w-3 h-3 rounded text-amber-500 focus:ring-amber-500/20 shadow-none border-slate-300 transition-all pointer-events-auto" 
                                 />
-                                <span className="text-[9px] font-bold text-slate-400 group-hover:text-amber-600 transition-colors uppercase">Exact</span>
+                                <span className="type-label-sm text-slate-400 group-hover:text-amber-600 transition-colors uppercase">Exact</span>
                             </label>
                         </div>
                         <Input 
                             value={filters.model}
                             onChange={(e) => updateFilter("model", e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg placeholder:text-slate-300" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg placeholder:text-slate-300" 
                             placeholder="Model No." 
                         />
                     </div>
 
                     {/* Row 2 */}
                     <div className="space-y-1.5 lg:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">MEMO</label>
+                        <label className="type-label text-slate-400 pl-1">MEMO</label>
                         <Input 
                             value={filters.memo}
                             onChange={(e) => updateFilter("memo", e.target.value)}
-                            className="h-9 text-xs bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg" 
+                            className="h-9 type-control-sm bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg" 
                             placeholder="Search by memo..." 
                         />
                     </div>
@@ -207,7 +207,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                         <Button
                             onClick={handleSearch}
                             disabled={isSearching}
-                            className="h-9 w-full bg-amber-500 hover:bg-amber-600 rounded-lg text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                            className="h-9 w-full bg-amber-500 hover:bg-amber-600 rounded-lg type-overline shadow-lg shadow-amber-500/20 transition-all active:scale-95"
                         >
                             {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search Equipment"}
                         </Button>
@@ -219,9 +219,9 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                        <h3 className="type-overline text-slate-900 flex items-center gap-2">
                             Model Search Results
-                            <span className="bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full text-[9px] ml-2">{results.length}</span>
+                            <span className="bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full type-label-sm ml-2">{results.length}</span>
                         </h3>
                     </div>
                     <Button 
@@ -229,7 +229,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                         size="sm" 
                         disabled={results.length === 0}
                         onClick={exportToExcel}
-                        className="h-7 px-3 rounded-md text-[9px] font-bold uppercase tracking-wider text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 transition-all shadow-sm"
+                        className="h-7 px-3 rounded-md type-label-sm text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 transition-all shadow-sm"
                     >
                         <Download className="w-3 h-3 mr-1.5" />
                         Export
@@ -257,7 +257,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                                         <th 
                                             key={col.key}
                                             onClick={() => requestSort(col.key)}
-                                            className="px-3 py-2 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-[#001489] cursor-pointer group hover:bg-slate-100 transition-colors"
+                                            className="px-3 py-2 border-b border-slate-200 type-label-sm text-[#001489] cursor-pointer group hover:bg-slate-100 transition-colors"
                                         >
                                             <div className="flex items-center">
                                                 {col.label}
@@ -270,17 +270,17 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                             <tbody className="divide-y divide-slate-100">
                                 {sortedResults.map((row) => (
                                     <tr key={row.ISID} className="hover:bg-amber-500/5 transition-colors cursor-pointer group">
-                                        <td className="px-3 py-2 text-[11px] font-black text-slate-900 group-hover:text-amber-600 transition-colors">{row.ISID}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-800">{row.NAEM_SUP}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-amber-600 bg-amber-500/5 uppercase">{row.MODL}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.MNFC_NAME}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{row.SERN}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-600">{row.CUST_NAME}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-500">{formatDate(row.LAST)}</td>
-                                        <td className="px-3 py-2 text-[11px] font-bold text-slate-400">{row.TERM ? `${row.TERM}m` : "—"}</td>
-                                        <td className="px-3 py-2 text-[11px] font-black text-rose-500 tracking-widest uppercase">{row.SELF}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-400">{row.MODE_DESC}</td>
-                                        <td className="px-3 py-2 text-[11px] font-medium text-slate-400 truncate max-w-[200px]">{row.MEMO}</td>
+                                        <td className="px-3 py-2 type-nav-item text-slate-900 group-hover:text-amber-600 transition-colors">{row.ISID}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-800">{row.NAEM_SUP}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-amber-600 bg-amber-500/5 uppercase">{row.MODL}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.MNFC_NAME}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{row.SERN}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-600">{row.CUST_NAME}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-500">{formatDate(row.LAST)}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-400">{row.TERM ? `${row.TERM}m` : "—"}</td>
+                                        <td className="px-3 py-2 type-nav-item text-rose-500 tracking-widest uppercase">{row.SELF}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-400">{row.MODE_DESC}</td>
+                                        <td className="px-3 py-2 type-dropdown-option text-slate-400 truncate max-w-[200px]">{row.MEMO}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -290,8 +290,8 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
                             <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
                                 <Wrench className="w-6 h-6 text-amber-200" />
                             </div>
-                            <p className="text-sm font-bold text-slate-400 mb-1">No equipment found for this model</p>
-                            <p className="text-[11px] font-medium text-slate-400/70">Check your spelling or try searching without exact match.</p>
+                            <p className="type-control text-slate-400 mb-1">No equipment found for this model</p>
+                            <p className="type-dropdown-option text-slate-400/70">Check your spelling or try searching without exact match.</p>
                         </div>
                     )}
                 </div>
@@ -329,7 +329,7 @@ function SearchableDropdown({ options, value, onChange, placeholder }: {
                         setIsOpen(true);
                         setSearch("");
                     }}
-                    className="h-9 pr-8 text-xs bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg placeholder:text-slate-300 font-medium"
+                    className="h-9 pr-8 type-control-sm bg-slate-50 border-slate-200 focus:border-amber-500 rounded-lg placeholder:text-slate-300"
                     placeholder={placeholder}
                 />
                 <button 
@@ -349,7 +349,7 @@ function SearchableDropdown({ options, value, onChange, placeholder }: {
                             <button 
                                 type="button"
                                 onClick={() => { onChange(""); setIsOpen(false); }}
-                                className="w-full px-4 py-2.5 text-left text-xs text-slate-400 hover:bg-slate-50 transition-colors italic border-b border-slate-50"
+                                className="w-full px-4 py-2.5 text-left type-control-sm text-slate-400 hover:bg-slate-50 transition-colors italic border-b border-slate-50"
                             >
                                 Clear Selection
                             </button>
@@ -362,18 +362,18 @@ function SearchableDropdown({ options, value, onChange, placeholder }: {
                                         setIsOpen(false);
                                         setSearch("");
                                     }}
-                                    className={`w-full px-4 py-2.5 text-left text-[11px] transition-colors border-b border-slate-50 last:border-0 ${
-                                        value === o.CODE ? "bg-amber-50 text-amber-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                    className={`w-full px-4 py-2.5 text-left type-dropdown-option transition-colors border-b border-slate-50 last:border-0 ${
+                                        value === o.CODE ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-slate-50"
                                     }`}
                                 >
                                     <div className="flex justify-between items-center">
                                         <span className="truncate pr-2">{o.NAME}</span>
-                                        <span className="text-[9px] font-black text-slate-300 uppercase shrink-0">{o.CODE}</span>
+                                        <span className="type-label-sm text-slate-300 uppercase shrink-0">{o.CODE}</span>
                                     </div>
                                 </button>
                             ))}
                             {filtered.length === 0 && (
-                                <div className="px-4 py-6 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                                <div className="px-4 py-6 text-center type-label text-slate-300">
                                     No matches found
                                 </div>
                             )}

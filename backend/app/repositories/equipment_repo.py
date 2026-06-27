@@ -106,15 +106,26 @@ class EquipmentRepository:
         is_all = limit >= 9999
         data_params = dict(params)
         if is_all:
-            final_data_sql = f"{data_sql} ORDER BY {sort_column} {sort_order}"
+            final_data_sql = f"""
+                SELECT a.*, NULL as CIDU
+                FROM (
+                    {data_sql} ORDER BY {sort_column} {sort_order}
+                ) a
+            """
         else:
             offset = (page - 1) * limit
             final_data_sql = f"""
-                SELECT * FROM (
+                SELECT paged.*,
+                    (
+                        SELECT MAX(TRIM(cal.CIDU))
+                        FROM EASYCAL.TBCALMAN cal
+                        WHERE TRIM(cal.ISID) = TRIM(paged.ISID)
+                    ) as CIDU
+                FROM (
                     SELECT a.*, ROWNUM rnum FROM (
                         {data_sql} ORDER BY {sort_column} {sort_order}
                     ) a WHERE ROWNUM <= :upper_limit
-                ) WHERE rnum > :offset
+                ) paged WHERE rnum > :offset
             """
             data_params["offset"] = offset
             data_params["upper_limit"] = offset + limit
@@ -146,6 +157,84 @@ class EquipmentRepository:
             """,
             params,
         )
+
+    def search_cert_downloads(
+        self,
+        corp_id: str,
+        is_elevated: bool,
+        filters,
+    ):
+        sql = """
+            SELECT *
+            FROM (
+                SELECT
+                    TRIM(m.ISID) as ISID,
+                    TRIM(c.CIDU) as CIDU,
+                    TRIM(m.ACCN) as ACCN,
+                    TRIM(m.NAEM_SUP) as NAEM_SUP,
+                    TRIM(m.MODL) as MODL,
+                    TRIM(m.SERN) as SERN,
+                    TRIM(cust.CONM) as CUSTOMER_NAME,
+                    TRIM(mnfc.CONM) as MANUFACTURER_NAME,
+                    TRIM(c.CARD) as CAL_DATE,
+                    TRIM(c.ROTD) as RETURN_DATE
+                FROM EASYCAL.TBCALMAN c
+                JOIN EASYCAL.TBMASMAN m ON TRIM(c.ISID) = TRIM(m.ISID)
+                LEFT JOIN EASYCAL.TBSUPMAN cust ON TRIM(m.CUST) = TRIM(cust.COID)
+                LEFT JOIN EASYCAL.TBSUPMAN mnfc ON TRIM(m.MNFC) = TRIM(mnfc.COID)
+                WHERE TRIM(c.CIDU) IS NOT NULL
+        """
+        params = {}
+
+        if not is_elevated:
+            sql += " AND TRIM(m.CUST) = :corp_id"
+            params["corp_id"] = corp_id
+        elif filters.company:
+            sql += """
+                AND (
+                    TRIM(m.CUST) LIKE '%' || :company || '%'
+                    OR UPPER(TRIM(cust.CONM)) LIKE '%' || UPPER(TRIM(:company)) || '%'
+                )
+            """
+            params["company"] = filters.company.strip()
+
+        if filters.regNo:
+            sql += " AND UPPER(TRIM(m.ISID)) = UPPER(TRIM(:reg_no))"
+            params["reg_no"] = filters.regNo.strip()
+        if filters.equipmentName:
+            sql += " AND UPPER(TRIM(m.NAEM_SUP)) LIKE '%' || UPPER(TRIM(:equipment_name)) || '%'"
+            params["equipment_name"] = filters.equipmentName.strip()
+        if filters.modelName:
+            sql += " AND UPPER(TRIM(m.MODL)) LIKE '%' || UPPER(TRIM(:model_name)) || '%'"
+            params["model_name"] = filters.modelName.strip()
+        if filters.manufacturer:
+            sql += """
+                AND (
+                    TRIM(m.MNFC) LIKE '%' || :manufacturer || '%'
+                    OR UPPER(TRIM(mnfc.CONM)) LIKE '%' || UPPER(TRIM(:manufacturer)) || '%'
+                )
+            """
+            params["manufacturer"] = filters.manufacturer.strip()
+        if filters.calDateStart:
+            sql += " AND TRIM(c.CARD) <> '0' AND c.CARD >= :cal_date_start"
+            params["cal_date_start"] = _date_param(filters.calDateStart)
+        if filters.calDateEnd:
+            sql += " AND TRIM(c.CARD) <> '0' AND c.CARD <= :cal_date_end"
+            params["cal_date_end"] = _date_param(filters.calDateEnd)
+        if filters.returnDateStart:
+            sql += " AND TRIM(c.ROTD) <> '0' AND c.ROTD >= :return_date_start"
+            params["return_date_start"] = _date_param(filters.returnDateStart)
+        if filters.returnDateEnd:
+            sql += " AND TRIM(c.ROTD) <> '0' AND c.ROTD <= :return_date_end"
+            params["return_date_end"] = _date_param(filters.returnDateEnd)
+
+        sql += """
+                ORDER BY c.CARD DESC, c.CIDU DESC
+            )
+            WHERE ROWNUM <= :limit
+        """
+        params["limit"] = filters.limit
+        return self.database.fetch_all(sql, params)
 
     def get_file_context(
         self,
