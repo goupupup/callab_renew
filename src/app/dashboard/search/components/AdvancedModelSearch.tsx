@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 
 interface LookupItem {
     CODE: string;
@@ -25,6 +26,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
+    const { progress, showGeneratedDownload } = useDownloadProgress();
 
     // Filter States
     const [filters, setFilters] = useState({
@@ -90,13 +92,9 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
             csvRows.push(row.join(","));
         });
 
+        const filename = `Model_Search_Results_${new Date().toISOString().split('T')[0]}.csv`;
         const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Model_Search_Results_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        showGeneratedDownload(blob, filename, "CSV Export");
     };
 
     const formatDate = (dateStr: string) => {
@@ -134,6 +132,7 @@ export default function AdvancedModelSearch({ lookups }: AdvancedModelSearchProp
 
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500">
+            <DownloadProgressBar progress={progress} />
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm relative z-20">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50/50">

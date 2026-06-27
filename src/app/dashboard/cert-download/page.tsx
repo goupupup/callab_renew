@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { Archive, Download, FileSpreadsheet, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,17 +39,9 @@ function formatDate(dateString: unknown) {
     return `${year}-${month}-${day}`;
 }
 
-function filenameFromDisposition(contentDisposition: string | null) {
-    if (!contentDisposition) return "";
-    const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
-    if (filenameStarMatch) return decodeURIComponent(filenameStarMatch[1]);
-    if (filenameMatch) return filenameMatch[1];
-    return "";
-}
-
 export default function CertDownloadPage() {
     const { data: session } = useAuth();
+    const { progress, downloadWithProgress } = useDownloadProgress();
     const user = session?.user as SessionUser | undefined;
     const isElevated = user?.role === "MASTER" || user?.role === "EMPLOYEE";
 
@@ -109,29 +102,14 @@ export default function CertDownloadPage() {
         try {
             const params = buildParams();
             params.set("type", type);
-            const response = await apiFetch(`/api/equipment/cert-download/bulk?${params.toString()}`);
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                toast.error(title, { description: error.detail || "Bulk download failed.", id: loadingToast });
-                return;
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = filenameFromDisposition(response.headers.get("Content-Disposition")) || `CALLAB_${type}_bulk.zip`;
-            document.body.appendChild(a);
-            a.click();
-            toast.success(title, { description: a.download, id: loadingToast });
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }, 1000);
-        } catch {
-            toast.error(title, { description: "Network synchronization error.", id: loadingToast });
+            const fileName = await downloadWithProgress({
+                path: `/api/equipment/cert-download/bulk?${params.toString()}`,
+                title,
+                fallbackFilename: `CALLAB_${type}_bulk.zip`,
+            });
+            toast.success(title, { description: fileName, id: loadingToast });
+        } catch (error) {
+            toast.error(title, { description: error instanceof Error ? error.message : "Network synchronization error.", id: loadingToast });
         } finally {
             setBulkDownloadType(null);
         }
@@ -139,6 +117,7 @@ export default function CertDownloadPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <DownloadProgressBar progress={progress} />
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>
                     <h2 className="type-page-title text-slate-900 mb-2">

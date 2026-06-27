@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { SearchableDropdown } from './SearchableDropdown';
 import { apiFetch } from "@/lib/api-client";
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 
 interface LookupItem {
     CODE: string;
@@ -27,6 +28,7 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
     const [isSearching, setIsSearching] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
+    const { progress, downloadWithProgress, showGeneratedDownload } = useDownloadProgress();
 
     const [filters, setFilters] = useState({
         regno: '',
@@ -89,18 +91,11 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
         if (!calNo || calNo === "—") return;
         const loadingToast = toast.loading(`Downloading certificate ${calNo}...`);
         try {
-            const res = await apiFetch(`/api/equipment/download?id=${isid}&type=report&calno=${calNo}`);
-            if (!res.ok) {
-                toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
-                return;
-            }
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${calNo}.pdf`;
-            a.click();
-            window.URL.revokeObjectURL(url);
+            await downloadWithProgress({
+                path: `/api/equipment/download?id=${isid}&type=report&calno=${calNo}`,
+                title: "Certificate Download",
+                fallbackFilename: `${calNo}.pdf`,
+            });
             toast.success("다운로드 완료", { id: loadingToast });
         } catch {
             toast.error("다운로드 실패", { id: loadingToast });
@@ -157,17 +152,14 @@ export default function AdvancedOngoingSearch({ lookups }: AdvancedOngoingSearch
             csvRows.push(row.join(","));
         });
 
+        const filename = `Ongoing_Jobs_${new Date().toISOString().split('T')[0]}.csv`;
         const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Ongoing_Jobs_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        showGeneratedDownload(blob, filename, "CSV Export");
     };
 
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500 pb-20">
+            <DownloadProgressBar progress={progress} />
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm relative z-20">
                 <div className="p-3 md:p-4 border-b border-slate-100 bg-slate-50/50">

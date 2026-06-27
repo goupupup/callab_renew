@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { SearchableDropdown } from './SearchableDropdown';
 import { apiFetch } from "@/lib/api-client";
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 
 interface LookupItem {
     CODE: string;
@@ -26,6 +27,7 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
+    const { progress, showGeneratedDownload } = useDownloadProgress();
 
     const [filters, setFilters] = useState({
         applicant: '',
@@ -118,17 +120,14 @@ export default function AdvancedExpirationSearch({ lookups }: AdvancedExpiration
             csvRows.push(row.join(","));
         });
 
+        const filename = `Expirations_List_${new Date().toISOString().split('T')[0]}.csv`;
         const blob = new Blob(["\ufeff" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Expirations_List_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        showGeneratedDownload(blob, filename, "CSV Export");
     };
 
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500 pb-20">
+            <DownloadProgressBar progress={progress} />
             {/* Search Condition Panel */}
             <div className="bg-white rounded-2xl border border-rose-200/60 shadow-sm relative z-20 flex flex-col xl:flex-row overflow-visible">
                 <div className="p-3 md:p-4 xl:p-5 border-b xl:border-b-0 xl:border-r border-rose-100 bg-rose-50/30 flex flex-col justify-center xl:w-48 shrink-0">

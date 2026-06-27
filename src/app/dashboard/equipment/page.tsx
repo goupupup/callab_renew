@@ -9,6 +9,7 @@ import {
     Loader2, ShieldCheck, Upload,
     ChevronsLeft, ChevronsRight, Download
 } from "lucide-react";
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { apiFetch, apiUrl } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-client";
 
 type EquipmentRow = {
@@ -43,15 +44,6 @@ type SessionUser = {
     role?: string;
 };
 
-function filenameFromDisposition(contentDisposition: string | null) {
-    if (!contentDisposition) return "";
-    const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
-    if (filenameStarMatch) return decodeURIComponent(filenameStarMatch[1]);
-    if (filenameMatch) return filenameMatch[1];
-    return "";
-}
-
 export default function EquipmentPage() {
     return (
         <Suspense fallback={
@@ -66,6 +58,7 @@ export default function EquipmentPage() {
 
 function EquipmentContent() {
     const { data: session } = useAuth();
+    const { progress, downloadWithProgress } = useDownloadProgress();
     const searchParams = useSearchParams();
     const filterParam = searchParams.get("filter");
 
@@ -194,52 +187,14 @@ function EquipmentContent() {
             if (calNo) {
                 params.append("calno", calNo);
             }
-            const response = await apiFetch(`/api/equipment/download?${params.toString()}`);
-
-            if (response.ok) {
-                const contentType = response.headers.get('Content-Type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    toast.error("System Error", { description: errorData.detail || errorData.error, id: loadingToast });
-                    return;
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-
-                const contentDisposition = response.headers.get('Content-Disposition');
-                let fileName = `${id}_${type}.${type === 'report' ? 'pdf' : 'zip'}`;
-
-                if (contentDisposition) {
-                    const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-                    const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
-                    if (filenameStarMatch) fileName = decodeURIComponent(filenameStarMatch[1]);
-                    else if (filenameMatch) fileName = filenameMatch[1];
-                }
-
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                toast.success("Download Initialized", { description: fileName, id: loadingToast });
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                }, 1000);
-            } else {
-                let description = "File not found or FTP connection failed.";
-                try {
-                    const errorData = await response.json();
-                    description = errorData.detail || errorData.error || description;
-                } catch {
-                    // Keep the default message when the server returns a non-JSON error.
-                }
-                toast.error("Download failed", { description, id: loadingToast });
-            }
-        } catch {
-            toast.error("Terminal Error", { id: loadingToast });
+            const fileName = await downloadWithProgress({
+                path: `/api/equipment/download?${params.toString()}`,
+                title: type === "report" ? "Certificate Download" : "Data File Download",
+                fallbackFilename: `${id}_${type}.${type === "report" ? "pdf" : "zip"}`,
+            });
+            toast.success("Download Initialized", { description: fileName, id: loadingToast });
+        } catch (error) {
+            toast.error("Download failed", { description: error instanceof Error ? error.message : "FTP connection failed.", id: loadingToast });
         }
     };
 
@@ -270,7 +225,7 @@ function EquipmentContent() {
         input.click();
     };
 
-    const handleExcelExport = () => {
+    const handleExcelExport = async () => {
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
             if (value) params.append(key, value.toString());
@@ -279,7 +234,15 @@ function EquipmentContent() {
         params.append("order", sortConfig.direction);
         params.append("page", pagination.page.toString());
         params.append("limit", pagination.limit.toString());
-        window.location.href = apiUrl(`/api/equipment/export?${params.toString()}`);
+        try {
+            await downloadWithProgress({
+                path: `/api/equipment/export?${params.toString()}`,
+                title: "Excel Export",
+                fallbackFilename: "Equipment_Export.xlsx",
+            });
+        } catch (error) {
+            toast.error("Excel export failed", { description: error instanceof Error ? error.message : "Download failed." });
+        }
     };
 
     const handleBulkDownload = async (type: "report" | "data") => {
@@ -296,38 +259,25 @@ function EquipmentContent() {
         const loadingToast = toast.loading(`${title} preparing...`);
         setBulkDownloadType(type);
         try {
-            const response = await apiFetch("/api/equipment/cert-download/bulk", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    type,
-                    items: equipment.map((item) => ({
-                        ISID: item.ISID,
-                        CIDU: item.CIDU || "",
-                    })),
-                }),
+            const fileName = await downloadWithProgress({
+                path: "/api/equipment/cert-download/bulk",
+                title,
+                fallbackFilename: `CALLAB_${type}_bulk.zip`,
+                init: {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type,
+                        items: equipment.map((item) => ({
+                            ISID: item.ISID,
+                            CIDU: item.CIDU || "",
+                        })),
+                    }),
+                },
             });
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                toast.error(title, { description: error.detail || "Bulk download failed.", id: loadingToast });
-                return;
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = filenameFromDisposition(response.headers.get("Content-Disposition")) || `CALLAB_${type}_bulk.zip`;
-            document.body.appendChild(a);
-            a.click();
-            toast.success(title, { description: a.download, id: loadingToast });
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }, 1000);
-        } catch {
-            toast.error(title, { description: "Network synchronization error.", id: loadingToast });
+            toast.success(title, { description: fileName, id: loadingToast });
+        } catch (error) {
+            toast.error(title, { description: error instanceof Error ? error.message : "Network synchronization error.", id: loadingToast });
         } finally {
             setBulkDownloadType(null);
         }
@@ -356,6 +306,7 @@ function EquipmentContent() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-700">
+            <DownloadProgressBar progress={progress} />
             {/* Search Filters Card */}
             <Card className="border-slate-100 shadow-sm rounded-2xl md:rounded-3xl overflow-hidden mt-0">
                 <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-3 px-6 text-slate-500">

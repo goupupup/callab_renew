@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 import AdvancedCalNoSearch from "./components/AdvancedCalNoSearch";
 import AdvancedOngoingSearch from "./components/AdvancedOngoingSearch";
 import AdvancedModelSearch from "./components/AdvancedModelSearch";
@@ -139,6 +140,7 @@ export default function SearchContent({ defaultTab }: SearchContentProps) {
 function SearchInner({ defaultTab }: SearchContentProps) {
     const { data: session, status } = useAuth();
     const router = useRouter();
+    const { progress, downloadWithProgress } = useDownloadProgress();
     const role = (session?.user as any)?.role;
     const isMaster = role === "MASTER";
 
@@ -417,21 +419,14 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const downloadReport = async (calNo: string) => {
         const loadingToast = toast.loading("Downloading report...");
         try {
-            const res = await apiFetch(`/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`);
-            if (!res.ok) {
-                toast.error("성적서 파일을 찾을 수 없습니다", { id: loadingToast });
-                return;
-            }
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${calNo}.pdf`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            toast.success("다운로드 완료", { id: loadingToast });
-        } catch {
-            toast.error("다운로드 실패", { id: loadingToast });
+            const fileName = await downloadWithProgress({
+                path: `/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`,
+                title: "Certificate Download",
+                fallbackFilename: `${calNo}.pdf`,
+            });
+            toast.success("다운로드 완료", { description: fileName, id: loadingToast });
+        } catch (error) {
+            toast.error("다운로드 실패", { description: error instanceof Error ? error.message : "성적서 파일을 찾을 수 없습니다", id: loadingToast });
         }
     };
 
@@ -468,6 +463,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500">
+            <DownloadProgressBar progress={progress} />
             {/* ── Dynamic Header ──────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#001489]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
