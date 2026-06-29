@@ -82,6 +82,7 @@ def test_equipment_passes_query_params_to_service():
 
     response = client.get(
         "/api/equipment?page=2&limit=50&sortBy=hctNo&order=asc&serialNumber=SN-1"
+        "&returnDateStart=2024-01-01&returnDateEnd=2024-01-31"
     )
 
     assert response.status_code == 200
@@ -96,6 +97,8 @@ def test_equipment_passes_query_params_to_service():
     assert service.query.sortBy == "hctNo"
     assert service.query.order == "asc"
     assert service.query.serialNumber == "SN-1"
+    assert service.query.returnDateStart == "2024-01-01"
+    assert service.query.returnDateEnd == "2024-01-31"
 
 
 def test_cert_download_search_passes_query_params_to_service():

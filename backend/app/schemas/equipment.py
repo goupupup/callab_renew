@@ -19,6 +19,8 @@ class EquipmentQuery(BaseModel):
     lastCalEnd: str = ""
     nextCalStart: str = ""
     nextCalEnd: str = ""
+    returnDateStart: str = ""
+    returnDateEnd: str = ""
     onGoingOnly: bool = False
     expirationOnly: bool = False
 

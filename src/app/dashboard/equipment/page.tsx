@@ -107,6 +107,8 @@ function EquipmentContent() {
         lastCalEnd: "",
         nextCalStart: "",
         nextCalEnd: "",
+        returnDateStart: "",
+        returnDateEnd: "",
         onGoingOnly: filterParam === "onGoingOnly",
         expirationOnly: filterParam === "expirationOnly"
     });
@@ -308,110 +310,111 @@ function EquipmentContent() {
         <div className="space-y-6 animate-in fade-in duration-700">
             <DownloadProgressBar progress={progress} />
             {/* Search Filters Card */}
-            <Card className="border-slate-100 shadow-sm rounded-2xl md:rounded-3xl overflow-hidden mt-0">
-                <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-3 px-6 text-slate-500">
-                    <CardTitle className="type-card-title flex items-center">
-                        <Search className="w-3.5 h-3.5 mr-3 text-[#001489]" />
-                        Asset Search & Filter System
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6">
-                    <form onSubmit={handleSearch} className="space-y-4 md:space-y-6">
-                        <div className="flex flex-col gap-4 md:gap-6">
-                            {/* Company Filter (Master Only) */}
+            <Card className="border border-slate-200 shadow-sm rounded-xl overflow-hidden mt-0">
+                <CardContent className="p-0">
+                    <form onSubmit={handleSearch}>
+                        <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+                            <CardTitle className="type-card-title flex items-center text-slate-700">
+                                <Search className="w-3.5 h-3.5 mr-2 text-[#001489]" />
+                                Asset Search & Filter System
+                            </CardTitle>
+                            <Button type="submit" className="h-8 px-5 rounded-md bg-[#001489] hover:bg-[#001489]/90 text-white type-label shadow-sm">
+                                <Search className="w-3.5 h-3.5 mr-1.5" />
+                                SEARCH
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-x-4 gap-y-3 p-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
                             {isElevated && (
-                                <div className="p-3 md:p-4 bg-slate-50/50 rounded-xl md:rounded-2xl border border-slate-100 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
-                                    <label className="type-table-head text-slate-500 md:w-32">Customer</label>
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <label className="type-label text-slate-500 ml-1">Customer</label>
                                     <Input
-                                        placeholder="Enter Company Name or ID..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white focus:border-[#001489] transition-all type-control text-slate-900 flex-1 md:max-w-2xl"
+                                        placeholder="Company name or ID"
+                                        className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
                                         value={filters.company}
                                         onChange={(e) => setFilters({ ...filters, company: e.target.value })}
                                     />
                                 </div>
                             )}
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Serial Number</label>
+                                <Input
+                                    placeholder="Serial ID"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.serialNumber}
+                                    onChange={(e) => setFilters({ ...filters, serialNumber: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Asset No</label>
+                                <Input
+                                    placeholder="Asset No"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.assetNo}
+                                    onChange={(e) => setFilters({ ...filters, assetNo: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">HCT Registration</label>
+                                <Input
+                                    placeholder="HCT No"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.regNo}
+                                    onChange={(e) => setFilters({ ...filters, regNo: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Model Name</label>
+                                <Input
+                                    placeholder="Model"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.modelName}
+                                    onChange={(e) => setFilters({ ...filters, modelName: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Equipment Name</label>
+                                <Input
+                                    placeholder="Equipment"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.equipmentName}
+                                    onChange={(e) => setFilters({ ...filters, equipmentName: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Manufacturer</label>
+                                <Input
+                                    placeholder="Manufacturer"
+                                    className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900"
+                                    value={filters.manufacturer}
+                                    onChange={(e) => setFilters({ ...filters, manufacturer: e.target.value })}
+                                />
+                            </div>
+                        </div>
 
-                            {/* Main Filters Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">Serial Number</label>
-                                    <Input
-                                        placeholder="Serial ID..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.serialNumber}
-                                        onChange={(e) => setFilters({ ...filters, serialNumber: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">Asset No</label>
-                                    <Input
-                                        placeholder="Asset No..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.assetNo}
-                                        onChange={(e) => setFilters({ ...filters, assetNo: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">HCT Registration</label>
-                                    <Input
-                                        placeholder="HCT No..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.regNo}
-                                        onChange={(e) => setFilters({ ...filters, regNo: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">Model Name</label>
-                                    <Input
-                                        placeholder="Model..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.modelName}
-                                        onChange={(e) => setFilters({ ...filters, modelName: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">Equipment Name</label>
-                                    <Input
-                                        placeholder="Name..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.equipmentName}
-                                        onChange={(e) => setFilters({ ...filters, equipmentName: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="type-label text-slate-400 ml-1">Manufacturer</label>
-                                    <Input
-                                        placeholder="Mnfr..."
-                                        className="h-10 md:h-12 rounded-xl border-slate-200 bg-white type-control text-slate-900"
-                                        value={filters.manufacturer}
-                                        onChange={(e) => setFilters({ ...filters, manufacturer: e.target.value })}
-                                    />
+                        <div className="grid grid-cols-1 gap-x-4 gap-y-3 border-t border-slate-100 bg-white px-4 pb-4 pt-3 lg:grid-cols-3">
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Last Calibration Range</label>
+                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.lastCalStart} onChange={(e) => setFilters({ ...filters, lastCalStart: e.target.value })} />
+                                    <span className="type-control-sm text-slate-300">~</span>
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.lastCalEnd} onChange={(e) => setFilters({ ...filters, lastCalEnd: e.target.value })} />
                                 </div>
                             </div>
-
-                            {/* Calibration Date Filters */}
-                            <div className="flex flex-col xl:flex-row gap-4 md:gap-6 border-t border-slate-100 pt-4 md:pt-6">
-                                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 md:gap-4">
-                                    <label className="type-label text-slate-500 sm:w-32">Last Calibration</label>
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <Input type="date" className="h-10 rounded-xl border-slate-200 bg-white type-control-sm text-slate-900 flex-1" value={filters.lastCalStart} onChange={(e) => setFilters({ ...filters, lastCalStart: e.target.value })} />
-                                        <span className="type-control-sm text-slate-300 text-center min-w-[12px]">~</span>
-                                        <Input type="date" className="h-10 rounded-xl border-slate-200 bg-white type-control-sm text-slate-900 flex-1" value={filters.lastCalEnd} onChange={(e) => setFilters({ ...filters, lastCalEnd: e.target.value })} />
-                                    </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Next Calibration Range</label>
+                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.nextCalStart} onChange={(e) => setFilters({ ...filters, nextCalStart: e.target.value })} />
+                                    <span className="type-control-sm text-slate-300">~</span>
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.nextCalEnd} onChange={(e) => setFilters({ ...filters, nextCalEnd: e.target.value })} />
                                 </div>
-                                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 md:gap-4">
-                                    <label className="type-label text-slate-500 sm:w-32">Next Calibration</label>
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <Input type="date" className="h-10 rounded-xl border-slate-200 bg-white type-control-sm text-slate-900 flex-1" value={filters.nextCalStart} onChange={(e) => setFilters({ ...filters, nextCalStart: e.target.value })} />
-                                        <span className="type-control-sm text-slate-300 text-center min-w-[12px]">~</span>
-                                        <Input type="date" className="h-10 rounded-xl border-slate-200 bg-white type-control-sm text-slate-900 flex-1" value={filters.nextCalEnd} onChange={(e) => setFilters({ ...filters, nextCalEnd: e.target.value })} />
-                                    </div>
-                                </div>
-                                <div className="xl:min-w-[180px] flex items-end">
-                                    <Button type="submit" className="h-10 md:h-12 w-full bg-[#001489] hover:bg-[#001489]/90 text-white rounded-xl shadow-lg shadow-blue-900/10 type-action">
-                                        <Search className="w-4 h-4 mr-2" />
-                                        SEARCH
-                                    </Button>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="type-label text-slate-500 ml-1">Return Date Range</label>
+                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.returnDateStart} onChange={(e) => setFilters({ ...filters, returnDateStart: e.target.value })} />
+                                    <span className="type-control-sm text-slate-300">~</span>
+                                    <Input type="date" className="h-8 rounded-md border-slate-200 bg-white type-control-sm text-slate-900 px-2" value={filters.returnDateEnd} onChange={(e) => setFilters({ ...filters, returnDateEnd: e.target.value })} />
                                 </div>
                             </div>
                         </div>

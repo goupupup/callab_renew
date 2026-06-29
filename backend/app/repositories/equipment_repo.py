@@ -15,6 +15,8 @@ class EquipmentFilters:
     last_cal_end: str = ""
     next_cal_start: str = ""
     next_cal_end: str = ""
+    return_date_start: str = ""
+    return_date_end: str = ""
     on_going_only: bool = False
     expiration_only: bool = False
 
@@ -343,6 +345,24 @@ class EquipmentRepository:
             where.append(f"AND {prefix}NEXT BETWEEN :next_cal_start AND :next_cal_end")
             params["next_cal_start"] = _date_param(filters.next_cal_start)
             params["next_cal_end"] = _date_param(filters.next_cal_end)
+        if filters.return_date_start or filters.return_date_end:
+            return_conditions = [
+                f"TRIM(cal_ret.ISID) = TRIM({prefix}ISID)",
+                "TRIM(cal_ret.ROTD) <> '0'",
+            ]
+            if filters.return_date_start:
+                return_conditions.append("cal_ret.ROTD >= :return_date_start")
+                params["return_date_start"] = _date_param(filters.return_date_start)
+            if filters.return_date_end:
+                return_conditions.append("cal_ret.ROTD <= :return_date_end")
+                params["return_date_end"] = _date_param(filters.return_date_end)
+            where.append(
+                f"""AND EXISTS (
+                    SELECT 1
+                    FROM EASYCAL.TBCALMAN cal_ret
+                    WHERE {" AND ".join(return_conditions)}
+                )"""
+            )
 
         return "\n".join(where), params
 

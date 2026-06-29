@@ -35,6 +35,8 @@ class EquipmentService:
                 last_cal_end=query.lastCalEnd,
                 next_cal_start=query.nextCalStart,
                 next_cal_end=query.nextCalEnd,
+                return_date_start=query.returnDateStart,
+                return_date_end=query.returnDateEnd,
                 on_going_only=query.onGoingOnly,
                 expiration_only=query.expirationOnly,
             ),
