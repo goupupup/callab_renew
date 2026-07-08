@@ -15,8 +15,7 @@ import {
     X,
     User,
     ShieldCheck,
-    Search,
-    Archive
+    Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -64,7 +63,6 @@ export default function DashboardLayout({
     const commonNavItems = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         { icon: Settings, label: "Equipments", href: "/dashboard/equipment" },
-        { icon: Archive, label: "Cert Download", href: "/dashboard/cert-download" },
         { icon: UserCog, label: "Account", href: "/dashboard/account" },
     ];
 

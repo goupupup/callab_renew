@@ -71,18 +71,12 @@ class EquipmentRepository:
         sort: EquipmentSort,
     ) -> Dict[str, Any]:
         where_sql, params = self._build_where_sql(corp_id, is_elevated, filters, alias="m")
-        count_where_sql, count_params = self._build_where_sql(
-            corp_id,
-            is_elevated,
-            filters,
-            alias="",
-        )
         sort_column = self.SORT_COLUMNS.get(sort.sort_by, "m.REGD")
         sort_order = "ASC" if sort.order.upper() == "ASC" else "DESC"
 
         count_row = self.database.fetch_one(
-            f"SELECT COUNT(*) as TOTAL FROM EASYCAL.TBMASMAN {count_where_sql}",
-            count_params,
+            f"SELECT COUNT(DISTINCT TRIM(m.ISID)) as TOTAL FROM EASYCAL.TBMASMAN m {where_sql}",
+            params,
         ) or {}
 
         data_sql = f"""
@@ -97,11 +91,17 @@ class EquipmentRepository:
                 m.LAST as LAST,
                 m.NEXT as NEXT,
                 m.STAT as STAT,
-                TRIM(s.CONM) as MANUFACTURER_NAME,
-                TRIM(cust.CONM) as CUSTOMER_NAME
+                (
+                    SELECT MAX(TRIM(s.CONM))
+                    FROM EASYCAL.TBSUPMAN s
+                    WHERE TRIM(m.MNFC) = TRIM(s.COID)
+                ) as MANUFACTURER_NAME,
+                (
+                    SELECT MAX(TRIM(cust.CONM))
+                    FROM EASYCAL.TBSUPMAN cust
+                    WHERE TRIM(m.CUST) = TRIM(cust.COID)
+                ) as CUSTOMER_NAME
             FROM EASYCAL.TBMASMAN m
-            LEFT JOIN EASYCAL.TBSUPMAN s ON TRIM(m.MNFC) = TRIM(s.COID)
-            LEFT JOIN EASYCAL.TBSUPMAN cust ON TRIM(m.CUST) = TRIM(cust.COID)
             {where_sql}
         """
 
@@ -349,6 +349,11 @@ class EquipmentRepository:
             return_conditions = [
                 f"TRIM(cal_ret.ISID) = TRIM({prefix}ISID)",
                 "TRIM(cal_ret.ROTD) <> '0'",
+                f"""cal_ret.CIDU = (
+                    SELECT MAX(cal_latest.CIDU)
+                    FROM EASYCAL.TBCALMAN cal_latest
+                    WHERE TRIM(cal_latest.ISID) = TRIM({prefix}ISID)
+                )""",
             ]
             if filters.return_date_start:
                 return_conditions.append("cal_ret.ROTD >= :return_date_start")

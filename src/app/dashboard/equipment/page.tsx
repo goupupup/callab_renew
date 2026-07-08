@@ -258,6 +258,12 @@ function EquipmentContent() {
         }
 
         const title = type === "report" ? "Bulk Certificate Download" : "Bulk Data Download";
+        const fileLabel = type === "report" ? "certificates" : "data files";
+        const confirmed = window.confirm(`Do you want to download ${equipment.length} ${fileLabel}?`);
+        if (!confirmed) {
+            return;
+        }
+
         const loadingToast = toast.loading(`${title} preparing...`);
         setBulkDownloadType(type);
         try {

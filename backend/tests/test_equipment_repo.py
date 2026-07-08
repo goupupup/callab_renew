@@ -30,8 +30,11 @@ def test_equipment_repository_scopes_customer_user_by_corp_id():
 
     count_sql, count_params = database.one_calls[0]
     data_sql, data_params = database.all_calls[0]
-    assert "TRIM(CUST) = :corp_id" in count_sql
+    assert "COUNT(DISTINCT TRIM(m.ISID)) as TOTAL" in count_sql
+    assert "FROM EASYCAL.TBMASMAN m" in count_sql
+    assert "TRIM(m.CUST) = :corp_id" in count_sql
     assert "TRIM(m.CUST) = :corp_id" in data_sql
+    assert "LEFT JOIN EASYCAL.TBSUPMAN" not in data_sql
     assert count_params["corp_id"] == "C001"
     assert data_params["corp_id"] == "C001"
 
@@ -94,6 +97,8 @@ def test_equipment_repository_filters_by_return_date_range():
     data_sql, data_params = database.all_calls[0]
     assert "EASYCAL.TBCALMAN cal_ret" in count_sql
     assert "EASYCAL.TBCALMAN cal_ret" in data_sql
+    assert "SELECT MAX(cal_latest.CIDU)" in count_sql
+    assert "SELECT MAX(cal_latest.CIDU)" in data_sql
     assert "cal_ret.ROTD >= :return_date_start" in data_sql
     assert "cal_ret.ROTD <= :return_date_end" in data_sql
     assert count_params["return_date_start"] == "20240101"
