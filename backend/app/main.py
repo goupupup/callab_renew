@@ -61,6 +61,7 @@ def create_app(
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(accounts.router)
+    app.include_router(accounts.account_requests_router)
     app.include_router(accounts.my_account_router)
     app.include_router(dashboard.router)
     app.include_router(equipment.router)

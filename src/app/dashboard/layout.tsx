@@ -15,7 +15,8 @@ import {
     X,
     User,
     ShieldCheck,
-    Search
+    Search,
+    History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -63,6 +64,7 @@ export default function DashboardLayout({
     const commonNavItems = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         { icon: Settings, label: "Equipments", href: "/dashboard/equipment" },
+        { icon: History, label: "History", href: "/dashboard/history" },
         { icon: UserCog, label: "Account", href: "/dashboard/account" },
     ];
 
@@ -87,7 +89,9 @@ export default function DashboardLayout({
     const renderNavItems = (items: any[]) => (
         <nav className="space-y-1">
             {items.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                const isActive = item.href === "/dashboard"
+                    ? pathname === item.href
+                    : pathname === item.href || pathname?.startsWith(item.href + "/");
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isExpanded = expandedItem === item.label;
 

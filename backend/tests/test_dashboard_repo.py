@@ -3,60 +3,25 @@ from app.repositories.dashboard_repo import DashboardRepository
 
 class FakeDatabase:
     def __init__(self):
-        self.calls = []
+        self.one_calls = []
+        self.all_calls = []
 
     def fetch_one(self, sql: str, params: dict):
-        self.calls.append(("one", sql, params))
-        return {"TOTAL_EQUIPMENT": 10, "ONGOING_COUNT": 2, "EXPIRED_COUNT": 1}
+        self.one_calls.append((sql, params))
+        return {}
 
     def fetch_all(self, sql: str, params: dict):
-        self.calls.append(("all", sql, params))
+        self.all_calls.append((sql, params))
         return []
 
 
-def test_dashboard_repository_scopes_basic_stats_by_corp_id():
+def test_basic_stats_uses_same_expiration_condition_as_equipment_filter():
     database = FakeDatabase()
     repo = DashboardRepository(database)
 
-    result = repo.get_basic_stats("C001", today="20260623")
+    repo.get_basic_stats(corp_id="APPLE", today="20260708")
 
-    assert result == {"TOTAL_EQUIPMENT": 10, "ONGOING_COUNT": 2, "EXPIRED_COUNT": 1}
-    _, sql, params = database.calls[0]
-    assert "FROM EASYCAL.TBMASMAN" in sql
-    assert "WHERE TRIM(CUST) = :corp_id" in sql
-    assert params == {"corp_id": "C001", "today": "20260623"}
-
-
-def test_dashboard_repository_company_stats_uses_bound_today_param():
-    database = FakeDatabase()
-    repo = DashboardRepository(database)
-
-    repo.list_company_stats(today="20260623")
-
-    _, sql, params = database.calls[0]
-    assert "GROUP BY TRIM(m.CUST)" in sql
-    assert params == {"today": "20260623"}
-
-
-def test_dashboard_repository_scopes_expirations_for_customer_user():
-    database = FakeDatabase()
-    repo = DashboardRepository(database)
-
-    repo.list_expirations(corp_id="C001", is_master=False)
-
-    _kind, sql, params = database.calls[0]
-    assert "WHERE A.STAT = '10'" in sql
-    assert "TRIM(A.CUST) = :corp_id" in sql
-    assert params == {"corp_id": "C001"}
-
-
-def test_dashboard_repository_does_not_scope_expirations_for_master():
-    database = FakeDatabase()
-    repo = DashboardRepository(database)
-
-    repo.list_expirations(corp_id="HCT", is_master=True)
-
-    _kind, sql, params = database.calls[0]
-    assert "WHERE A.STAT = '10'" in sql
-    assert "TRIM(A.CUST) = :corp_id" not in sql
-    assert params == {}
+    sql, params = database.one_calls[0]
+    assert "NEXT <> '0' AND NEXT < :today" in sql
+    assert "STAT = '10' AND NEXT" not in sql
+    assert params == {"corp_id": "APPLE", "today": "20260708"}

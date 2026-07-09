@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMessageDialog } from "@/components/ui/message-dialog";
 import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 import AdvancedCalNoSearch from "./components/AdvancedCalNoSearch";
 import AdvancedOngoingSearch from "./components/AdvancedOngoingSearch";
@@ -141,6 +142,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const { data: session, status } = useAuth();
     const router = useRouter();
     const { progress, downloadWithProgress } = useDownloadProgress();
+    const { confirm, MessageDialog } = useMessageDialog();
     const role = (session?.user as any)?.role;
     const isMaster = role === "MASTER";
 
@@ -315,7 +317,12 @@ function SearchInner({ defaultTab }: SearchContentProps) {
     const handleSave = async () => {
         if (!selectedEquipment) return;
         
-        if (!window.confirm("Do you really want to change this information?")) {
+        const confirmed = await confirm({
+            title: "Save Equipment Changes",
+            description: "Do you want to save these equipment information changes?",
+            confirmText: "Save",
+        });
+        if (!confirmed) {
             return;
         }
 
@@ -463,6 +470,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
 
     return (
         <div className="space-y-4 w-full animate-in fade-in duration-500">
+            {MessageDialog}
             <DownloadProgressBar progress={progress} />
             {/* ── Dynamic Header ──────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 relative">

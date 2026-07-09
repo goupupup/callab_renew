@@ -38,6 +38,13 @@ class CertDownloadQuery(BaseModel):
     limit: int = Field(default=500, ge=1, le=2000)
 
 
+class HistoryQuery(BaseModel):
+    page: int = Field(default=1, ge=1)
+    limit: int = Field(default=25, ge=1)
+    searchType: str = "regNo"
+    keyword: str = ""
+
+
 class EquipmentItem(BaseModel):
     ISID: str
     ACCN: str = ""
@@ -92,4 +99,9 @@ class EquipmentPagination(BaseModel):
 
 class EquipmentListResponse(BaseModel):
     data: List[EquipmentItem]
+    pagination: EquipmentPagination
+
+
+class HistoryListResponse(BaseModel):
+    data: List[CertDownloadItem]
     pagination: EquipmentPagination

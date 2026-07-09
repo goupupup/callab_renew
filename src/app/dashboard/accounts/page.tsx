@@ -7,19 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Key, Activity, Trash2, Edit } from "lucide-react";
+import { UserPlus, Search, Key, Activity, Trash2, Edit, UserCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-client";
+import { useMessageDialog } from "@/components/ui/message-dialog";
 
 export default function AccountsPage() {
     const { data: session } = useAuth();
+    const { confirm, MessageDialog } = useMessageDialog();
     const router = useRouter();
     const [accounts, setAccounts] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+    const [isRequestsOpen, setIsRequestsOpen] = useState(true);
+    const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
+    const [rejectingUserId, setRejectingUserId] = useState<string | null>(null);
+    const [approvalData, setApprovalData] = useState<Record<string, any>>({});
+    const [customerResults, setCustomerResults] = useState<Record<string, any[]>>({});
+    const [customerSearchLoading, setCustomerSearchLoading] = useState<Record<string, boolean>>({});
 
     // Registration Form State
     const [formData, setFormData] = useState({
@@ -44,16 +53,149 @@ export default function AccountsPage() {
     const fetchAccounts = async () => {
         setIsLoading(true);
         try {
-            const res = await apiFetch("/api/accounts");
-            if (res.ok) {
-                const data = await res.json();
+            const [accountsRes, requestsRes] = await Promise.all([
+                apiFetch("/api/accounts"),
+                apiFetch("/api/account-requests"),
+            ]);
+            if (accountsRes.ok) {
+                const data = await accountsRes.json();
                 setAccounts(data);
+            }
+            if (requestsRes.ok) {
+                const data = await requestsRes.json();
+                setRequests(data);
             }
         } catch (error) {
             console.error("Fetch Accounts Error:", error);
             toast.error("Failed to load accounts.");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const updateApproval = (userId: string, field: string, value: string) => {
+        setApprovalData({
+            ...approvalData,
+            [userId]: {
+                ...(approvalData[userId] || {}),
+                [field]: value,
+            },
+        });
+    };
+
+    const searchCustomers = async (userId: string, q: string) => {
+        updateApproval(userId, "customerSearch", q);
+        if (q.trim().length < 2) {
+            setCustomerResults({ ...customerResults, [userId]: [] });
+            return;
+        }
+
+        setCustomerSearchLoading({ ...customerSearchLoading, [userId]: true });
+        try {
+            const res = await apiFetch(`/api/account-requests/customers?q=${encodeURIComponent(q.trim())}`);
+            if (!res.ok) {
+                throw new Error("Customer search failed.");
+            }
+            const data = await res.json();
+            setCustomerResults({ ...customerResults, [userId]: data });
+        } catch (error) {
+            toast.error("Customer search failed", {
+                description: error instanceof Error ? error.message : "Unable to search TBSUPMAN.",
+            });
+        } finally {
+            setCustomerSearchLoading({ ...customerSearchLoading, [userId]: false });
+        }
+    };
+
+    const selectCustomer = (userId: string, customer: any) => {
+        setApprovalData({
+            ...approvalData,
+            [userId]: {
+                ...(approvalData[userId] || {}),
+                corpId: customer.CORP_ID,
+                corpName: customer.CORP_NAME,
+                customerSearch: customer.CORP_NAME,
+            },
+        });
+        setCustomerResults({ ...customerResults, [userId]: [] });
+    };
+
+    const handleApproveRequest = async (request: any) => {
+        const current = approvalData[request.USERID] || {};
+        const corpName = current.corpName || "";
+        if (!current.corpId || !corpName) {
+            toast.error("Select a customer from TBSUPMAN before approving.");
+            return;
+        }
+
+        const confirmed = await confirm({
+            title: "Approve Access Request",
+            description: `Approve ${request.USERID} and assign this account to [${current.corpId}] ${corpName}?`,
+            confirmText: "Approve",
+            variant: "warning",
+        });
+        if (!confirmed) return;
+
+        setApprovingUserId(request.USERID);
+        const loadingToast = toast.loading("Approving access request...");
+        try {
+            const res = await apiFetch("/api/account-requests/approve", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: request.USERID,
+                    corpId: current.corpId,
+                    corpName,
+                    authority: current.authority || "U",
+                    corpType: current.corpType || "C",
+                }),
+            });
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.detail || "Approval failed.");
+            }
+            toast.success("Access request approved.", { id: loadingToast });
+            fetchAccounts();
+        } catch (error) {
+            toast.error("Approval failed", {
+                description: error instanceof Error ? error.message : "Unable to approve access request.",
+                id: loadingToast,
+            });
+        } finally {
+            setApprovingUserId(null);
+        }
+    };
+
+    const handleRejectRequest = async (request: any) => {
+        const confirmed = await confirm({
+            title: "Reject Access Request",
+            description: `Reject ${request.USERID}? This will permanently delete the pending request data.`,
+            confirmText: "Reject",
+            variant: "warning",
+        });
+        if (!confirmed) return;
+
+        setRejectingUserId(request.USERID);
+        const loadingToast = toast.loading("Rejecting access request...");
+        try {
+            const res = await apiFetch("/api/account-requests/reject", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: request.USERID }),
+            });
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.detail || "Rejection failed.");
+            }
+            toast.success("Access request rejected.", { id: loadingToast });
+            fetchAccounts();
+        } catch (error) {
+            toast.error("Rejection failed", {
+                description: error instanceof Error ? error.message : "Unable to reject access request.",
+                id: loadingToast,
+            });
+        } finally {
+            setRejectingUserId(null);
         }
     };
 
@@ -101,6 +243,7 @@ export default function AccountsPage() {
 
     return (
         <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            {MessageDialog}
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>
@@ -209,6 +352,147 @@ export default function AccountsPage() {
                             </div>
                         </form>
                     </CardContent>
+                </Card>
+            )}
+
+            {requests.length > 0 && (
+                <Card className="border-none shadow-2xl shadow-blue-900/5 bg-white rounded-2xl md:rounded-[2.5rem] overflow-hidden">
+                    <CardHeader
+                        className="bg-amber-50/70 p-6 md:p-8 border-b border-amber-100 cursor-pointer"
+                        onClick={() => setIsRequestsOpen(!isRequestsOpen)}
+                    >
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center space-x-3">
+                                <UserCheck className="w-5 h-5 text-amber-600" />
+                                <CardTitle className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-amber-700">Pending Access Requests</CardTitle>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Badge className="bg-amber-600 text-white">{requests.length}</Badge>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-amber-700 hover:bg-amber-100"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setIsRequestsOpen(!isRequestsOpen);
+                                    }}
+                                >
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${isRequestsOpen ? "rotate-180" : ""}`} />
+                                </Button>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    {isRequestsOpen && <CardContent className="p-0">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <Table className="min-w-[1100px]">
+                                <TableHeader>
+                                    <TableRow className="border-b border-slate-50 hover:bg-transparent">
+                                        <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Requester</TableHead>
+                                        <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Company</TableHead>
+                                        <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Match</TableHead>
+                                        <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Role</TableHead>
+                                        <TableHead className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {requests.map((request) => (
+                                        <TableRow key={request.USERID} className="border-b border-slate-50 align-top">
+                                            <TableCell className="px-6 py-4">
+                                                <p className="text-xs font-black text-slate-900">{request.USERNAME || "---"}</p>
+                                                <p className="mt-1 text-[10px] font-bold text-[#001489]">{request.USERID}</p>
+                                                <p className="mt-1 text-[10px] font-bold text-slate-400">{request.EMAIL || "---"}</p>
+                                                <p className="mt-1 text-[10px] font-bold text-slate-400">{request.TELNO || "Phone N/A"}</p>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <p className="text-xs font-black uppercase text-slate-900">{request.CORPNAME || "---"}</p>
+                                                <p className="mt-1 max-w-[280px] text-[10px] font-semibold leading-relaxed text-slate-400">{request.CORPADDRESS || "---"}</p>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="relative min-w-[320px] space-y-2">
+                                                    <Input
+                                                        placeholder="Search TBSUPMAN by customer name or ID"
+                                                        className="h-9 rounded-lg border-slate-100 bg-slate-50 text-xs font-bold"
+                                                        value={approvalData[request.USERID]?.customerSearch || ""}
+                                                        onChange={(e) => searchCustomers(request.USERID, e.target.value)}
+                                                    />
+                                                    {approvalData[request.USERID]?.corpId && (
+                                                        <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                                                                Selected Customer
+                                                            </p>
+                                                            <p className="mt-1 text-xs font-black text-slate-900">
+                                                                [{approvalData[request.USERID].corpId}] {approvalData[request.USERID].corpName}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {customerSearchLoading[request.USERID] && (
+                                                        <p className="text-[10px] font-bold text-slate-400">Searching TBSUPMAN...</p>
+                                                    )}
+                                                    {(customerResults[request.USERID] || []).length > 0 && (
+                                                        <div className="absolute left-0 right-0 top-10 z-30 max-h-56 overflow-y-auto rounded-xl border border-slate-100 bg-white shadow-2xl">
+                                                            {customerResults[request.USERID].map((customer) => (
+                                                                <button
+                                                                    key={customer.CORP_ID}
+                                                                    type="button"
+                                                                    className="w-full px-3 py-2 text-left hover:bg-[#001489]/5"
+                                                                    onClick={() => selectCustomer(request.USERID, customer)}
+                                                                >
+                                                                    <p className="text-xs font-black text-slate-900">{customer.CORP_NAME}</p>
+                                                                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-[#001489]">ID: {customer.CORP_ID}</p>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="grid min-w-[260px] grid-cols-2 gap-2">
+                                                    <Select value={approvalData[request.USERID]?.authority || "U"} onValueChange={(v) => updateApproval(request.USERID, "authority", v)}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-slate-100 bg-slate-50 text-xs font-bold">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="U">U - Standard User</SelectItem>
+                                                            <SelectItem value="A">A - Administrator</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Select value={approvalData[request.USERID]?.corpType || "C"} onValueChange={(v) => updateApproval(request.USERID, "corpType", v)}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-slate-100 bg-slate-50 text-xs font-bold">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="C">C - Customer Company</SelectItem>
+                                                            <SelectItem value="H">H - HCT Internal</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="h-9 rounded-lg border-rose-100 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50"
+                                                        disabled={rejectingUserId === request.USERID || approvingUserId === request.USERID}
+                                                        onClick={() => handleRejectRequest(request)}
+                                                    >
+                                                        {rejectingUserId === request.USERID ? "Rejecting..." : "Reject"}
+                                                    </Button>
+                                                    <Button
+                                                        className="h-9 rounded-lg bg-[#001489] px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-[#000e62]"
+                                                        disabled={approvingUserId === request.USERID || rejectingUserId === request.USERID}
+                                                        onClick={() => handleApproveRequest(request)}
+                                                    >
+                                                        {approvingUserId === request.USERID ? "Approving..." : "Approve"}
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>}
                 </Card>
             )}
 

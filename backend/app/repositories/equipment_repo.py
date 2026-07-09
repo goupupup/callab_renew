@@ -238,6 +238,80 @@ class EquipmentRepository:
         params["limit"] = filters.limit
         return self.database.fetch_all(sql, params)
 
+    def search_history(
+        self,
+        corp_id: str,
+        is_elevated: bool,
+        search_type: str,
+        keyword: str,
+        page: int,
+        limit: int,
+    ) -> Dict[str, Any]:
+        where_sql, params = self._build_history_where_sql(corp_id, is_elevated, search_type, keyword)
+        if not keyword.strip():
+            return {"total": 0, "rows": []}
+
+        count_row = self.database.fetch_one(
+            f"""
+            SELECT COUNT(*) as TOTAL
+            FROM EASYCAL.TBCALMAN c
+            JOIN EASYCAL.TBMASMAN m ON TRIM(c.ISID) = TRIM(m.ISID)
+            {where_sql}
+            """,
+            params,
+        ) or {}
+
+        data_sql = f"""
+            SELECT
+                TRIM(m.ISID) as ISID,
+                TRIM(c.CIDU) as CIDU,
+                TRIM(m.ACCN) as ACCN,
+                TRIM(m.NAEM_SUP) as NAEM_SUP,
+                TRIM(m.MODL) as MODL,
+                TRIM(m.SERN) as SERN,
+                (
+                    SELECT MAX(TRIM(cust.CONM))
+                    FROM EASYCAL.TBSUPMAN cust
+                    WHERE TRIM(m.CUST) = TRIM(cust.COID)
+                ) as CUSTOMER_NAME,
+                (
+                    SELECT MAX(TRIM(mnfc.CONM))
+                    FROM EASYCAL.TBSUPMAN mnfc
+                    WHERE TRIM(m.MNFC) = TRIM(mnfc.COID)
+                ) as MANUFACTURER_NAME,
+                TRIM(c.CARD) as CAL_DATE,
+                TRIM(c.ROTD) as RETURN_DATE
+            FROM EASYCAL.TBCALMAN c
+            JOIN EASYCAL.TBMASMAN m ON TRIM(c.ISID) = TRIM(m.ISID)
+            {where_sql}
+            ORDER BY c.CIDU DESC
+        """
+
+        data_params = dict(params)
+        is_all = limit >= 9999
+        if is_all:
+            final_data_sql = data_sql
+        else:
+            offset = (page - 1) * limit
+            final_data_sql = f"""
+                SELECT *
+                FROM (
+                    SELECT a.*, ROWNUM rnum
+                    FROM (
+                        {data_sql}
+                    ) a
+                    WHERE ROWNUM <= :upper_limit
+                )
+                WHERE rnum > :offset
+            """
+            data_params["offset"] = offset
+            data_params["upper_limit"] = offset + limit
+
+        return {
+            "total": int(count_row.get("TOTAL") or 0),
+            "rows": self.database.fetch_all(final_data_sql, data_params),
+        }
+
     def get_file_context(
         self,
         corp_id: str,
@@ -368,6 +442,29 @@ class EquipmentRepository:
                     WHERE {" AND ".join(return_conditions)}
                 )"""
             )
+
+        return "\n".join(where), params
+
+    def _build_history_where_sql(self, corp_id: str, is_elevated: bool, search_type: str, keyword: str):
+        where = ["WHERE TRIM(c.CIDU) IS NOT NULL"]
+        params = {}
+
+        if not is_elevated:
+            where.append("AND TRIM(m.CUST) = :corp_id")
+            params["corp_id"] = corp_id
+
+        value = keyword.strip()
+        if value:
+            if search_type == "assetNo":
+                where.append("AND UPPER(TRIM(m.ACCN)) LIKE '%' || UPPER(TRIM(:keyword)) || '%'")
+            else:
+                where.append(
+                    """AND (
+                        UPPER(TRIM(c.ISID)) = UPPER(TRIM(:keyword))
+                        OR UPPER(TRIM(m.ISID)) = UPPER(TRIM(:keyword))
+                    )"""
+                )
+            params["keyword"] = value
 
         return "\n".join(where), params
 

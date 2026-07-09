@@ -10,6 +10,8 @@ from app.schemas.equipment import (
     EquipmentListResponse,
     EquipmentPagination,
     EquipmentQuery,
+    HistoryListResponse,
+    HistoryQuery,
 )
 
 
@@ -75,6 +77,29 @@ class EquipmentService:
             data=[_map_cert_download_item(row) for row in rows],
             total=len(rows),
             limit=query.limit,
+        )
+
+    def search_history(self, user: CurrentUser, query: HistoryQuery) -> HistoryListResponse:
+        limit = query.limit
+        page = query.page
+        result = self.equipment_repository.search_history(
+            corp_id=user.corp_id,
+            is_elevated=user.role in ("MASTER", "EMPLOYEE"),
+            search_type=query.searchType,
+            keyword=query.keyword,
+            page=page,
+            limit=limit,
+        )
+        total = result["total"]
+        is_all = limit >= 9999
+        return HistoryListResponse(
+            data=[_map_cert_download_item(row) for row in result["rows"]],
+            pagination=EquipmentPagination(
+                total=total,
+                page=1 if is_all else page,
+                limit=limit,
+                totalPages=1 if is_all else math.ceil(total / limit) if total else 0,
+            ),
         )
 
 

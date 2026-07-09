@@ -11,7 +11,7 @@ class DashboardRepository:
             SELECT
                 COUNT(*) as TOTAL_EQUIPMENT,
                 SUM(CASE WHEN STAT IN ('02', '11', '05', '07') THEN 1 ELSE 0 END) as ONGOING_COUNT,
-                SUM(CASE WHEN STAT = '10' AND NEXT <> '0' AND NEXT < :today THEN 1 ELSE 0 END) as EXPIRED_COUNT
+                SUM(CASE WHEN NEXT <> '0' AND NEXT < :today THEN 1 ELSE 0 END) as EXPIRED_COUNT
             FROM EASYCAL.TBMASMAN
             WHERE TRIM(CUST) = :corp_id
             """,

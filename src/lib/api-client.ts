@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+    (process.env.NODE_ENV === "development" ? "http://localhost:8081" : "");
 
 export function apiUrl(path: string): string {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;

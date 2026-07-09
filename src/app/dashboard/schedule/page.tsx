@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useMessageDialog } from "@/components/ui/message-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +14,7 @@ import { useAuth } from "@/lib/auth-client";
 
 export default function SchedulePage() {
     const { data: session } = useAuth();
+    const { confirm, MessageDialog } = useMessageDialog();
     const router = useRouter();
     const [schedules, setSchedules] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
@@ -109,7 +111,13 @@ export default function SchedulePage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Confirm schedule termination?")) return;
+        const confirmed = await confirm({
+            title: "Delete Schedule",
+            description: "Do you want to delete this schedule entry?",
+            confirmText: "Delete",
+            variant: "warning",
+        });
+        if (!confirmed) return;
         try {
             const res = await apiFetch(`/api/schedules/${id}`, { method: "DELETE" });
             if (res.ok) {
@@ -153,6 +161,7 @@ export default function SchedulePage() {
 
     return (
         <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            {MessageDialog}
             {/* Page Header */}
             <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>

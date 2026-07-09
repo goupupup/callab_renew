@@ -9,6 +9,7 @@ from app.schemas.equipment import (
     CertDownloadSearchResponse,
     EquipmentListResponse,
     EquipmentPagination,
+    HistoryListResponse,
 )
 from app.services.equipment_file_service import FileResult
 
@@ -17,6 +18,7 @@ class FakeEquipmentService:
     def __init__(self):
         self.query = None
         self.cert_query = None
+        self.history_query = None
 
     def search(self, user: CurrentUser, query):
         self.query = query
@@ -39,6 +41,22 @@ class FakeEquipmentService:
             ],
             total=1,
             limit=query.limit,
+        )
+
+    def search_history(self, user: CurrentUser, query):
+        self.history_query = query
+        return HistoryListResponse(
+            data=[
+                CertDownloadItem(
+                    ISID="1001",
+                    CIDU="CAL2024001",
+                    ACCN="ASSET1",
+                    NAEM_SUP="Equipment",
+                    CAL_DATE="20240102",
+                    RETURN_DATE="20240103",
+                )
+            ],
+            pagination=EquipmentPagination(total=1, page=query.page, limit=query.limit, totalPages=1),
         )
 
 
@@ -123,6 +141,56 @@ def test_cert_download_search_passes_query_params_to_service():
     assert service.cert_query.calDateStart == "2024-01-01"
     assert service.cert_query.returnDateEnd == "2024-01-31"
     assert service.cert_query.limit == 100
+
+
+def test_history_search_passes_query_params_to_service():
+    settings = Settings(session_secret="test-secret")
+    service = FakeEquipmentService()
+    client = TestClient(create_app(settings=settings, equipment_service=service))
+    user = CurrentUser(
+        user_id="admin",
+        name="Administrator",
+        corp_id="HCT",
+        corp_name="HCT",
+        role="MASTER",
+    )
+    client.cookies.set(settings.session_cookie_name, create_session_token(user, settings))
+
+    response = client.get("/api/equipment/history?searchType=assetNo&keyword=ASSET1&page=2&limit=50")
+
+    assert response.status_code == 200
+    assert response.json()["pagination"] == {
+        "total": 1,
+        "page": 2,
+        "limit": 50,
+        "totalPages": 1,
+    }
+    assert service.history_query.searchType == "assetNo"
+    assert service.history_query.keyword == "ASSET1"
+    assert service.history_query.page == 2
+    assert service.history_query.limit == 50
+
+
+def test_history_export_returns_xlsx_file():
+    settings = Settings(session_secret="test-secret")
+    service = FakeEquipmentService()
+    client = TestClient(create_app(settings=settings, equipment_service=service))
+    user = CurrentUser(
+        user_id="admin",
+        name="Administrator",
+        corp_id="HCT",
+        corp_name="HCT",
+        role="MASTER",
+    )
+    client.cookies.set(settings.session_cookie_name, create_session_token(user, settings))
+
+    response = client.get("/api/equipment/history/export?searchType=regNo&keyword=1001&limit=25")
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"PK")
+    assert "Calibration_History_" in response.headers["content-disposition"]
+    assert service.history_query.searchType == "regNo"
+    assert service.history_query.keyword == "1001"
 
 
 def test_cert_download_bulk_returns_zip_file():

@@ -13,6 +13,7 @@ import { DownloadProgressBar, useDownloadProgress } from "@/components/download-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useMessageDialog } from "@/components/ui/message-dialog";
 import {
     Table,
     TableBody,
@@ -59,6 +60,7 @@ export default function EquipmentPage() {
 function EquipmentContent() {
     const { data: session } = useAuth();
     const { progress, downloadWithProgress } = useDownloadProgress();
+    const { alert, confirm, MessageDialog } = useMessageDialog();
     const searchParams = useSearchParams();
     const filterParam = searchParams.get("filter");
 
@@ -253,13 +255,21 @@ function EquipmentContent() {
             return;
         }
         if (equipment.length > 200) {
-            window.alert("Bulk download is limited to 200 rows at a time. Please reduce the table rows to 200 or fewer and try again.");
+            await alert({
+                title: "Bulk Download Limit",
+                description: "Bulk download is limited to 200 rows at a time. Please reduce the table rows to 200 or fewer and try again.",
+                variant: "warning",
+            });
             return;
         }
 
         const title = type === "report" ? "Bulk Certificate Download" : "Bulk Data Download";
         const fileLabel = type === "report" ? "certificates" : "data files";
-        const confirmed = window.confirm(`Do you want to download ${equipment.length} ${fileLabel}?`);
+        const confirmed = await confirm({
+            title,
+            description: `Do you want to download ${equipment.length} ${fileLabel}?`,
+            confirmText: "Download",
+        });
         if (!confirmed) {
             return;
         }
@@ -314,6 +324,7 @@ function EquipmentContent() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-700">
+            {MessageDialog}
             <DownloadProgressBar progress={progress} />
             {/* Search Filters Card */}
             <Card className="border border-slate-200 shadow-sm rounded-xl overflow-hidden mt-0">
@@ -445,34 +456,40 @@ function EquipmentContent() {
                     </CardTitle>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-8">
                         <div className="flex flex-col sm:flex-row gap-2">
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                className="h-8 px-3 rounded-lg border-slate-200 bg-white type-caption text-slate-700 hover:bg-slate-50 shadow-sm w-full sm:w-auto"
-                                onClick={handleExcelExport}
-                            >
-                                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                                Excel Export
-                            </Button>
-                            <Button
-                                size="xs"
-                                className="h-8 px-3 rounded-lg bg-[#001489] hover:bg-[#001489]/90 type-caption shadow-sm w-full sm:w-auto"
-                                disabled={bulkDownloadType !== null || equipment.length === 0}
-                                onClick={() => handleBulkDownload("report")}
-                            >
-                                {bulkDownloadType === "report" ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Download className="w-3.5 h-3.5 mr-1.5" />}
-                                Bulk Cert Download
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                className="h-8 px-3 rounded-lg border-[#001489]/20 bg-white type-caption text-[#001489] hover:bg-[#001489]/5 shadow-sm w-full sm:w-auto"
-                                disabled={bulkDownloadType !== null || equipment.length === 0}
-                                onClick={() => handleBulkDownload("data")}
-                            >
-                                {bulkDownloadType === "data" ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />}
-                                Bulk Data Download
-                            </Button>
+                            <DownloadTooltip text="Downloads the Excel file for the items currently visible on this page.">
+                                <Button
+                                    variant="outline"
+                                    size="xs"
+                                    className="h-8 px-3 rounded-lg border-slate-200 bg-white type-caption text-slate-700 hover:bg-slate-50 shadow-sm w-full sm:w-auto"
+                                    onClick={handleExcelExport}
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                                    Excel Export
+                                </Button>
+                            </DownloadTooltip>
+                            <DownloadTooltip text="Downloads the certificates for the items currently visible on this page.">
+                                <Button
+                                    size="xs"
+                                    className="h-8 px-3 rounded-lg bg-[#001489] hover:bg-[#001489]/90 type-caption shadow-sm w-full sm:w-auto"
+                                    disabled={bulkDownloadType !== null || equipment.length === 0}
+                                    onClick={() => handleBulkDownload("report")}
+                                >
+                                    {bulkDownloadType === "report" ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Download className="w-3.5 h-3.5 mr-1.5" />}
+                                    Bulk Cert Download
+                                </Button>
+                            </DownloadTooltip>
+                            <DownloadTooltip text="Downloads the data files for the items currently visible on this page.">
+                                <Button
+                                    variant="outline"
+                                    size="xs"
+                                    className="h-8 px-3 rounded-lg border-[#001489]/20 bg-white type-caption text-[#001489] hover:bg-[#001489]/5 shadow-sm w-full sm:w-auto"
+                                    disabled={bulkDownloadType !== null || equipment.length === 0}
+                                    onClick={() => handleBulkDownload("data")}
+                                >
+                                    {bulkDownloadType === "data" ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />}
+                                    Bulk Data Download
+                                </Button>
+                            </DownloadTooltip>
                         </div>
                         <div className="flex items-center space-x-6 sm:space-x-8">
                             <label className="flex items-center space-x-2 md:space-x-3 cursor-pointer group">
@@ -655,6 +672,17 @@ function EquipmentContent() {
                     </div>
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+function DownloadTooltip({ children, text }: { children: React.ReactNode; text: string }) {
+    return (
+        <div className="group relative w-full sm:w-auto">
+            {children}
+            <div className="pointer-events-none absolute left-1/2 top-full z-40 mt-2 w-64 -translate-x-1/2 rounded-lg border border-slate-100 bg-slate-950 px-3 py-2 text-center text-[10px] font-bold leading-relaxed text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                {text}
+            </div>
         </div>
     );
 }

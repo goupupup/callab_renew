@@ -7,10 +7,14 @@ from app.schemas.equipment import (
     CertDownloadQuery,
     EquipmentListResponse,
     EquipmentQuery,
+    HistoryListResponse,
+    HistoryQuery,
 )
 from app.services.excel_export_service import (
     build_equipment_export_xlsx,
+    build_history_export_xlsx,
     equipment_export_filename,
+    history_export_filename,
 )
 
 router = APIRouter(prefix="/api/equipment", tags=["equipment"])
@@ -49,6 +53,31 @@ def search_cert_downloads(
     current_user: CurrentUser = Depends(current_user_from_request),
 ):
     return request.app.state.equipment_service.search_cert_downloads(current_user, query)
+
+
+@router.get("/history", response_model=HistoryListResponse)
+def search_history(
+    request: Request,
+    query: HistoryQuery = Depends(),
+    current_user: CurrentUser = Depends(current_user_from_request),
+):
+    return request.app.state.equipment_service.search_history(current_user, query)
+
+
+@router.get("/history/export")
+def export_history(
+    request: Request,
+    query: HistoryQuery = Depends(),
+    current_user: CurrentUser = Depends(current_user_from_request),
+):
+    result = request.app.state.equipment_service.search_history(current_user, query)
+    content = build_history_export_xlsx(result.data)
+    filename = history_export_filename()
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/cert-download/bulk")

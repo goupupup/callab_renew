@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Iterable
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from app.schemas.equipment import EquipmentItem
+from app.schemas.equipment import CertDownloadItem, EquipmentItem
 
 
 EQUIPMENT_EXPORT_HEADERS = [
@@ -16,6 +16,18 @@ EQUIPMENT_EXPORT_HEADERS = [
     "Serial Number",
     "Cal Date",
     "Next Cal",
+]
+
+HISTORY_EXPORT_HEADERS = [
+    "No",
+    "Cal No",
+    "HCT No",
+    "Asset No",
+    "Equipment Name",
+    "Model Name",
+    "Serial Number",
+    "Cal Date",
+    "Return Date",
 ]
 
 
@@ -45,8 +57,43 @@ def build_equipment_export_xlsx(items: Iterable[EquipmentItem]) -> bytes:
     return workbook.getvalue()
 
 
+def build_history_export_xlsx(items: Iterable[CertDownloadItem]) -> bytes:
+    rows = [HISTORY_EXPORT_HEADERS]
+    for index, item in enumerate(items, start=1):
+        rows.append(
+            [
+                str(index),
+                item.CIDU or "---",
+                item.ISID,
+                item.ACCN or "---",
+                item.NAEM_SUP or "---",
+                item.MODL or "---",
+                item.SERN or "---",
+                item.CAL_DATE or "---",
+                item.RETURN_DATE or "---",
+            ]
+        )
+
+    return _build_xlsx(rows)
+
+
 def equipment_export_filename() -> str:
     return f"Equipment_Export_{datetime.utcnow().strftime('%Y-%m-%d')}.xlsx"
+
+
+def history_export_filename() -> str:
+    return f"Calibration_History_{datetime.utcnow().strftime('%Y-%m-%d')}.xlsx"
+
+
+def _build_xlsx(rows) -> bytes:
+    workbook = BytesIO()
+    with ZipFile(workbook, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", _content_types_xml())
+        archive.writestr("_rels/.rels", _root_rels_xml())
+        archive.writestr("xl/workbook.xml", _workbook_xml())
+        archive.writestr("xl/_rels/workbook.xml.rels", _workbook_rels_xml())
+        archive.writestr("xl/worksheets/sheet1.xml", _sheet_xml(rows))
+    return workbook.getvalue()
 
 
 def _sheet_xml(rows):

@@ -7,6 +7,7 @@ import { AtSign, Building2, IdCard, KeyRound, Phone, Save, UserCog } from "lucid
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useMessageDialog } from "@/components/ui/message-dialog";
 import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-client";
 
@@ -42,6 +43,7 @@ function emptyIfNullish(value: unknown): string {
 
 export default function AccountPage() {
     const { refresh } = useAuth();
+    const { confirm, MessageDialog } = useMessageDialog();
     const [form, setForm] = useState<AccountForm>(emptyForm);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -84,7 +86,12 @@ export default function AccountPage() {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!window.confirm("Save changes?")) {
+        const confirmed = await confirm({
+            title: "Save Account Changes",
+            description: "Do you want to save the changes to your account information?",
+            confirmText: "Save",
+        });
+        if (!confirmed) {
             return;
         }
 
@@ -143,14 +150,13 @@ export default function AccountPage() {
 
     return (
         <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            {MessageDialog}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-l-4 border-[#001489] pl-4 md:pl-8">
                 <div>
                     <h2 className="type-page-title text-slate-900 mb-2">
                         Account <span className="text-[#001489]">Settings</span>
                     </h2>
-                    <p className="type-page-meta text-slate-400">
-                        Table: <span className="type-nav-item text-slate-900">CUSTCAL.TWUSRMAN</span>
-                    </p>
+                
                 </div>
             </div>
 

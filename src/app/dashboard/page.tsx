@@ -62,13 +62,13 @@ export default function DashboardPage() {
             label: "Our Calibration Services",
             description: "Review HCT America's calibration service scope.",
             icon: Award,
-            action: () => window.open("/calibration-services.pdf", "_blank", "noopener,noreferrer"),
+            action: () => window.open("/HCTA_Calibration_service_Brochure.pdf", "_blank", "noopener,noreferrer"),
         },
         {
             label: "Certification Download",
             description: "Open the certificate download guide.",
             icon: Download,
-            action: () => window.open("/certification-download.pdf", "_blank", "noopener,noreferrer"),
+            action: () => window.open("/HCTA_CMC_2026-2.pdf", "_blank", "noopener,noreferrer"),
         },
         {
             label: "Membership Procedure",
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <h3 className="type-card-title text-blue-200 mb-1">HCTA NOTICE</h3>
-                            <p className="type-subpage-title line-clamp-2 md:line-clamp-none">System maintenance scheduled for March 15th at 22:00 PST.</p>
+                            <p className="type-subpage-title line-clamp-2 md:line-clamp-none">Welcome to the new CALLAB.US.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -124,10 +124,6 @@ export default function DashboardPage() {
                             {session?.user?.role || "USER"}
                         </Badge>
                     </div>
-                </div>
-                <div className="hidden xl:flex items-center space-x-3 text-slate-300">
-                    <Zap className="w-4 h-4" />
-                    <span className="type-nav-section">Integrated Telemetry</span>
                 </div>
             </div>
 
