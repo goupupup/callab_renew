@@ -48,7 +48,7 @@ class EquipmentFileService:
 
         remote_path, content = downloaded
         filename = build_download_filename(equipment_id, asset_no, resolved_cal_no, remote_path, file_type)
-        media_type = "application/pdf" if file_type == "report" else "application/octet-stream"
+        media_type = "application/pdf" if file_type == "report" else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" if file_type == "excel" else "application/octet-stream"
         return FileResult(content=content, filename=filename, media_type=media_type)
 
     def get_bulk_download(self, user, file_type: str, items) -> FileResult:
@@ -166,6 +166,14 @@ def build_candidate_paths(equipment_id: str, asset_no: str, cal_no: str, file_ty
             f"/report/report_rawdata/{year}/{cal_no}.pdf",
             f"/HCT_CALLAB/gear/{equipment_id}.pdf",
             f"/HCT_CALLAB/gear/{cal_no}.pdf",
+        ]
+
+    if file_type == "excel" and cal_no:
+        return [
+            f"/report/report_hct/{year}/{cal_no}.xlsx",
+            f"/report/report_hct/{year}/{cal_no}.XLSX",
+            f"/report/report_hct/{cal_no}.xlsx",
+            f"/report/report_hct/{cal_no}.XLSX",
         ]
 
     return []

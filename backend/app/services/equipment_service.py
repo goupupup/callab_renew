@@ -89,6 +89,8 @@ class EquipmentService:
             keyword=query.keyword,
             page=page,
             limit=limit,
+            sort_by=query.sortBy,
+            order=query.order,
         )
         total = result["total"]
         is_all = limit >= 9999

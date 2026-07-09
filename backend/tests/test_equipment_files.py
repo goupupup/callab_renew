@@ -119,6 +119,15 @@ def test_report_candidate_paths_follow_legacy_ftp_layout():
     assert "/HCT_CALLAB/gear/CAL2024001.pdf" in paths
 
 
+def test_excel_report_candidate_paths_follow_hct_report_layout():
+    paths = build_candidate_paths("1001", "ASSET1", "CAL2024001", "excel")
+
+    assert paths[:2] == [
+        "/report/report_hct/2024/CAL2024001.xlsx",
+        "/report/report_hct/2024/CAL2024001.XLSX",
+    ]
+
+
 def test_data_download_filename_uses_actual_remote_extension():
     filename = build_download_filename(
         "1001",

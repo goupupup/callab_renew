@@ -53,9 +53,21 @@ class EquipmentRepository:
         "modelName": "m.MODL",
         "equipmentName": "m.NAEM_SUP",
         "serialNumber": "m.SERN",
-        "lastCal": "CASE WHEN m.LAST = '0' OR m.LAST IS NULL THEN '00000000' ELSE m.LAST END",
-        "nextCal": "CASE WHEN m.NEXT = '0' OR m.NEXT IS NULL THEN '99991231' ELSE m.NEXT END",
+        "customerName": "cust.CONM",
+        "manufacturerName": "mnfc.CONM",
+        "lastCal": "CASE WHEN REGEXP_LIKE(TRIM(m.LAST), '^[0-9]{8}$') AND TRIM(m.LAST) <> '00000000' THEN TO_DATE(TRIM(m.LAST), 'YYYYMMDD') END",
+        "nextCal": "CASE WHEN REGEXP_LIKE(TRIM(m.NEXT), '^[0-9]{8}$') AND TRIM(m.NEXT) <> '00000000' THEN TO_DATE(TRIM(m.NEXT), 'YYYYMMDD') END",
         "regDate": "m.REGD",
+    }
+    HISTORY_SORT_COLUMNS = {
+        "calNo": "c.CIDU",
+        "hctNo": "TO_NUMBER(REGEXP_REPLACE(TRIM(c.ISID), '[^0-9]', ''))",
+        "assetNo": "TRIM(m.ACCN)",
+        "equipmentName": "m.NAEM_SUP",
+        "modelName": "m.MODL",
+        "serialNumber": "m.SERN",
+        "calDate": "CASE WHEN REGEXP_LIKE(TRIM(c.CARD), '^[0-9]{8}$') AND TRIM(c.CARD) <> '00000000' THEN TO_DATE(TRIM(c.CARD), 'YYYYMMDD') END",
+        "returnDate": "CASE WHEN REGEXP_LIKE(TRIM(c.ROTD), '^[0-9]{8}$') AND TRIM(c.ROTD) <> '00000000' THEN TO_DATE(TRIM(c.ROTD), 'YYYYMMDD') END",
     }
 
     def __init__(self, database):
@@ -91,17 +103,19 @@ class EquipmentRepository:
                 m.LAST as LAST,
                 m.NEXT as NEXT,
                 m.STAT as STAT,
-                (
-                    SELECT MAX(TRIM(s.CONM))
-                    FROM EASYCAL.TBSUPMAN s
-                    WHERE TRIM(m.MNFC) = TRIM(s.COID)
-                ) as MANUFACTURER_NAME,
-                (
-                    SELECT MAX(TRIM(cust.CONM))
-                    FROM EASYCAL.TBSUPMAN cust
-                    WHERE TRIM(m.CUST) = TRIM(cust.COID)
-                ) as CUSTOMER_NAME
+                TRIM(mnfc.CONM) as MANUFACTURER_NAME,
+                TRIM(cust.CONM) as CUSTOMER_NAME
             FROM EASYCAL.TBMASMAN m
+            LEFT JOIN (
+                SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                FROM EASYCAL.TBSUPMAN
+                GROUP BY TRIM(COID)
+            ) cust ON TRIM(m.CUST) = cust.COID
+            LEFT JOIN (
+                SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                FROM EASYCAL.TBSUPMAN
+                GROUP BY TRIM(COID)
+            ) mnfc ON TRIM(m.MNFC) = mnfc.COID
             {where_sql}
         """
 
@@ -111,7 +125,7 @@ class EquipmentRepository:
             final_data_sql = f"""
                 SELECT a.*, NULL as CIDU
                 FROM (
-                    {data_sql} ORDER BY {sort_column} {sort_order}
+                    {data_sql} ORDER BY {sort_column} {sort_order} NULLS LAST
                 ) a
             """
         else:
@@ -125,7 +139,7 @@ class EquipmentRepository:
                     ) as CIDU
                 FROM (
                     SELECT a.*, ROWNUM rnum FROM (
-                        {data_sql} ORDER BY {sort_column} {sort_order}
+                        {data_sql} ORDER BY {sort_column} {sort_order} NULLS LAST
                     ) a WHERE ROWNUM <= :upper_limit
                 ) paged WHERE rnum > :offset
             """
@@ -182,8 +196,16 @@ class EquipmentRepository:
                     TRIM(c.ROTD) as RETURN_DATE
                 FROM EASYCAL.TBCALMAN c
                 JOIN EASYCAL.TBMASMAN m ON TRIM(c.ISID) = TRIM(m.ISID)
-                LEFT JOIN EASYCAL.TBSUPMAN cust ON TRIM(m.CUST) = TRIM(cust.COID)
-                LEFT JOIN EASYCAL.TBSUPMAN mnfc ON TRIM(m.MNFC) = TRIM(mnfc.COID)
+                LEFT JOIN (
+                    SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                    FROM EASYCAL.TBSUPMAN
+                    GROUP BY TRIM(COID)
+                ) cust ON TRIM(m.CUST) = cust.COID
+                LEFT JOIN (
+                    SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                    FROM EASYCAL.TBSUPMAN
+                    GROUP BY TRIM(COID)
+                ) mnfc ON TRIM(m.MNFC) = mnfc.COID
                 WHERE TRIM(c.CIDU) IS NOT NULL
         """
         params = {}
@@ -192,13 +214,9 @@ class EquipmentRepository:
             sql += " AND TRIM(m.CUST) = :corp_id"
             params["corp_id"] = corp_id
         elif filters.company:
-            sql += """
-                AND (
-                    TRIM(m.CUST) LIKE '%' || :company || '%'
-                    OR UPPER(TRIM(cust.CONM)) LIKE '%' || UPPER(TRIM(:company)) || '%'
-                )
-            """
-            params["company"] = filters.company.strip()
+            company_sql, company_params = self._build_company_id_filter("m.CUST", filters.company)
+            sql += f" AND {company_sql}"
+            params.update(company_params)
 
         if filters.regNo:
             sql += " AND UPPER(TRIM(m.ISID)) = UPPER(TRIM(:reg_no))"
@@ -246,10 +264,14 @@ class EquipmentRepository:
         keyword: str,
         page: int,
         limit: int,
+        sort_by: str = "calNo",
+        order: str = "desc",
     ) -> Dict[str, Any]:
         where_sql, params = self._build_history_where_sql(corp_id, is_elevated, search_type, keyword)
         if not keyword.strip():
             return {"total": 0, "rows": []}
+        sort_column = self.HISTORY_SORT_COLUMNS.get(sort_by, "c.CIDU")
+        sort_order = "ASC" if order.upper() == "ASC" else "DESC"
 
         count_row = self.database.fetch_one(
             f"""
@@ -269,22 +291,24 @@ class EquipmentRepository:
                 TRIM(m.NAEM_SUP) as NAEM_SUP,
                 TRIM(m.MODL) as MODL,
                 TRIM(m.SERN) as SERN,
-                (
-                    SELECT MAX(TRIM(cust.CONM))
-                    FROM EASYCAL.TBSUPMAN cust
-                    WHERE TRIM(m.CUST) = TRIM(cust.COID)
-                ) as CUSTOMER_NAME,
-                (
-                    SELECT MAX(TRIM(mnfc.CONM))
-                    FROM EASYCAL.TBSUPMAN mnfc
-                    WHERE TRIM(m.MNFC) = TRIM(mnfc.COID)
-                ) as MANUFACTURER_NAME,
+                TRIM(cust.CONM) as CUSTOMER_NAME,
+                TRIM(mnfc.CONM) as MANUFACTURER_NAME,
                 TRIM(c.CARD) as CAL_DATE,
                 TRIM(c.ROTD) as RETURN_DATE
             FROM EASYCAL.TBCALMAN c
             JOIN EASYCAL.TBMASMAN m ON TRIM(c.ISID) = TRIM(m.ISID)
+            LEFT JOIN (
+                SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                FROM EASYCAL.TBSUPMAN
+                GROUP BY TRIM(COID)
+            ) cust ON TRIM(m.CUST) = cust.COID
+            LEFT JOIN (
+                SELECT TRIM(COID) as COID, MAX(TRIM(CONM)) as CONM
+                FROM EASYCAL.TBSUPMAN
+                GROUP BY TRIM(COID)
+            ) mnfc ON TRIM(m.MNFC) = mnfc.COID
             {where_sql}
-            ORDER BY c.CIDU DESC
+            ORDER BY {sort_column} {sort_order} NULLS LAST, c.CIDU DESC
         """
 
         data_params = dict(params)
@@ -372,15 +396,9 @@ class EquipmentRepository:
             where.append(f"AND TRIM({prefix}CUST) = :corp_id")
             params["corp_id"] = corp_id
         elif filters.company:
-            where.append(
-                f"""AND (TRIM({prefix}CUST) LIKE '%' || :company || '%'
-                OR EXISTS (
-                    SELECT 1 FROM EASYCAL.TBSUPMAN s2
-                    WHERE TRIM(s2.COID) = TRIM({prefix}CUST)
-                      AND UPPER(TRIM(s2.CONM)) LIKE '%' || UPPER(TRIM(:company)) || '%'
-                ))"""
-            )
-            params["company"] = filters.company
+            company_sql, company_params = self._build_company_id_filter(f"{prefix}CUST", filters.company)
+            where.append(f"AND {company_sql}")
+            params.update(company_params)
 
         if filters.serial_number:
             where.append(f"AND UPPER(TRIM({prefix}SERN)) LIKE '%' || UPPER(TRIM(:sern)) || '%'")
@@ -444,6 +462,42 @@ class EquipmentRepository:
             )
 
         return "\n".join(where), params
+
+    def _build_company_id_filter(self, column: str, company: str):
+        company_ids = self._resolve_company_ids(company)
+        if company_ids:
+            params = {f"company_id_{index}": company_id for index, company_id in enumerate(company_ids)}
+            bind_names = ", ".join(f":company_id_{index}" for index in range(len(company_ids)))
+            return f"TRIM({column}) IN ({bind_names})", params
+
+        return (
+            f"UPPER(TRIM({column})) LIKE '%' || UPPER(TRIM(:company_id_text)) || '%'",
+            {"company_id_text": company.strip()},
+        )
+
+    def _resolve_company_ids(self, company: str):
+        value = company.strip()
+        if not value:
+            return []
+
+        rows = self.database.fetch_all(
+            """
+            SELECT COID
+            FROM (
+                SELECT DISTINCT TRIM(COID) as COID
+                FROM EASYCAL.TBSUPMAN
+                WHERE TRIM(COID) IS NOT NULL
+                  AND (
+                    UPPER(TRIM(COID)) LIKE '%' || UPPER(TRIM(:company)) || '%'
+                    OR UPPER(TRIM(CONM)) LIKE '%' || UPPER(TRIM(:company)) || '%'
+                  )
+                ORDER BY TRIM(COID)
+            )
+            WHERE ROWNUM <= :limit
+            """,
+            {"company": value, "limit": 500},
+        )
+        return [str(row.get("COID") or "").strip() for row in rows if str(row.get("COID") or "").strip()]
 
     def _build_history_where_sql(self, corp_id: str, is_elevated: bool, search_type: str, keyword: str):
         where = ["WHERE TRIM(c.CIDU) IS NOT NULL"]

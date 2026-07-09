@@ -49,6 +49,7 @@
 }
 
 :root {
+  --font-scale: 1;
   --radius: 0.75rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -250,5 +251,59 @@
 
   .type-dropdown-option {
     @apply text-[11px] font-bold;
+  }
+}
+
+@layer components {
+  .type-page-title { font-size: calc(1.5rem * var(--font-scale)); }
+  .type-page-meta { font-size: calc(10px * var(--font-scale)); }
+  .type-card-title { font-size: calc(10px * var(--font-scale)); }
+  .type-panel-title { font-size: calc(10px * var(--font-scale)); }
+  .type-section-title { font-size: calc(1.125rem * var(--font-scale)); }
+  .type-subpage-title { font-size: calc(1.25rem * var(--font-scale)); }
+  .type-detail-title { font-size: calc(1.25rem * var(--font-scale)); }
+  .type-section-eyebrow { font-size: calc(9px * var(--font-scale)); }
+  .type-overline { font-size: calc(10px * var(--font-scale)); }
+  .type-divider-label { font-size: calc(9px * var(--font-scale)); }
+  .type-label { font-size: calc(10px * var(--font-scale)); }
+  .type-label-sm { font-size: calc(9px * var(--font-scale)); }
+  .type-caption { font-size: calc(8px * var(--font-scale)); }
+  .type-status-badge { font-size: calc(7px * var(--font-scale)); }
+  .type-control { font-size: calc(0.875rem * var(--font-scale)); }
+  .type-control-sm { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-form-input { font-size: calc(13px * var(--font-scale)); }
+  .type-action { font-size: calc(10px * var(--font-scale)); }
+  .type-action-sm { font-size: calc(10px * var(--font-scale)); }
+  .type-table-head { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-table-body { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-table-body-strong { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-metric-value { font-size: calc(1.5rem * var(--font-scale)); }
+  .type-metric-label { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-company-name { font-size: calc(0.75rem * var(--font-scale)); }
+  .type-company-code { font-size: calc(8px * var(--font-scale)); }
+  .type-company-stat-label { font-size: calc(9px * var(--font-scale)); }
+  .type-company-stat-value { font-size: calc(1.125rem * var(--font-scale)); }
+  .type-nav-section { font-size: calc(9px * var(--font-scale)); }
+  .type-nav-item { font-size: calc(11px * var(--font-scale)); }
+  .type-dropdown-option { font-size: calc(11px * var(--font-scale)); }
+
+  @media (min-width: 768px) {
+    .type-page-title { font-size: calc(2.25rem * var(--font-scale)); }
+    .type-page-meta { font-size: calc(0.75rem * var(--font-scale)); }
+    .type-card-title { font-size: calc(0.75rem * var(--font-scale)); }
+    .type-panel-title { font-size: calc(12px * var(--font-scale)); }
+    .type-section-title { font-size: calc(1.25rem * var(--font-scale)); }
+    .type-subpage-title { font-size: calc(1.5rem * var(--font-scale)); }
+    .type-detail-title { font-size: calc(1.875rem * var(--font-scale)); }
+    .type-section-eyebrow { font-size: calc(10px * var(--font-scale)); }
+    .type-label-sm { font-size: calc(10px * var(--font-scale)); }
+    .type-caption { font-size: calc(9px * var(--font-scale)); }
+    .type-status-badge { font-size: calc(8px * var(--font-scale)); }
+    .type-metric-value { font-size: calc(2.25rem * var(--font-scale)); }
+    .type-metric-label { font-size: calc(0.875rem * var(--font-scale)); }
+    .type-company-name { font-size: calc(0.875rem * var(--font-scale)); }
+    .type-company-code { font-size: calc(0.75rem * var(--font-scale)); }
+    .type-company-stat-label { font-size: calc(10px * var(--font-scale)); }
+    .type-company-stat-value { font-size: calc(1.5rem * var(--font-scale)); }
   }
 }

@@ -7,7 +7,7 @@ import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-client";
 import {
     Search, ChevronDown, Save, History, Download, X, Loader2,
-    FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database, Check
+    FileText, AlertTriangle, Clock, Wrench, ChevronRight, Activity, Database, Check, FileSpreadsheet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -423,18 +423,23 @@ function SearchInner({ defaultTab }: SearchContentProps) {
         }
     };
 
-    const downloadReport = async (calNo: string) => {
-        const loadingToast = toast.loading("Downloading report...");
+    const downloadHistoryFile = async (calNo: string, type: "report" | "excel") => {
+        const isExcel = type === "excel";
+        const loadingToast = toast.loading(isExcel ? "Downloading Excel file..." : "Downloading PDF report...");
         try {
             const fileName = await downloadWithProgress({
-                path: `/api/equipment/download?id=${selectedEquipment?.ISID}&type=report&calno=${calNo}`,
-                title: "Certificate Download",
-                fallbackFilename: `${calNo}.pdf`,
+                path: `/api/equipment/download?id=${selectedEquipment?.ISID}&type=${type}&calno=${calNo}`,
+                title: isExcel ? "Certificate Excel Download" : "Certificate PDF Download",
+                fallbackFilename: `${calNo}.${isExcel ? "xlsx" : "pdf"}`,
             });
             toast.success("다운로드 완료", { description: fileName, id: loadingToast });
         } catch (error) {
             toast.error("다운로드 실패", { description: error instanceof Error ? error.message : "성적서 파일을 찾을 수 없습니다", id: loadingToast });
         }
+    };
+
+    const downloadReport = async (calNo: string) => {
+        await downloadHistoryFile(calNo, "report");
     };
 
     const updateField = (key: keyof Equipment, value: string) => {
@@ -1005,7 +1010,7 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                     <table className="w-full text-left border-collapse min-w-[1000px]">
                                         <thead className="bg-[#001489]/5 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-8 py-5 type-label text-slate-500 text-center">Actions</th>
+                                                <th className="px-8 py-5 type-label text-slate-500 text-center">Downloads</th>
                                                 <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">CAL NO</th>
                                                 <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">CERTI NO</th>
                                                 <th className="px-8 py-5 type-label text-slate-500 whitespace-nowrap">REC DATE</th>
@@ -1019,13 +1024,24 @@ function SearchInner({ defaultTab }: SearchContentProps) {
                                             {calHistory.map((h, i) => (
                                                 <tr key={i} className="hover:bg-slate-50/80 transition-colors group text-center">
                                                     <td className="px-8 py-6">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); downloadReport(h.CIDU); }}
-                                                            className="p-3 bg-slate-950 hover:bg-[#001489] text-white rounded-xl transition-all shadow-lg transform scale-90 group-hover:scale-100"
-                                                            title="Download PDF"
-                                                        >
-                                                            <Download className="w-4 h-4" />
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); downloadHistoryFile(h.CIDU, "report"); }}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-[#001489] text-white rounded-xl transition-all shadow-sm"
+                                                                title="Download PDF report"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                <span className="type-caption">PDF</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); downloadHistoryFile(h.CIDU, "excel"); }}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 rounded-xl transition-all shadow-sm"
+                                                                title="Download Excel file"
+                                                            >
+                                                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                                                <span className="type-caption">Excel</span>
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                     <td className="px-8 py-6 text-left">
                                                         <button

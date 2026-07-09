@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-client";
+import { FontScaleControl } from "@/components/font-scale-control";
 
 export default function DashboardLayout({
     children,
@@ -236,7 +237,10 @@ export default function DashboardLayout({
                     </div>
 
                     {/* Right Section: Redesigned Profile (As per reference) */}
-                    <div className="flex items-center space-x-4 md:space-x-8">
+                    <div className="flex items-center space-x-3 md:space-x-6">
+                        <div className="hidden lg:block">
+                            <FontScaleControl />
+                        </div>
                         {/* Status Icons */}
                         <div className="hidden sm:flex items-center space-x-1 border-r border-slate-100 pr-4 md:pr-8">
                             <Button variant="ghost" size="icon" className="text-slate-300 hover:text-[#001489] w-10 h-10">

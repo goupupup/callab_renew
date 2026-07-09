@@ -11,6 +11,9 @@ import {
     FileSpreadsheet,
     History,
     Loader2,
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
     Search,
 } from "lucide-react";
 import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
@@ -42,6 +45,11 @@ type HistoryRow = {
 };
 
 type SearchType = "regNo" | "assetNo";
+type SortDirection = "asc" | "desc";
+type SortConfig = {
+    key: string;
+    direction: SortDirection;
+};
 
 export default function HistoryPage() {
     const { progress, downloadWithProgress } = useDownloadProgress();
@@ -59,17 +67,23 @@ export default function HistoryPage() {
         limit: 25,
         totalPages: 0,
     });
+    const [sortConfig, setSortConfig] = useState<SortConfig>({
+        key: "calNo",
+        direction: "desc",
+    });
 
-    const buildParams = (page = pagination.page, limit = pagination.limit) => {
+    const buildParams = (page = pagination.page, limit = pagination.limit, sort = sortConfig) => {
         const params = new URLSearchParams();
         params.append("searchType", searchType);
         params.append("keyword", keyword.trim());
         params.append("page", page.toString());
         params.append("limit", limit.toString());
+        params.append("sortBy", sort.key);
+        params.append("order", sort.direction);
         return params;
     };
 
-    const fetchHistory = async (page = 1, limit = pagination.limit) => {
+    const fetchHistory = async (page = 1, limit = pagination.limit, sort = sortConfig) => {
         if (!keyword.trim()) {
             await alert({
                 title: "Search Required",
@@ -89,7 +103,7 @@ export default function HistoryPage() {
         }
 
         try {
-            const response = await apiFetch(`/api/equipment/history?${buildParams(page, limit).toString()}`, {
+            const response = await apiFetch(`/api/equipment/history?${buildParams(page, limit, sort).toString()}`, {
                 signal: controller.signal,
             });
             if (!response.ok) {
@@ -119,14 +133,43 @@ export default function HistoryPage() {
     };
 
     const handleLimitChange = (limit: number) => {
-        fetchHistory(1, limit);
+        fetchHistory(1, limit, sortConfig);
     };
 
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= pagination.totalPages) {
-            fetchHistory(page, pagination.limit);
+            fetchHistory(page, pagination.limit, sortConfig);
         }
     };
+
+    const handleSort = (key: string) => {
+        const direction: SortDirection = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
+        const newSort = { key, direction };
+        setSortConfig(newSort);
+        fetchHistory(1, pagination.limit, newSort);
+    };
+
+    const renderSortHeader = (label: string, key: string) => {
+        const isActive = sortConfig.key === key;
+        const Icon = isActive ? (sortConfig.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+        return (
+            <button
+                type="button"
+                onClick={() => handleSort(key)}
+                className="flex w-full items-center justify-start gap-2 group-hover:text-[#001489]"
+            >
+                <span>{label}</span>
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#001489]" : "text-slate-300"}`} />
+            </button>
+        );
+    };
+
+    const activeFilters = [
+        keyword.trim() && `${searchType === "regNo" ? "HCT No" : "Asset No"}: ${keyword.trim()}`,
+    ].filter(Boolean);
+    const visibleStart = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+    const visibleEnd = pagination.limit >= 9999 ? rows.length : Math.min(pagination.page * pagination.limit, pagination.total);
+    const sortLabel = `${sortConfig.key} ${sortConfig.direction.toUpperCase()}`;
 
     const handleExcelExport = async () => {
         if (rows.length === 0) {
@@ -136,7 +179,7 @@ export default function HistoryPage() {
 
         try {
             await downloadWithProgress({
-                path: `/api/equipment/history/export?${buildParams(pagination.page, pagination.limit).toString()}`,
+                path: `/api/equipment/history/export?${buildParams(pagination.page, pagination.limit, sortConfig).toString()}`,
                 title: "History Excel Export",
                 fallbackFilename: "Calibration_History.xlsx",
             });
@@ -273,20 +316,39 @@ export default function HistoryPage() {
 
             <Card className="border border-slate-200 shadow-sm rounded-xl overflow-hidden bg-white">
                 <CardHeader className="px-4 md:px-6 py-4 md:py-5 border-b border-slate-50">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <CardTitle className="type-panel-title text-slate-500 flex items-center">
-                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 shadow-inner">
-                                <History className="w-4 h-4 text-[#001489]" />
-                            </div>
-                            Calibration History
-                            {isRefreshing && (
-                                <div className="ml-4 flex items-center text-[#001489]">
-                                    <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                                    <span className="type-caption tracking-[0.2em] opacity-60">SYNCING...</span>
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="min-w-0 space-y-3">
+                            <CardTitle className="type-panel-title text-slate-500 flex items-center">
+                                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 shadow-inner">
+                                    <History className="w-4 h-4 text-[#001489]" />
                                 </div>
-                            )}
-                        </CardTitle>
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                Calibration History
+                                {isRefreshing && (
+                                    <div className="ml-4 flex items-center text-[#001489]">
+                                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                        <span className="type-caption tracking-[0.2em] opacity-60">SYNCING...</span>
+                                    </div>
+                                )}
+                            </CardTitle>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Total {pagination.total}</span>
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Showing {visibleStart}-{visibleEnd}</span>
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Sort {sortLabel}</span>
+                                <span className="rounded-lg bg-blue-50 px-3 py-1 type-label-sm text-[#001489]">Downloads apply to current page</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {activeFilters.length > 0 ? (
+                                    activeFilters.map((filter) => (
+                                        <span key={filter as string} className="rounded-lg border border-slate-100 bg-white px-3 py-1 type-label-sm text-slate-500 shadow-sm">
+                                            {filter}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="type-label-sm text-slate-300">Search by HCT No or Asset No</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center xl:justify-end">
                             <DownloadTooltip text="Downloads the Excel file for the items currently visible on this page.">
                                 <Button variant="outline" size="xs" className="h-8 px-3 rounded-lg border-slate-200 bg-white type-caption text-slate-700 hover:bg-slate-50 shadow-sm w-full sm:w-auto" onClick={handleExcelExport}>
                                     <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
@@ -319,14 +381,14 @@ export default function HistoryPage() {
                                 <TableRow className="border-none hover:bg-transparent">
                                     <TableHead className="w-16 text-center type-table-head py-4 text-slate-400">ID</TableHead>
                                     <TableHead className="w-20 text-center type-table-head py-4 text-slate-400">Cert</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Cal No</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">HCT No</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Asset No</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Equipment Name</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Model/Manu</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Serial ID</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Cal Date</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">Return Date</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Cal No", "calNo")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("HCT No", "hctNo")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Asset No", "assetNo")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Equipment Name", "equipmentName")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Model/Manu", "modelName")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Serial ID", "serialNumber")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Cal Date", "calDate")}</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-5">{renderSortHeader("Return Date", "returnDate")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

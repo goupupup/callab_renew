@@ -100,7 +100,7 @@ export default function AccountsPage() {
             setCustomerResults({ ...customerResults, [userId]: data });
         } catch (error) {
             toast.error("Customer search failed", {
-                description: error instanceof Error ? error.message : "Unable to search TBSUPMAN.",
+                description: error instanceof Error ? error.message : "Unable to search customers.",
             });
         } finally {
             setCustomerSearchLoading({ ...customerSearchLoading, [userId]: false });
@@ -124,7 +124,7 @@ export default function AccountsPage() {
         const current = approvalData[request.USERID] || {};
         const corpName = current.corpName || "";
         if (!current.corpId || !corpName) {
-            toast.error("Select a customer from TBSUPMAN before approving.");
+            toast.error("Select a customer before approving.");
             return;
         }
 
@@ -250,9 +250,6 @@ export default function AccountsPage() {
                     <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-slate-900 leading-tight mb-2">
                         Account <span className="text-[#001489]">Hierarchy Manager</span>
                     </h2>
-                    <p className="text-[10px] md:text-xs font-bold text-slate-400">
-                        Protocol: <span className="text-slate-900 uppercase font-black">CUSTCAL.TWUSRMAN-V4</span>
-                    </p>
                 </div>
                 <div className="flex items-center">
                     <Button
@@ -411,7 +408,7 @@ export default function AccountsPage() {
                                             <TableCell className="px-6 py-4">
                                                 <div className="relative min-w-[320px] space-y-2">
                                                     <Input
-                                                        placeholder="Search TBSUPMAN by customer name or ID"
+                                                        placeholder="Search customer name"
                                                         className="h-9 rounded-lg border-slate-100 bg-slate-50 text-xs font-bold"
                                                         value={approvalData[request.USERID]?.customerSearch || ""}
                                                         onChange={(e) => searchCustomers(request.USERID, e.target.value)}
@@ -427,7 +424,7 @@ export default function AccountsPage() {
                                                         </div>
                                                     )}
                                                     {customerSearchLoading[request.USERID] && (
-                                                        <p className="text-[10px] font-bold text-slate-400">Searching TBSUPMAN...</p>
+                                                        <p className="text-[10px] font-bold text-slate-400">Searching customers...</p>
                                                     )}
                                                     {(customerResults[request.USERID] || []).length > 0 && (
                                                         <div className="absolute left-0 right-0 top-10 z-30 max-h-56 overflow-y-auto rounded-xl border border-slate-100 bg-white shadow-2xl">

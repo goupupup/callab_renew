@@ -7,7 +7,8 @@ import {
     Search, FileText, Trash2, Eye,
     FileSpreadsheet, ChevronLeft, ChevronRight,
     Loader2, ShieldCheck, Upload,
-    ChevronsLeft, ChevronsRight, Download
+    ChevronsLeft, ChevronsRight, Download,
+    ArrowDown, ArrowUp, ArrowUpDown
 } from "lucide-react";
 import { DownloadProgressBar, useDownloadProgress } from "@/components/download-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +64,7 @@ function EquipmentContent() {
     const { alert, confirm, MessageDialog } = useMessageDialog();
     const searchParams = useSearchParams();
     const filterParam = searchParams.get("filter");
+    const companyParam = searchParams.get("company") || "";
 
     const [sortConfig, setSortConfig] = useState({
         key: "regDate",
@@ -103,7 +105,7 @@ function EquipmentContent() {
         regNo: "",
         modelName: "",
         equipmentName: "",
-        company: "",
+        company: companyParam,
         manufacturer: "",
         lastCalStart: "",
         lastCalEnd: "",
@@ -173,6 +175,39 @@ function EquipmentContent() {
         setSortConfig(newSort);
         fetchEquipment(1, pagination.limit, newSort);
     };
+
+    const renderSortHeader = (label: string, key: string, align: "left" | "right" = "left") => {
+        const isActive = sortConfig.key === key;
+        const Icon = isActive ? (sortConfig.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+        return (
+            <button
+                type="button"
+                onClick={() => handleSort(key)}
+                className={`flex w-full items-center gap-2 group-hover:text-[#001489] ${align === "right" ? "justify-end" : "justify-start"}`}
+            >
+                <span>{label}</span>
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#001489]" : "text-slate-300"}`} />
+            </button>
+        );
+    };
+
+    const activeFilters = [
+        filters.company && `Company: ${filters.company}`,
+        filters.regNo && `HCT No: ${filters.regNo}`,
+        filters.assetNo && `Asset: ${filters.assetNo}`,
+        filters.serialNumber && `Serial: ${filters.serialNumber}`,
+        filters.modelName && `Model: ${filters.modelName}`,
+        filters.equipmentName && `Equipment: ${filters.equipmentName}`,
+        filters.manufacturer && `Manufacturer: ${filters.manufacturer}`,
+        filters.lastCalStart && filters.lastCalEnd && `Cal Date: ${filters.lastCalStart} to ${filters.lastCalEnd}`,
+        filters.nextCalStart && filters.nextCalEnd && `Next Date: ${filters.nextCalStart} to ${filters.nextCalEnd}`,
+        filters.returnDateStart && filters.returnDateEnd && `Return Date: ${filters.returnDateStart} to ${filters.returnDateEnd}`,
+        filters.onGoingOnly && "On-Going only",
+        filters.expirationOnly && "Expiring only",
+    ].filter(Boolean);
+    const visibleStart = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+    const visibleEnd = pagination.limit >= 9999 ? equipment.length : Math.min(pagination.page * pagination.limit, pagination.total);
+    const sortLabel = `${sortConfig.key} ${sortConfig.direction.toUpperCase()}`;
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -441,21 +476,41 @@ function EquipmentContent() {
 
             {/* Equipment Data Table */}
             <Card className="border-none shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] rounded-2xl md:rounded-[2.5rem] overflow-hidden bg-white mt-4">
-                <CardHeader className="px-6 md:px-10 py-4 md:py-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-50">
-                    <CardTitle className="type-panel-title text-slate-400 flex items-center">
-                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-orange-50 flex items-center justify-center mr-3 md:mr-5 shadow-inner">
-                            <FileText className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
-                        </div>
-                        Secure Asset Registry
-                        {isRefreshing && (
-                            <div className="ml-4 md:ml-8 flex items-center text-[#001489]">
-                                <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                                <span className="type-caption tracking-[0.2em] opacity-60">SYNCING...</span>
+                <CardHeader className="px-6 md:px-10 py-4 md:py-6 border-b border-slate-50">
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="min-w-0 space-y-3">
+                            <CardTitle className="type-panel-title text-slate-500 flex items-center">
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-orange-50 flex items-center justify-center mr-3 md:mr-5 shadow-inner">
+                                    <FileText className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
+                                </div>
+                                Secure Asset Registry
+                                {isRefreshing && (
+                                    <div className="ml-4 md:ml-8 flex items-center text-[#001489]">
+                                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                        <span className="type-caption tracking-[0.2em] opacity-60">SYNCING...</span>
+                                    </div>
+                                )}
+                            </CardTitle>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Total {pagination.total}</span>
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Showing {visibleStart}-{visibleEnd}</span>
+                                <span className="rounded-lg bg-slate-50 px-3 py-1 type-label-sm text-slate-500">Sort {sortLabel}</span>
+                                <span className="rounded-lg bg-blue-50 px-3 py-1 type-label-sm text-[#001489]">Downloads apply to current page</span>
                             </div>
-                        )}
-                    </CardTitle>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-8">
-                        <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {activeFilters.length > 0 ? (
+                                    activeFilters.map((filter) => (
+                                        <span key={filter as string} className="rounded-lg border border-slate-100 bg-white px-3 py-1 type-label-sm text-slate-500 shadow-sm">
+                                            {filter}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="type-label-sm text-slate-300">No filters applied</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-stretch gap-3 xl:items-end">
+                            <div className="flex flex-col sm:flex-row gap-2">
                             <DownloadTooltip text="Downloads the Excel file for the items currently visible on this page.">
                                 <Button
                                     variant="outline"
@@ -490,7 +545,8 @@ function EquipmentContent() {
                                     Bulk Data Download
                                 </Button>
                             </DownloadTooltip>
-                        </div>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                         <div className="flex items-center space-x-6 sm:space-x-8">
                             <label className="flex items-center space-x-2 md:space-x-3 cursor-pointer group">
                                 <div className="relative flex items-center">
@@ -535,6 +591,8 @@ function EquipmentContent() {
                             <option value="100">SHOW: 100</option>
                             <option value="9999">SHOW: ALL</option>
                         </select>
+                            </div>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -546,25 +604,35 @@ function EquipmentContent() {
                                     <TableHead className="w-24 text-center type-table-head py-4 text-slate-400">DATA</TableHead>
                                     <TableHead className="w-20 text-center type-table-head py-4 text-slate-400">Reports</TableHead>
                                     {isElevated && (
-                                        <TableHead className="type-table-head py-4 text-slate-900 px-6">Customer</TableHead>
+                                        <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                            {renderSortHeader("Customer", "customerName")}
+                                        </TableHead>
                                     )}
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group" onClick={() => handleSort("assetNo")}>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
                                         <div className="flex items-center space-x-2 group-hover:text-[#001489]">
-                                            <span>Asset #</span>
-                                            {sortConfig.key === "assetNo" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                                            {renderSortHeader("Asset #", "assetNo")}
                                         </div>
                                     </TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group" onClick={() => handleSort("hctNo")}>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
                                         <div className="flex items-center space-x-2 group-hover:text-[#001489]">
-                                            <span>HCT No</span>
-                                            {sortConfig.key === "hctNo" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                                            {renderSortHeader("HCT No", "hctNo")}
                                         </div>
                                     </TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6">Equipment Name</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6">Model/Manu</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6">Serial ID</TableHead>
-                                    <TableHead className="type-table-head py-4 text-slate-900 px-6">Cal Date</TableHead>
-                                    <TableHead className="text-right type-table-head py-4 text-slate-900 px-6">Next Cycle</TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                        {renderSortHeader("Equipment Name", "equipmentName")}
+                                    </TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                        {renderSortHeader("Model/Manu", "modelName")}
+                                    </TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                        {renderSortHeader("Serial ID", "serialNumber")}
+                                    </TableHead>
+                                    <TableHead className="type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                        {renderSortHeader("Cal Date", "lastCal")}
+                                    </TableHead>
+                                    <TableHead className="text-right type-table-head py-4 text-slate-900 px-6 cursor-pointer group">
+                                        {renderSortHeader("Next Cycle", "nextCal", "right")}
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

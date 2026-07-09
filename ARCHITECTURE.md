@@ -22,6 +22,7 @@ Frontend responsibilities:
 - Store no Oracle or FTP credentials.
 - Call FastAPI through `src/lib/api-client.ts`.
 - Use `src/lib/auth-client.tsx` for FastAPI session-cookie authentication.
+- Do not expose database schema names, table names, or backend implementation identifiers in UI text. Use product/domain wording instead.
 
 ## Backend
 

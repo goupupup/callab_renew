@@ -30,6 +30,15 @@ export default function DashboardPage() {
     const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
     const isMaster = (session?.user as any)?.role === "MASTER";
+    const ownCompanyFilter = ((session?.user as any)?.corpName || (session?.user as any)?.corpId || "").trim();
+
+    const equipmentLink = (filter?: string) => {
+        const params = new URLSearchParams();
+        if (filter) params.set("filter", filter);
+        if (isMaster && ownCompanyFilter) params.set("company", ownCompanyFilter);
+        const query = params.toString();
+        return query ? `/dashboard/equipment?${query}` : "/dashboard/equipment";
+    };
 
     useEffect(() => {
         async function loadDashboardData() {
@@ -52,9 +61,9 @@ export default function DashboardPage() {
     }, [session]);
 
     const metricCards = [
-        { label: "Total Equipment", value: stats.totalEquipment?.toString() || "0", icon: HardDrive, color: "text-[#001489]", bg: "bg-blue-50", link: "/dashboard/equipment" },
-        { label: "On-Going", value: stats.ongoingCount?.toString() || "0", icon: FileText, color: "text-[#001489]", bg: "bg-blue-50", link: "/dashboard/equipment?filter=onGoingOnly" },
-        { label: "Expirations", value: stats.upcomingExpirations?.toString() || "0", icon: History, color: "text-amber-600", bg: "bg-amber-50", link: "/dashboard/equipment?filter=expirationOnly" },
+        { label: "Total Equipment", value: stats.totalEquipment?.toString() || "0", icon: HardDrive, color: "text-[#001489]", bg: "bg-blue-50", link: equipmentLink() },
+        { label: "On-Going", value: stats.ongoingCount?.toString() || "0", icon: FileText, color: "text-[#001489]", bg: "bg-blue-50", link: equipmentLink("onGoingOnly") },
+        { label: "Expirations", value: stats.upcomingExpirations?.toString() || "0", icon: History, color: "text-amber-600", bg: "bg-amber-50", link: equipmentLink("expirationOnly") },
     ];
 
     const serviceActions = [
@@ -163,7 +172,7 @@ export default function DashboardPage() {
                             <Card
                                 key={company.corpId}
                                 className="bg-white border-slate-100 hover:border-[#001489]/30 transition-all rounded-xl md:rounded-[1.5rem] shadow-sm overflow-hidden group h-full flex flex-col"
-                                onClick={() => router.push(`/dashboard/equipment?company=${encodeURIComponent(company.corpId)}`)}
+                                onClick={() => router.push(`/dashboard/equipment?company=${encodeURIComponent(company.corpName || company.corpId)}`)}
                             >
                                 <div className="p-4 md:p-5 pb-2 bg-slate-50/5 group-hover:bg-[#001489]/5 transition-colors border-b border-transparent group-hover:border-slate-100 flex-none">
                                     <h4 className="type-company-name text-slate-900 truncate">

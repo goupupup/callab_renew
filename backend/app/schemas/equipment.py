@@ -43,6 +43,8 @@ class HistoryQuery(BaseModel):
     limit: int = Field(default=25, ge=1)
     searchType: str = "regNo"
     keyword: str = ""
+    sortBy: str = "calNo"
+    order: str = "desc"
 
 
 class EquipmentItem(BaseModel):

@@ -156,7 +156,7 @@ def test_history_search_passes_query_params_to_service():
     )
     client.cookies.set(settings.session_cookie_name, create_session_token(user, settings))
 
-    response = client.get("/api/equipment/history?searchType=assetNo&keyword=ASSET1&page=2&limit=50")
+    response = client.get("/api/equipment/history?searchType=assetNo&keyword=ASSET1&page=2&limit=50&sortBy=hctNo&order=asc")
 
     assert response.status_code == 200
     assert response.json()["pagination"] == {
@@ -169,6 +169,8 @@ def test_history_search_passes_query_params_to_service():
     assert service.history_query.keyword == "ASSET1"
     assert service.history_query.page == 2
     assert service.history_query.limit == 50
+    assert service.history_query.sortBy == "hctNo"
+    assert service.history_query.order == "asc"
 
 
 def test_history_export_returns_xlsx_file():
